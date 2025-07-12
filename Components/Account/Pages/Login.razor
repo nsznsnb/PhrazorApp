@@ -1,61 +1,63 @@
 ﻿@page "/Account/Login"
+@layout EmptyLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
+@using PhrazorApp.Common
+@using PhrazorApp.Components.Layout
 @using PhrazorApp.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IJSRuntime JS
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>英作文練習アプリ</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Log in</MudText>
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudPaper Elevation="5" Class="pa-16">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                    <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">Phrazor App</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem>
+                <StatusMessage Message="@errorMessage" />
+                <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+                    <DataAnnotationsValidator />
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Dark" />
+                        <MudText Typo="Typo.h5">ログイン</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">Phrazor Appを使用するにはアカウントにログインしてください</MudText>
 
-<MudGrid>
-    <MudItem md="6">
-        <StatusMessage Message="@errorMessage" />
-        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-            <DataAnnotationsValidator />
 
-            <MudText GutterBottom="true" Typo="Typo.body1">Use a local account to log in.</MudText>
+                    <MudStaticTextField @bind-Value="@Input.UserId" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Person" autocomplete="username"
+                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーId" For="() => Input.UserId" />
 
-            <MudGrid>
-                <MudItem md="12">
-                    <MudStaticTextField For="@(() => Input.Email)" @bind-Value="Input.Email" 
-                        Label="Email" Placeholder="name@example.com" 
-                        UserAttributes="@(new() { { "autocomplete", "username" }, { "aria-required", "true" } } )" />
-                </MudItem>
-                <MudItem md="12">
-                    <MudStaticTextField For="@(() => Input.Password)" @bind-Value="Input.Password" 
-                        Label="Password" InputType="InputType.Password" Placeholder="password" 
-                        UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } } )" />
-                </MudItem>
-                <MudItem md="12">
-                    <MudStaticCheckBox For="@(() => Input.RememberMe)" @bind-Value="Input.RememberMe">Remember me</MudStaticCheckBox>
-                </MudItem>
-                <MudItem md="12">
-                    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Log in</MudStaticButton>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
+                    <MudStaticTextField @bind-Value="@Input.Password" autocomplete="current-password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
+                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
+                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" For="() => Input.Password" />
 
-        <MudGrid Class="mt-4">
-            <MudItem md="12">
-                <MudLink Href="Account/ForgotPassword">Forgot your password?</MudLink><br />
-                <MudLink Href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</MudLink><br />
-                <MudLink Href="Account/ResendEmailConfirmation">Resend email confirmation</MudLink>
+                    <MudLink Href="Account/ForgotPassword" Typo="Typo.body2" Color="Color.Primary"><b>パスワードをお忘れですか？</b></MudLink>
+
+
+                    <MudStaticButton Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">続ける</MudStaticButton>
+
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
+                        <MudText Typo="Typo.body2">アカウントが未登録ですか？</MudText>
+                        <MudLink Href="/Account/Register" Typo="Typo.body2" Color="Color.Primary"><b>アカウントの作成</b></MudLink>
+                    </MudStack>
+
+                </EditForm>
             </MudItem>
         </MudGrid>
-    </MudItem>
-    <MudItem md="6">
-        <MudText GutterBottom="true" Typo="Typo.body1">Use another service to log in.</MudText>
-
-        <ExternalLoginPicker />
-    </MudItem>
-</MudGrid>
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string? errorMessage;
@@ -63,11 +65,11 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,7 +84,7 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(Input.UserId, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -105,17 +107,36 @@
         }
     }
 
+
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = "";
+        [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
+        [Display(Name = "ユーザーId")]
+        public string UserId { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
         [DataType(DataType.Password)]
+        [Display(Name = "パスワード")]
         public string Password { get; set; } = "";
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 }
+
+<script>
+    let timeoutId;
+
+    function showPassword(inputElement, button) {
+        if (inputElement.type === 'password') {
+            inputElement.type = 'text';
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(function () {
+                inputElement.type = 'password';
+            }, 5000);
+        } else {
+            inputElement.type = 'password';
+            clearTimeout(timeoutId);
+        }
+    }
+</script>
