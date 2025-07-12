@@ -1,0 +1,137 @@
+﻿@page "/categories"
+@using PhrazorApp.ViewModel
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudGrid>
+
+        <!-- 左：ジャンル一覧 -->
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardHeader>
+                    <MudText Typo="Typo.h6">ジャンル（大分類）</MudText>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@OnAddButtonClicked">
+                        新規追加
+                    </MudButton>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTable Items="@Elements" Hover="true" @bind-SelectedItem="@SelectedLargeCategory">
+                        <HeaderContent>
+                            <MudTh>ジャンル名</MudTh>
+                            <MudTh>操作</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditLarge(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteLarge(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- 右：サブジャンル一覧 -->
+        <MudItem xs="12" md="6">
+            @if (SelectedLargeCategory != null)
+            {
+                <MudCard>
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h6">@SelectedLargeCategory.Name のサブジャンル</MudText>
+                        <MudSpacer />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@AddSmall">
+                            サブジャンル追加
+                        </MudButton>
+                    </MudCardHeader>
+
+                    <MudCardContent>
+                        <MudTable Items="@SelectedLargeCategory.SubCategories" Hover="true">
+                            <HeaderContent>
+                                <MudTh>サブジャンル名</MudTh>
+                                <MudTh>操作</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Name</MudTd>
+                                <MudTd>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditSmall(context))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteSmall(context))" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+
+    private MudForm form;
+
+    private LargeCategoryModelValidator largeCategoryValidator = new();
+    private SmallCategoryModelValidator smallCategoryValidator = new();
+
+    private LargeCategoryModel model = new();
+    private LargeCategoryModel? SelectedLargeCategory;
+
+    private List<LargeCategoryModel> Elements = new()
+    {
+        new LargeCategoryModel {
+            Id = Guid.NewGuid(), Name = "ジャンル1",
+            SubCategories = new List<SmallCategoryModel> {
+                new SmallCategoryModel { Id = Guid.NewGuid(), Name = "サブジャンル1" },
+                new SmallCategoryModel { Id = Guid.NewGuid(), Name = "サブジャンル2" }
+            }
+        },
+        new LargeCategoryModel { Id = Guid.NewGuid(), Name = "ジャンル2" },
+        new LargeCategoryModel { Id = Guid.NewGuid(), Name = "ジャンル3" }
+    };
+
+    private void OnAddButtonClicked()
+    {
+        var newItem = new LargeCategoryModel { Id = Guid.NewGuid(), Name = "新ジャンル" };
+        Elements.Add(newItem);
+        SelectedLargeCategory = newItem;
+    }
+
+    private void EditLarge(LargeCategoryModel item)
+    {
+        Snackbar.Add($"Edit: {item.Name}", Severity.Info);
+    }
+
+    private void DeleteLarge(LargeCategoryModel item)
+    {
+        Elements.Remove(item);
+        if (SelectedLargeCategory == item)
+            SelectedLargeCategory = null;
+    }
+
+    private void AddSmall()
+    {
+        if (SelectedLargeCategory == null) return;
+        SelectedLargeCategory.SubCategories.Add(new SmallCategoryModel { Id = Guid.NewGuid(), Name = "新サブジャンル" });
+    }
+
+    private void EditSmall(SmallCategoryModel item)
+    {
+        Snackbar.Add($"Edit Sub: {item.Name}", Severity.Info);
+    }
+
+    private void DeleteSmall(SmallCategoryModel item)
+    {
+        SelectedLargeCategory?.SubCategories.Remove(item);
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            Snackbar.Add("保存完了！", Severity.Success);
+        }
+    }
+}

@@ -7,6 +7,7 @@ using PhraseMudBlazor.Data;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
+using PhrazorApp.Services;
 
 namespace PhrazorApp
 {
@@ -67,6 +68,8 @@ namespace PhrazorApp
 
             builder.Services.Configure<SeedUserOptions>(
                 builder.Configuration.GetSection("SeedUser"));
+
+            builder.Services.AddTransient<ICategoryService, CategoryService>();
 
             var app = builder.Build();
 
