@@ -12,7 +12,6 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-@inject IJSRuntime JS
 
 <PageTitle>英作文練習アプリ</PageTitle>
 
@@ -33,15 +32,15 @@
                         <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Dark" />
                         <MudText Typo="Typo.h5">ログイン</MudText>
                     </MudStack>
-                    <MudText Typo="Typo.caption">Phrazor Appを使用するにはアカウントにログインしてください</MudText>
+                    <MudText Typo="Typo.caption">Phrazor Appを使用するにはアカウントにログインしてください。</MudText>
 
 
                     <MudStaticTextField @bind-Value="@Input.UserId" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Person" autocomplete="username"
-                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーId" For="() => Input.UserId" />
+                    Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーId" For="() => Input.UserId" />
 
                     <MudStaticTextField @bind-Value="@Input.Password" autocomplete="current-password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
-                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
-                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" For="() => Input.Password" />
+                    Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
+                    AdornmentClickFunction="showPassword" InputType="InputType.Password" For="() => Input.Password" />
 
                     <MudLink Href="Account/ForgotPassword" Typo="Typo.body2" Color="Color.Primary"><b>パスワードをお忘れですか？</b></MudLink>
 
@@ -65,6 +64,7 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
 
     [SupplyParameterFromQuery]
@@ -84,7 +84,7 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.UserId, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(Input.UserId, Input.Password, true, lockoutOnFailure: false);
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -94,7 +94,7 @@
         {
             RedirectManager.RedirectTo(
                 "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+                new() { ["returnUrl"] = ReturnUrl });
         }
         else if (result.IsLockedOut)
         {
@@ -103,11 +103,13 @@
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = ComMessage.MSG_E_INVALID_ACCOUNT;
         }
     }
 
-
+    /// <summary>
+    /// ログインページモデル
+    /// </summary>
     private sealed class InputModel
     {
         [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
@@ -119,14 +121,13 @@
         [Display(Name = "パスワード")]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
     }
 }
 
 <script>
     let timeoutId;
 
+    
     function showPassword(inputElement, button) {
         if (inputElement.type === 'password') {
             inputElement.type = 'text';
