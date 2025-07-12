@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MudBlazor.Services;
+using PhraseMudBlazor.Data;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
@@ -10,7 +12,7 @@ namespace PhrazorApp
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -33,17 +35,38 @@ namespace PhrazorApp
                 })
                 .AddIdentityCookies();
 
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            var connectionString = builder.Configuration.GetConnectionString("IdentityConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+
+            builder.Services.AddDbContextFactory<EngDbContext>(opt =>
+            {
+                if (builder.Environment.IsDevelopment())
+                {
+                    // 開発時は詳細なエラーとセンシティブデータのロギングを有効にする
+                    opt = opt.EnableSensitiveDataLogging().EnableDetailedErrors();
+                }
+                opt.UseSqlServer(
+                    builder.Configuration.GetConnectionString("EngDbContext"),
+                    // リトライ処理を有効にする
+                    options => options.EnableRetryOnFailure());
+            });
+
+            // ユーザーシークレットを使用（開発時のみ）
+            builder.Configuration.AddUserSecrets<Program>();
+
+            builder.Services.Configure<SeedUserOptions>(
+                builder.Configuration.GetSection("SeedUser"));
 
             var app = builder.Build();
 
@@ -51,6 +74,15 @@ namespace PhrazorApp
             if (app.Environment.IsDevelopment())
             {
                 app.UseMigrationsEndPoint();
+
+                using (var scope = app.Services.CreateScope())
+                {
+                    var services = scope.ServiceProvider;
+
+                    var seedOptions = services.GetRequiredService<IOptions<SeedUserOptions>>().Value;
+
+                    await SeedUserData.InitializeAsync(services, seedOptions);
+                }
             }
             else
             {
