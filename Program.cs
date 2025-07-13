@@ -69,7 +69,10 @@ namespace PhrazorApp
             builder.Services.Configure<SeedUserOptions>(
                 builder.Configuration.GetSection("SeedUser"));
 
+            builder.Services.AddHttpClient<ImageGeneratorService>();
+
             builder.Services.AddTransient<ICategoryService, CategoryService>();
+
 
             var app = builder.Build();
 

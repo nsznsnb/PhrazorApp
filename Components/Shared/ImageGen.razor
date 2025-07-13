@@ -1,0 +1,40 @@
+﻿@page "/imagegen"
+@inject ImageGeneratorService ImageService
+
+<h3>英文から画像生成</h3>
+
+<MudTextField @bind-Value="Prompt" Label="英文を入力" />
+<MudButton OnClick="Generate">画像生成</MudButton>
+
+@if (IsLoading)
+{
+    <MudSkeleton Width="512px" Height="512px" Animation="Animation.Wave" />
+}
+else if (!string.IsNullOrEmpty(ImageUrl))
+{
+    <img src="@ImageUrl" alt="生成画像" style="max-width: 100%; margin-top: 1rem;" />
+}
+
+@code {
+    private string? Prompt;
+    private string? ImageUrl;
+    private bool IsLoading = false;
+
+    private async Task Generate()
+    {
+        if (string.IsNullOrWhiteSpace(Prompt))
+            return;
+
+        ImageUrl = null;
+        IsLoading = true;
+
+        try
+        {
+            ImageUrl = await ImageService.GenerateImageAsync(Prompt);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}
