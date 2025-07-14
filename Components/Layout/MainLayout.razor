@@ -1,20 +1,26 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="MyCustomTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
-        <MudText Typo="Typo.h5" Class="ml-3">Application</MudText>
+        <MudLink Href="/" Class="ml-3" Style="text-decoration: none; color: inherit;">
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Secondary" />
+                <MudText Typo="Typo.h5" Style="@($"color:{MyCustomTheme.PaletteLight.AppbarText};")">PhrazorApp</MudText>
+
+            </MudStack>
+        </MudLink>
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
     </MudAppBar>
-    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Class="full-height-drawer">
         <NavMenu />
     </MudDrawer>
-    <MudMainContent Class="mt-16 pa-4">
+    <MudMainContent Class="pa-4" Style="margin-top: var(--mud-appbar-height);">
         @Body
     </MudMainContent>
 </MudLayout>
@@ -26,8 +32,33 @@
     <span class="dismiss">🗙</span>
 </div>
 
+
 @code {
     private bool _drawerOpen = true;
-}
 
+    /// <summary>
+    /// テーマカスタマイズ
+    /// </summary>
+    MudTheme MyCustomTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = Colors.Indigo.Default,
+            Secondary = Colors.Blue.Accent4,
+            AppbarBackground = Colors.Indigo.Default,
+            Background = Colors.Gray.Lighten5,
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            AppbarHeight = "54px"
+        },
+        Typography = new Typography()
+        {
+            Default = new DefaultTypography()
+            {
+                FontFamily = new[] { ComDefine.FONT_FAMILY_1, ComDefine.FONT_FAMILY_2, ComDefine.FONT_FAMILY_3 }
+            }
+        }
+    };
+}
 
