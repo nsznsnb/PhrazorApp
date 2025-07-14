@@ -1,0 +1,155 @@
+﻿@page "/categories/create"
+@page "/categories/edit"
+@inject NavigationManager NavigationManager
+
+
+<MudContainer>
+    <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
+
+        <MudStack Spacing="2">
+
+            <MudCard>
+                <MudCardContent Class="py-2">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/categories"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+            <MudCard>
+                <MudCardHeader Class="py-2">
+                    <CardHeaderContent>
+                        <MudStack Row="true">
+                            <h3>
+                                カテゴリ入力
+                            </h3>
+                        </MudStack>
+
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent Class="py-2">
+                    <MudGrid Spacing="1">
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="@model.Name"
+                                          Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ名" For="() => model.Name" ShrinkLabel />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+
+            </MudCard>
+
+            <MudCard>
+                <MudCardHeader Class="py-2">
+                    <CardHeaderContent>
+                        <MudStack Row="true" Class="align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.ListAlt" Title="ListAlt" />
+                            <h3>
+                                サブカテゴリ一覧入力
+                            </h3>
+                            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_ROW_ADD</MudButton>
+                        </MudStack>
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent Class="py-2">
+                    <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="370px" Bordered="true" @ref="table">
+                        <HeaderContent>
+                            <MudTh>サブカテゴリ名</MudTh>
+                            <MudTh>操作</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudText Typo="Typo.subtitle1">@context.Name</MudText>
+                            </MudTd>
+                            <MudTd Align="Right">
+                                <MudStack Row="true">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" />
+                                </MudStack>
+                            </MudTd>
+                        </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd>
+                                <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
+                                    <MudTextField @bind-Value="@context.Name"
+                                                  Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ" For="() => model.Name" ShrinkLabel />
+                                </MudFocusTrap>
+                            </MudTd>
+                            <MudTd Align="Right">
+                                <MudStack Row="true">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => OnDeleteButtonClicked(context.Id)" />
+                                </MudStack>
+                            </MudTd>
+                        </RowEditingTemplate>
+
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+
+
+
+        </MudStack>
+    </MudForm>
+
+</MudContainer>
+
+
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+
+    MudForm form;
+    /// <summary>
+    /// サブカテゴリ一覧のref
+    /// </summary>
+    MudTable<SmallCategoryModel> table;
+
+    LargeCategoryModelValidator largeCategoryValidator = new LargeCategoryModelValidator();
+    SmallCategoryModelValidator smallCategoryValidator = new SmallCategoryModelValidator();
+
+
+    private LargeCategoryModel model = new LargeCategoryModel();
+
+
+    /// <summary>
+    /// 行追加ボタン押下時の処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task OnAddButtonClicked()
+    {
+        if (model.SubCategories == null)
+        {
+            model.SubCategories = new();
+        }
+
+        var newSub = new SmallCategoryModel { Id = Guid.NewGuid(), Name = "" };
+        model.SubCategories.Add(newSub);
+
+        await InvokeAsync(StateHasChanged); 
+        await Task.Delay(100); 
+        table.SetEditingItem(newSub);
+    }
+
+    /// <summary>
+    /// 行削除ボタン押下時の処理
+    /// </summary>
+    /// <param name="id"></param>
+    private void OnDeleteButtonClicked(Guid id)
+    {
+        model.SubCategories = model.SubCategories.Where(x => x.Id != id).ToList();
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            Snackbar.Add("Submitted!");
+        }
+    }
+
+}
