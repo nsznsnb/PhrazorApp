@@ -8,3 +8,8 @@
     top: var(--mud-appbar-height);
     height: calc(100vh - var(--mud-appbar-height));
 }
+
+.break-text {
+    white-space: normal;
+    word-break: break-word; /* または break-all や anywhere に調整可能 */
+}

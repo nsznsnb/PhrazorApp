@@ -1,5 +1,5 @@
 ﻿@page "/categories/create"
-@page "/categories/edit"
+@page "/categories/edit/{Id:guid}"
 @inject NavigationManager NavigationManager
 
 
@@ -7,12 +7,12 @@
     <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
 
         <MudStack Spacing="2">
-
+            <h2>フレーズカテゴリ編集</h2>
             <MudCard>
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block" OnClick="Clear">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
                         <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/categories"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     </MudStack>
                 </MudCardContent>
@@ -56,35 +56,23 @@
                 </MudCardHeader>
 
                 <MudCardContent Class="py-2">
-                    <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="370px" Bordered="true" @ref="table">
+                    <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="370px" Bordered="true" @ref="table" >
                         <HeaderContent>
                             <MudTh>サブカテゴリ名</MudTh>
                             <MudTh>操作</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd>
-                                <MudText Typo="Typo.subtitle1">@context.Name</MudText>
-                            </MudTd>
-                            <MudTd Align="Right">
-                                <MudStack Row="true">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" />
-                                </MudStack>
-                            </MudTd>
-                        </RowTemplate>
-                        <RowEditingTemplate>
-                            <MudTd>
                                 <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
                                     <MudTextField @bind-Value="@context.Name"
                                                   Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ" For="() => model.Name" ShrinkLabel />
                                 </MudFocusTrap>
                             </MudTd>
-                            <MudTd Align="Right">
-                                <MudStack Row="true">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => OnDeleteButtonClicked(context.Id)" />
-                                </MudStack>
+                            <MudTd>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="OnAddButtonClicked">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
                             </MudTd>
-                        </RowEditingTemplate>
-
+                        </RowTemplate>
+     
                     </MudTable>
                 </MudCardContent>
             </MudCard>
@@ -101,6 +89,9 @@
 @code {
     [Inject] ISnackbar Snackbar { get; set; }
 
+    [Parameter]
+    public Guid? Id { get; set; }
+
     MudForm form;
     /// <summary>
     /// サブカテゴリ一覧のref
@@ -113,24 +104,41 @@
 
     private LargeCategoryModel model = new LargeCategoryModel();
 
+    private SmallCategoryModel itemBeforeEdit;
+
+    private void Clear()
+    {
+        model = new();
+    }
+
+    private void BeginEdit(SmallCategoryModel item)
+    {
+        item.Name = item.Name;
+        item.IsEditing = true;
+    }
+
+    private void SaveEdit(SmallCategoryModel item)
+    {
+        item.Name = item.Name;
+        item.IsEditing = false;
+    }
+
+    private void CancelEdit(SmallCategoryModel item)
+    {
+        item.IsEditing = false;
+    }
 
     /// <summary>
     /// 行追加ボタン押下時の処理
     /// </summary>
     /// <returns></returns>
-    private async Task OnAddButtonClicked()
+    private void OnAddButtonClicked()
     {
-        if (model.SubCategories == null)
-        {
-            model.SubCategories = new();
-        }
 
-        var newSub = new SmallCategoryModel { Id = Guid.NewGuid(), Name = "" };
+
+        var newSub = new SmallCategoryModel { Id = Guid.NewGuid(), Name = "" , IsEditing = true};
         model.SubCategories.Add(newSub);
 
-        await InvokeAsync(StateHasChanged); 
-        await Task.Delay(100); 
-        table.SetEditingItem(newSub);
     }
 
     /// <summary>
@@ -140,6 +148,30 @@
     private void OnDeleteButtonClicked(Guid id)
     {
         model.SubCategories = model.SubCategories.Where(x => x.Id != id).ToList();
+    }
+
+    /// <summary>
+    /// 編集前にアイテムをバックアップする
+    /// </summary>
+    /// <param name="element"></param>
+    private void BackupItem(object element)
+    {
+        itemBeforeEdit = new()
+        {
+            Id = ((SmallCategoryModel)element).Id,
+            Name = ((SmallCategoryModel)element).Name,
+        };
+    }
+
+
+    /// <summary>
+    /// 編集中のアイテムを編集前の状態に戻す
+    /// </summary>
+    /// <param name="element"></param>
+    private void ResetItemToOriginalValues(object element)
+    {
+        ((SmallCategoryModel)element).Id = itemBeforeEdit.Id;
+        ((SmallCategoryModel)element).Name = itemBeforeEdit.Name;
     }
 
     private async Task Submit()

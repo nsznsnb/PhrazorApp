@@ -3,47 +3,66 @@
 @inject NavigationManager NavigationManager
 
 <MudContainer>
-    <MudStack>
-        <h3>フレーズジャンル設定</h3>
-        <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
+    <MudStack Spacing="2">
+        <h2>フレーズカテゴリ一覧</h2>
+        <MudCard>
+            <MudCardContent Class="py-2">
+                <MudStack Row="true" Spacing="1">
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => NavigationManager.NavigateTo("/categories/create"))">新規追加</MudButton>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" Class="align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.ListAlt" Title="ListAlt" />
+                        <h3>
+                            フレーズカテゴリ一覧
+                        </h3>
+                    </MudStack>
 
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudStack Row="true">
-                            <MudText Typo="Typo.h6">フレーズジャンル</MudText>
-                            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Color="Color.Tertiary" Size="Size.Small" OnClick="@(() => NavigationManager.NavigateTo("/categories/create"))">新規追加</MudButton>
-                        </MudStack>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudTable Items="@Elements" Dense="true" Hover="true">
-                        <HeaderContent>
-                            <MudTh>カテゴリ</MudTh>
-                            <MudTh>操作</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd>
-                                <MudText Typo="Typo.subtitle1">@context.Name</MudText>
-                                <MudText Typo="Typo.body2" Class="ms-2" Color="Color.Secondary">
-                                    @string.Join(", ", context.SubCategories.Select(s => s.Name))
-                                </MudText>
-                            </MudTd>
-                            <MudTd Align="Right">
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.Edit">
-                                    サブカテゴリ編集
-                                </MudButton>
-                            </MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary">Read more</MudButton>
-                </MudCardActions>
-            </MudCard>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="@Elements" Hover="true" Height="470px" FixedHeader="true" Dense="true">
+                    <HeaderContent>
+                        <MudTh>カテゴリ</MudTh>
+                        <MudTh style="min-width: 200px;">操作</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
+                                <MudTd >
+                                    <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
+                                        @foreach (var sub in context.SubCategories)
+                                        {
+                                            <MudChip Color="Color.Default"
+                                                     T="string"
+                                                     Variant="Variant.Text"
+                                                     Size="Size.Small">
+                                                @sub.Name
+                                            </MudChip>
+                                        }
+                                    </MudStack>
+                                </MudTd>
 
-        </MudForm>
+                            </MudStack>
+
+                        </MudTd>
+                        <MudTd Align="Right" style="min-width: 200px;">
+                            <MudStack Row="true">
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/categories/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                            </MudStack>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+
+        </MudCard>
+
 
 
     </MudStack>
@@ -68,7 +87,17 @@
     {
         new LargeCategoryModel { Id = new Guid(), Name = "ジャンル1", SubCategories = new List<SmallCategoryModel>() {
             new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル1" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" }
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+
         } },
         new LargeCategoryModel { Id = new Guid(), Name = "ジャンル2" },
         new LargeCategoryModel { Id = new Guid(), Name = "ジャンル3" }

@@ -15,6 +15,11 @@ namespace PhrazorApp.Common
         public const string FONT_FAMILY_2 = "Noto Sans JP";
         public const string FONT_FAMILY_3 = "sans-serif";
 
+        public const string LABEL_BUTTON_EDIT = "編集";
+        public const string LABEL_BUTTON_EDIT_COMMIT = "編集確定";
+        public const string LABEL_BUTTON_EDIT_CANCEL = "編集破棄";
+        public const string LABEL_BUTTON_CREATE = "新規登録";
+        public const string LABEL_BUTTON_DELETE = "削除";
         public const string LABEL_BUTTON_REGISTER = "登録";
         public const string LABEL_BUTTON_CLEAR = "クリア";
         public const string LABEL_ROW_ADD = "行追加";

@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PhrazorApp.ViewModel
 {
+
     public class LargeCategoryModel
     {
         [Display(Name = "ジャンルId")]
@@ -18,6 +19,7 @@ namespace PhrazorApp.ViewModel
 
     public class SmallCategoryModel
     {
+
         [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
         [Display(Name = "サブジャンルId")]
         public Guid Id { get; set; }
@@ -26,6 +28,9 @@ namespace PhrazorApp.ViewModel
         [Display(Name = "サブジャンル名")]
         public string Name { get; set; } = string.Empty;
 
+        public string ParentName { get; set; } = string.Empty;
+
+        public bool IsEditing { get; set; }
     }
 
 
