@@ -1,10 +1,14 @@
 ﻿@page "/categories"
 @using PhrazorApp.ViewModel
 @inject NavigationManager NavigationManager
+@inject ICategoryService CategoryService
 
 <MudContainer>
     <MudStack Spacing="2">
-        <h2>フレーズカテゴリ一覧</h2>
+        <MudStack Row Spacing="0">
+            <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Dark" Title="Favorite" Style="transform: translateY(2px)" />
+            <h2>フレーズカテゴリ一覧</h2>
+        </MudStack>
         <MudCard>
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
@@ -25,7 +29,7 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudTable Items="@Elements" Hover="true" Height="470px" FixedHeader="true" Dense="true">
+                <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" Dense="true">
                     <HeaderContent>
                         <MudTh>カテゴリ</MudTh>
                         <MudTh style="min-width: 200px;">操作</MudTh>
@@ -73,49 +77,38 @@
 @code {
     [Inject] ISnackbar Snackbar { get; set; }
 
-    MudForm form;
-
-    LargeCategoryModelValidator largeCategoryValidator = new LargeCategoryModelValidator();
-    SmallCategoryModelValidator smallCategoryValidator = new SmallCategoryModelValidator();
 
 
     private LargeCategoryModel model = new LargeCategoryModel();
 
+    private List<LargeCategoryModel> Elements = new ();
 
 
-    private List<LargeCategoryModel> Elements = new List<LargeCategoryModel>
+    // private List<LargeCategoryModel> Elements = new List<LargeCategoryModel>
+    // {
+    //     new LargeCategoryModel { Id = new Guid(), Name = "ジャンル1", SubCategories = new List<SmallCategoryModel>() {
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル1" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
+
+    //     } },
+    //     new LargeCategoryModel { Id = new Guid(), Name = "ジャンル2" },
+    //     new LargeCategoryModel { Id = new Guid(), Name = "ジャンル3" }
+    // };
+
+    protected override async Task OnInitializedAsync()
     {
-        new LargeCategoryModel { Id = new Guid(), Name = "ジャンル1", SubCategories = new List<SmallCategoryModel>() {
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル1" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-            new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-
-        } },
-        new LargeCategoryModel { Id = new Guid(), Name = "ジャンル2" },
-        new LargeCategoryModel { Id = new Guid(), Name = "ジャンル3" }
-    };
-
-    private void OnAddButtonClicked()
-    {
-        Elements.Add(new LargeCategoryModel());
+        Elements = await CategoryService.GetCategoryViewModelListAsync();
     }
 
-    private async Task Submit()
-    {
-        await form.Validate();
 
-        if (form.IsValid)
-        {
-            Snackbar.Add("Submitted!");
-        }
-    }
 
 }

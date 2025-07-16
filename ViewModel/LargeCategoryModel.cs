@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using PhrazorApp.Common;
+using PhrazorApp.Models;
 using PhrazorApp.ViewModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -15,6 +16,8 @@ namespace PhrazorApp.ViewModel
         public string Name { get; set; } = string.Empty;
 
         public List<SmallCategoryModel> SubCategories { get; set; } = new();
+
+
     }
 
     public class SmallCategoryModel
@@ -28,9 +31,9 @@ namespace PhrazorApp.ViewModel
         [Display(Name = "サブジャンル名")]
         public string Name { get; set; } = string.Empty;
 
-        public string ParentName { get; set; } = string.Empty;
 
         public bool IsEditing { get; set; }
+
     }
 
 
@@ -41,14 +44,16 @@ public class LargeCategoryModelValidator : AbstractValidator<LargeCategoryModel>
     public LargeCategoryModelValidator()
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage(ComMessage.REQUIRED_DETAIL);
+            .NotEmpty()
+            .WithName("カテゴリId")
+            .WithMessage(string.Format(ComMessage.REQUIRED_DETAIL, "カテゴリId"));
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage(ComMessage.REQUIRED_DETAIL);
+            .NotEmpty().WithMessage(string.Format(ComMessage.REQUIRED_DETAIL, "カテゴリ名"));
 
         RuleForEach(x => x.SubCategories)
             .SetValidator(new SmallCategoryModelValidator());
-    }
 
+    }
     public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
     {
         var result = await ValidateAsync(ValidationContext<LargeCategoryModel>.CreateWithOptions((LargeCategoryModel)model, x => x.IncludeProperties(propertyName)));
@@ -56,15 +61,20 @@ public class LargeCategoryModelValidator : AbstractValidator<LargeCategoryModel>
             return Array.Empty<string>();
         return result.Errors.Select(e => e.ErrorMessage);
     };
+
 }
 public class SmallCategoryModelValidator : AbstractValidator<SmallCategoryModel>
 {
     public SmallCategoryModelValidator()
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage(ComMessage.REQUIRED_DETAIL);
+                    .NotEmpty()
+                    .WithName("サブカテゴリId")
+                    .WithMessage("{PropertyName}を入力してください。");
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage(ComMessage.REQUIRED_DETAIL);
+                    .NotEmpty()
+                    .WithName("サブカテゴリ名")
+                    .WithMessage("{PropertyName}を入力してください。");
     }
 
     public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
@@ -74,4 +84,6 @@ public class SmallCategoryModelValidator : AbstractValidator<SmallCategoryModel>
             return Array.Empty<string>();
         return result.Errors.Select(e => e.ErrorMessage);
     };
+
+
 }
