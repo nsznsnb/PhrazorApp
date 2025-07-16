@@ -1,5 +1,5 @@
 ﻿body {
-    font-family: 'Noto Sans', 'Noto Sans JP', sans-serif;
+    font-family: 'BIZ UDPGothic', sans-serif;
 }
 
 /* メインレイアウトサイドバー高さ調整 */
@@ -13,3 +13,4 @@
     white-space: normal;
     word-break: break-word; /* または break-all や anywhere に調整可能 */
 }
+
