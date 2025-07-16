@@ -11,9 +11,9 @@ namespace PhrazorApp.Common
         /// <summary>
         /// 
         /// </summary>
-        public const string FONT_FAMILY_1 = "Noto Sans";
-        public const string FONT_FAMILY_2 = "Noto Sans JP";
-        public const string FONT_FAMILY_3 = "sans-serif";
+        public const string FONT_FAMILY_1 = "BIZ UDPGothic";
+        public const string FONT_FAMILY_2 = "sans-serif";
+        public const string FONT_FAMILY_3 = "";
 
         public const string LABEL_BUTTON_EDIT = "編集";
         public const string LABEL_BUTTON_EDIT_COMMIT = "編集確定";
