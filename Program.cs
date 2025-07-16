@@ -58,9 +58,7 @@ namespace PhrazorApp
                     opt = opt.EnableSensitiveDataLogging().EnableDetailedErrors();
                 }
                 opt.UseSqlServer(
-                    builder.Configuration.GetConnectionString("EngDbContext"),
-                    // リトライ処理を有効にする
-                    options => options.EnableRetryOnFailure());
+                    builder.Configuration.GetConnectionString("EngDbContext"));
             });
 
             // ユーザーシークレットを使用（開発時のみ）
@@ -70,7 +68,9 @@ namespace PhrazorApp
                 builder.Configuration.GetSection("SeedUser"));
 
             builder.Services.AddHttpClient<ImageGeneratorService>();
+            builder.Services.AddHttpContextAccessor();
 
+            builder.Services.AddTransient<IUserService, UserService>();
             builder.Services.AddTransient<ICategoryService, CategoryService>();
 
 
