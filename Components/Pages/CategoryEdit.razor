@@ -131,6 +131,12 @@
             model = new() { Id = Guid.NewGuid() };
         }
 
+        if (form != null)
+        {
+            // バリデーションエラークリア
+            await form.ResetAsync();
+        }
+
     }
 
 
