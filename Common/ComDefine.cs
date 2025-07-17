@@ -16,15 +16,15 @@ namespace PhrazorApp.Common
         public const string FONT_FAMILY_3 = "";
 
         public const string LABEL_BUTTON_EDIT = "編集";
-        public const string LABEL_BUTTON_EDIT_COMMIT = "編集確定";
-        public const string LABEL_BUTTON_EDIT_CANCEL = "編集破棄";
         public const string LABEL_BUTTON_CREATE = "新規登録";
         public const string LABEL_BUTTON_DELETE = "削除";
         public const string LABEL_BUTTON_REGISTER = "登録";
         public const string LABEL_BUTTON_CLEAR = "クリア";
+        public const string LABEL_BUTTON_CANCEL = "キャンセル";
         public const string LABEL_ROW_ADD = "行追加";
         public const string LABEL_BUTTON_RETURN_INDEX = "一覧に戻る";
-        public const string LABEL_TABLE_ROWS_PER_PAGE = "1ページの表示件数";
+
+        public const string LABEL_DIALOG_TITLE_DELETE_CONFIRM = "削除確認";
 
 
     }

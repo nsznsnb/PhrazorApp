@@ -1,0 +1,63 @@
+﻿<MudDialog Class="blur dialog-background" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-10 mt-1" ActionsClass="dialog-background-surface">
+    <TitleContent>
+        @titleText
+    </TitleContent>
+    <DialogContent>
+        @ContentText
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="@color" OnClick="Submit">@executeButtonText</MudButton>
+        <MudButton OnClick="Cancel">@ComDefine.LABEL_BUTTON_CANCEL</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .blur {
+        backdrop-filter: blur(10px);
+    }
+
+    .dialog-background {
+        background-color: transparent;
+    }
+
+    .dialog-background-title {
+        background: rgb(from var(--mud-palette-info-lighten) r g b / 50%);
+        color: var(--mud-palette-white);
+    }
+
+    .dialog-background-surface {
+        background: rgb(from var(--mud-palette-surface) r g b / 75%);
+    }
+</style>
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public CommonDialogPattern DialogPattern { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; } = string.Empty;
+
+
+    private Color color { get; set; }
+    private string titleText { get; set; } = string.Empty;
+    private string executeButtonText { get; set; } = string.Empty;
+
+
+    protected override void OnInitialized()
+    {
+        switch (DialogPattern)
+        {
+            case CommonDialogPattern.DeleteConfirm:
+                color = Color.Error;
+                titleText = ComDefine.LABEL_DIALOG_TITLE_DELETE_CONFIRM;
+                executeButtonText = ComDefine.LABEL_BUTTON_DELETE;
+                break;
+        }
+    }
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
+
+    private void Cancel() => MudDialog.Cancel();
+}

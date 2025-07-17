@@ -3,10 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
-using PhraseMudBlazor.Data;
+using PhrazorApp.Data;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
-using PhrazorApp.Data;
 using PhrazorApp.Services;
 
 namespace PhrazorApp

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using PhrazorApp.Data;
 
-namespace PhraseMudBlazor.Data
+namespace PhrazorApp.Data
 {
     public static class SeedUserData
     {

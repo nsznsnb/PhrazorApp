@@ -1,6 +1,7 @@
 ﻿@page "/categories"
 @using PhrazorApp.ViewModel
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 @inject ICategoryService CategoryService
 
 <MudContainer>
@@ -38,27 +39,24 @@
                         <MudTd>
                             <MudStack Spacing="1">
                                 <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
-                                <MudTd >
-                                    <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
-                                        @foreach (var sub in context.SubCategories)
-                                        {
-                                            <MudChip Color="Color.Default"
-                                                     T="string"
-                                                     Variant="Variant.Text"
-                                                     Size="Size.Small">
-                                                @sub.Name
-                                            </MudChip>
-                                        }
-                                    </MudStack>
-                                </MudTd>
-
+                                <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
+                                    @foreach (var sub in context.SubCategories)
+                                    {
+                                        <MudChip Color="Color.Default"
+                                                 T="string"
+                                                 Variant="Variant.Text"
+                                                 Size="Size.Small">
+                                            @sub.Name
+                                        </MudChip>
+                                    }
+                                </MudStack>
                             </MudStack>
 
                         </MudTd>
                         <MudTd Align="Right" style="min-width: 200px;">
                             <MudStack Row="true">
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/categories/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
                             </MudStack>
                         </MudTd>
                     </RowTemplate>
@@ -107,6 +105,11 @@
     protected override async Task OnInitializedAsync()
     {
         Elements = await CategoryService.GetCategoryViewModelListAsync();
+    }
+
+    private Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
+    {
+        return DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
     }
 
 
