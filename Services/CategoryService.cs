@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Azure;
+using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Common;
 using PhrazorApp.Data;
 using PhrazorApp.Models;
@@ -12,7 +13,7 @@ namespace PhrazorApp.Services
 
         public Task<LargeCategoryModel> GetCategoryViewModelAsync(Guid largeCategoryId);
 
-        public Task<string> CreateCategoryAsync(LargeCategoryModel model);
+        public Task<ServiceResult> CreateCategoryAsync(LargeCategoryModel model);
 
         //Task<string> UpdateCategoryAsync(LargeCategoryModel model);
 
@@ -94,7 +95,7 @@ namespace PhrazorApp.Services
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<string> CreateCategoryAsync(LargeCategoryModel model)
+        public async Task<ServiceResult> CreateCategoryAsync(LargeCategoryModel model)
         {
 
             var userId = _userService.GetUserId();
@@ -133,11 +134,11 @@ namespace PhrazorApp.Services
             }
             catch (Exception ex)
             {
-                return string.Format(ComMessage.MSG_E_ERROR_CREATE_DETAIL, model.Name);
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_ERROR_CREATE_DETAIL, model.Name));
             }
 
 
-            return string.Empty;
+            return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, model.Name));
         }
     }
 }

@@ -170,16 +170,16 @@
 
         if (form.IsValid)
         {
-            var errorMsg = await CategoryService.CreateCategoryAsync(model);
+            var result = await CategoryService.CreateCategoryAsync(model);
             NavigationManager.NavigateTo("/categories");
 
-            if (!string.IsNullOrEmpty(errorMsg))
+            if (result.IsSuccess)
             {
-                Snackbar.Add(errorMsg, Severity.Error);
+                Snackbar.Add(result.Message!);
             }
             else
             {
-                Snackbar.Add(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, model.Name));
+                Snackbar.Add(result.Message!, Severity.Error);
             }
         }
     }
