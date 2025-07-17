@@ -13,7 +13,7 @@ namespace PhrazorApp.Services
 
         public Task<LargeCategoryModel> GetCategoryViewModelAsync(Guid largeCategoryId);
 
-        public Task<ServiceResult> CreateCategoryAsync(LargeCategoryModel model);
+        public Task<IServiceResult> CreateCategoryAsync(LargeCategoryModel model);
 
         //Task<string> UpdateCategoryAsync(LargeCategoryModel model);
 
@@ -95,7 +95,7 @@ namespace PhrazorApp.Services
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<ServiceResult> CreateCategoryAsync(LargeCategoryModel model)
+        public async Task<IServiceResult> CreateCategoryAsync(LargeCategoryModel model)
         {
 
             var userId = _userService.GetUserId();

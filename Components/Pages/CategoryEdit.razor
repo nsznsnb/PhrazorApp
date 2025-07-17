@@ -171,16 +171,15 @@
         if (form.IsValid)
         {
             var result = await CategoryService.CreateCategoryAsync(model);
+            Snackbar.AddServiceResult(result);
+
+            if (!result.IsSuccess)
+            {
+                return;
+            }
+
             NavigationManager.NavigateTo("/categories");
 
-            if (result.IsSuccess)
-            {
-                Snackbar.Add(result.Message!);
-            }
-            else
-            {
-                Snackbar.Add(result.Message!, Severity.Error);
-            }
         }
     }
 
