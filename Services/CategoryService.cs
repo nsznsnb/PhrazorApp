@@ -133,7 +133,7 @@ namespace PhrazorApp.Services
             }
             catch (Exception ex)
             {
-                return string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, model.Name);
+                return string.Format(ComMessage.MSG_E_ERROR_CREATE_DETAIL, model.Name);
             }
 
 
