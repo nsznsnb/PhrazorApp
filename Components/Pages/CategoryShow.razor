@@ -73,34 +73,12 @@
 
 
 @code {
-    [Inject] ISnackbar Snackbar { get; set; }
-
 
 
     private LargeCategoryModel model = new LargeCategoryModel();
 
     private List<LargeCategoryModel> Elements = new ();
 
-
-    // private List<LargeCategoryModel> Elements = new List<LargeCategoryModel>
-    // {
-    //     new LargeCategoryModel { Id = new Guid(), Name = "ジャンル1", SubCategories = new List<SmallCategoryModel>() {
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル1" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-    //         new SmallCategoryModel { Id = new Guid(), Name = "サブジャンル2" },
-
-    //     } },
-    //     new LargeCategoryModel { Id = new Guid(), Name = "ジャンル2" },
-    //     new LargeCategoryModel { Id = new Guid(), Name = "ジャンル3" }
-    // };
 
     protected override async Task OnInitializedAsync()
     {
