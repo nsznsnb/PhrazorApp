@@ -142,9 +142,9 @@ namespace PhrazorApp.Services
         /// </summary>
         /// <param name="message">処理結果メッセージ</param>
         /// <returns></returns>
-        public static ServiceResult<T> Failure(string message)
+        public static ServiceResult Failure(string message)
         {
-            return new ServiceResult<T> { Status = ServiceStatus.Error, Message = message };
+            return new ServiceResult { Status = ServiceStatus.Error, Message = message };
         }
     }
 }
