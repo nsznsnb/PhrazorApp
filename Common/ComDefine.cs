@@ -26,6 +26,7 @@ namespace PhrazorApp.Common
         public const string LABEL_BUTTON_CLEAR = "クリア";
         public const string LABEL_BUTTON_CANCEL = "キャンセル";
         public const string LABEL_ROW_ADD = "行追加";
+        public const string LABEL_ROW_DELETE = "行削除";
         public const string LABEL_BUTTON_RETURN_INDEX = "一覧に戻る";
 
         public const string LABEL_DIALOG_TITLE_REGISTER_CONFIRM = "登録確認";

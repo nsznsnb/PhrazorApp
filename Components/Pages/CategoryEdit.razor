@@ -6,7 +6,6 @@
 @inject ICategoryService CategoryService
 
 
-
 <MudContainer>
     <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
 
@@ -73,14 +72,12 @@
                         <RowTemplate>
                             <MudTd>
                                 <MudForm Model="@context" Validation=@(smallCategoryValidator.ValidateValue)>
-                                    <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
                                         <MudTextField @bind-Value="@context.Name"
-                                                      Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ" For="() => model.Name" ShrinkLabel />
-                                    </MudFocusTrap>
+                                                      Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="サブカテゴリ名" For="() => model.Name" ShrinkLabel />
                                 </MudForm>
                             </MudTd>
                             <MudTd>
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_ROW_DELETE</MudButton>
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
                                            Disabled="@isFirst(context)"
                                            OnClick="@(() => MoveUp(context))">上へ</MudButton>
