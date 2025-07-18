@@ -33,7 +33,7 @@
 
         // Enter キー: submit を除く input, select でフォーカス移動
         if (e.key === 'Enter') {
-            if (['input', 'select', 'textarea'].includes(tag) && type !== 'submit') {
+            if (['input', 'select'].includes(tag) && type !== 'submit') {
                 e.preventDefault();
                 moveFocus(e.target);
             }
