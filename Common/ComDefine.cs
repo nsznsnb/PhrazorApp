@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PhrazorApp.Common
 {
-    public static class ComDefine
+    public class ComDefine
     {
         /// <summary>
         /// 

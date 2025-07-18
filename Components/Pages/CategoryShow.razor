@@ -2,6 +2,7 @@
 @using PhrazorApp.ViewModel
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @inject ICategoryService CategoryService
 
 <MudContainer>
@@ -82,12 +83,30 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // 一覧取得
         Elements = await CategoryService.GetCategoryViewModelListAsync();
     }
 
-    private Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
+    private async Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
     {
-        return DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
+        // 確認ダイアログ表示
+        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult!.Canceled)
+        {
+            return;
+        }
+
+        // カテゴリ削除
+        var result = await CategoryService.DeleteCategoryAsync(item.Id);
+        Snackbar.AddServiceResult(result);
+        if (!result.IsSuccess)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo("/categories");
     }
 
 

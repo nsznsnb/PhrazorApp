@@ -1,6 +1,7 @@
 ﻿@page "/categories/create"
 @page "/categories/edit/{Id:guid}"
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 @inject ICategoryService CategoryService
 
 
@@ -62,7 +63,7 @@
 
                 <MudCardContent Class="py-2">
 
-                    <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true" @ref="table" >
+                    <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true">
                         <HeaderContent>
                             <MudTh>サブカテゴリ名</MudTh>
                             <MudTh>操作</MudTh>
@@ -71,17 +72,17 @@
                         <RowTemplate>
                             <MudTd>
                                 <MudForm Model="@context" Validation=@(smallCategoryValidator.ValidateValue)>
-                                <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
-                                    <MudTextField @bind-Value="@context.Name"
-                                                  Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ" For="() => model.Name" ShrinkLabel />
-                                </MudFocusTrap>
+                                    <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
+                                        <MudTextField @bind-Value="@context.Name"
+                                                      Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ" For="() => model.Name" ShrinkLabel />
+                                    </MudFocusTrap>
                                 </MudForm>
                             </MudTd>
                             <MudTd>
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
                             </MudTd>
                         </RowTemplate>
-     
+
                     </MudTable>
                 </MudCardContent>
             </MudCard>
@@ -96,25 +97,29 @@
 
 
 @code {
-    [Inject] ISnackbar Snackbar { get; set; }
 
     [Parameter]
     public Guid? Id { get; set; }
 
     MudForm form;
-    /// <summary>
-    /// サブカテゴリ一覧のref
-    /// </summary>
-    MudTable<SmallCategoryModel> table;
+
 
     LargeCategoryModelValidator largeCategoryValidator = new LargeCategoryModelValidator();
     SmallCategoryModelValidator smallCategoryValidator = new SmallCategoryModelValidator();
 
 
+    /// <summary>
+    /// 編集かどうか
+    /// </summary>
+    private bool isEdit = false;
+    /// <summary>
+    /// 作成対象モデル
+    /// </summary>
     private LargeCategoryModel model = new LargeCategoryModel();
 
     protected override async Task OnInitializedAsync()
     {
+        isEdit = Id != null ? true : false;
         await ClearAsync();
 
     }
@@ -122,7 +127,7 @@
 
     private async Task ClearAsync()
     {
-        if (Id != null)
+        if (isEdit)
         {
             model = await CategoryService.GetCategoryViewModelAsync(Id.Value);
         }
@@ -148,7 +153,7 @@
     {
 
 
-        var newSub = new SmallCategoryModel { Id = Guid.NewGuid(), Name = "" , IsEditing = true};
+        var newSub = new SmallCategoryModel { Id = Guid.NewGuid(), Name = "", IsEditing = true };
         model.SubCategories.Add(newSub);
 
     }
@@ -159,7 +164,7 @@
     /// <param name="item">選択アイテム</param>
     private void OnDeleteButtonClicked(SmallCategoryModel item)
     {
-        model.SubCategories = model.SubCategories.Where(x => x.Id != item.Id).ToList();
+        model.SubCategories.Remove(item);
     }
 
 
@@ -170,7 +175,7 @@
 
         if (form.IsValid)
         {
-            var result = await CategoryService.CreateCategoryAsync(model);
+            var result = isEdit ? await CategoryService.UpdateCategoryAsync(model) : await CategoryService.CreateCategoryAsync(model);
             Snackbar.AddServiceResult(result);
 
             if (!result.IsSuccess)

@@ -9,6 +9,7 @@
 
         public const string MSG_I_CONFIRM_DELETE = "{0}を削除します。よろしいですか?";
 
+        public const string MSG_E_ERROR_NOT_FOUND = "{0}が見つかりませんでした。";
         public const string MSG_E_ERROR_CREATE_DETAIL = "{0}の作成中にエラーが発生しました。";
         public const string MSG_E_ERROR_UPDATE_DETAIL = "{0}の更新中にエラーが発生しました。";
         public const string MSG_E_ERROR_DELETE_DETAIL = "{0}の削除中にエラーが発生しました。";
