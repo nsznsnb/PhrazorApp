@@ -12,7 +12,7 @@ namespace PhrazorApp.Common
             PaletteLight = new PaletteLight()
             {
                 Primary = Colors.Indigo.Default,
-                Secondary = Colors.Cyan.Default,
+                Secondary = Colors.LightBlue.Default,
                 AppbarBackground = Colors.Indigo.Default,
                 Background = Colors.Gray.Lighten5,
             },
