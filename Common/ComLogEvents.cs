@@ -1,0 +1,30 @@
+﻿namespace PhrazorApp.Common
+{
+    /// <summary>
+    /// イベントID管理クラス
+    /// </summary>
+    public class ComLogEvents
+    {
+        /// <summary>
+        /// アイテム取得
+        /// </summary>
+        public static readonly EventId GetItem = new(1000, nameof(GetItem));
+        /// <summary>
+        /// アイテム一覧取得
+        /// </summary>
+        public static readonly EventId ListItems = new(1100, nameof(ListItems));
+        /// <summary>
+        /// アイテム作成
+        /// </summary>
+        public static readonly EventId CreateItem = new(1200, nameof(CreateItem));
+        /// <summary>
+        /// アイテム更新
+        /// </summary>
+        public static readonly EventId UpdateItem = new(1300, nameof(UpdateItem));
+        /// <summary>
+        /// アイテム削除
+        /// </summary>
+        public static readonly EventId DeleteItem = new(1400, nameof(DeleteItem));
+
+    }
+}
