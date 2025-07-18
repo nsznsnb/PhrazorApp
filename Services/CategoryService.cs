@@ -5,7 +5,7 @@ using PhrazorApp.Common;
 using PhrazorApp.Data;
 using PhrazorApp.Extensions;
 using PhrazorApp.Models;
-using PhrazorApp.ViewModel;
+using PhrazorApp.ViewModels;
 using System.Security.Cryptography.Xml;
 
 namespace PhrazorApp.Services
@@ -31,9 +31,9 @@ namespace PhrazorApp.Services
     {
         private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
         private readonly IUserService _userService;
-        private readonly ILogger<ICategoryService> _logger;
+        private readonly ILogger<CategoryService> _logger;
 
-        public CategoryService(IDbContextFactory<EngDbContext> dbContextFactory, IUserService userService, ILogger<ICategoryService> logger)
+        public CategoryService(IDbContextFactory<EngDbContext> dbContextFactory, IUserService userService, ILogger<CategoryService> logger)
         {
             _dbContextFactory = dbContextFactory;
             _userService = userService;
