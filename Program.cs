@@ -69,6 +69,8 @@ namespace PhrazorApp
             builder.Services.AddHttpClient<ImageGeneratorService>();
             builder.Services.AddHttpContextAccessor();
 
+            builder.Services.AddScoped<LoadingService>();
+
             builder.Services.AddTransient<IUserService, UserService>();
             builder.Services.AddTransient<ICategoryService, CategoryService>();
 
