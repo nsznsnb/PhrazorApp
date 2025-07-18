@@ -5,7 +5,7 @@
     /// </summary>
     public class LoadingService
     {
-        public event Action OnChange;
+        public event Action VisiblityChanged;
 
         private bool _isVisible;
         public bool IsVisible
@@ -16,7 +16,7 @@
                 if (_isVisible != value)
                 {
                     _isVisible = value;
-                    OnChange?.Invoke();
+                    VisiblityChanged?.Invoke();
                 }
             }
         }
