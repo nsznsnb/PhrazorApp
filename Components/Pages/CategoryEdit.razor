@@ -2,6 +2,7 @@
 @page "/categories/edit/{Id:guid}"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject ICategoryService CategoryService
 
 
@@ -12,7 +13,7 @@
         <MudStack Spacing="2">
             <MudStack Row Spacing="0">
                 <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Dark" Title="Favorite" Style="transform: translateY(2px)" />
-                <h2>フレーズカテゴリ編集</h2>
+                <h2>@string.Format(isEdit ? ComDefine.LABEL_EDIT_PAGE_TITLE : ComDefine.LABEL_CREATE_PAGE_TITLE, "フレーズカテゴリ")</h2>
             </MudStack>
             <MudCard>
                 <MudCardContent Class="py-2">
@@ -173,19 +174,29 @@
     {
         await form.Validate();
 
-        if (form.IsValid)
+        if (!form.IsValid)
         {
-            var result = isEdit ? await CategoryService.UpdateCategoryAsync(model) : await CategoryService.CreateCategoryAsync(model);
-            Snackbar.AddServiceResult(result);
-
-            if (!result.IsSuccess)
-            {
-                return;
-            }
-
-            NavigationManager.NavigateTo("/categories");
-
+            return;
         }
+
+        // 確認ダイアログ表示
+        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.RegisterConfirm, string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Name));
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult!.Canceled)
+        {
+            return;
+        }
+
+        var result = isEdit ? await CategoryService.UpdateCategoryAsync(model) : await CategoryService.CreateCategoryAsync(model);
+        Snackbar.AddServiceResult(result);
+
+        if (!result.IsSuccess)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo("/categories");
     }
 
 }

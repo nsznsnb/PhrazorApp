@@ -3,5 +3,9 @@
     /// <summary>
     /// 削除確認
     /// </summary>
-    DeleteConfirm
+    DeleteConfirm,
+    /// <summary>
+    /// 登録確認
+    /// </summary>
+    RegisterConfirm,
 }

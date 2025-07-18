@@ -7,6 +7,7 @@
         public const string MSG_I_SUCCESS_UPDATE_DETAIL = "{0}を更新しました。";
         public const string MSG_I_SUCCESS_DELETE_DETAIL = "{0}を削除しました。";
 
+        public const string MSG_I_CONFIRM_REGIST = "{0}を登録します。よろしいですか?";
         public const string MSG_I_CONFIRM_DELETE = "{0}を削除します。よろしいですか?";
 
         public const string MSG_E_ERROR_NOT_FOUND = "{0}が見つかりませんでした。";

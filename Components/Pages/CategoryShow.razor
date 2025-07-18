@@ -9,7 +9,7 @@
     <MudStack Spacing="2">
         <MudStack Row Spacing="0">
             <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Dark" Title="Favorite" Style="transform: translateY(2px)" />
-            <h2>フレーズカテゴリ一覧</h2>
+            <h2>@string.Format(ComDefine.LABEL_LIST_PAGE_TITLE, "フレーズカテゴリ")</h2>
         </MudStack>
         <MudCard>
             <MudCardContent Class="py-2">
@@ -24,7 +24,7 @@
                     <MudStack Row="true" Class="align-center">
                         <MudIcon Icon="@Icons.Material.Filled.ListAlt" Title="ListAlt" />
                         <h3>
-                            フレーズカテゴリ一覧
+                            @string.Format(ComDefine.LABEL_LIST_PAGE_TITLE, "フレーズカテゴリ")
                         </h3>
                     </MudStack>
 
@@ -106,7 +106,8 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/categories");
+        // 一覧取得
+        Elements = await CategoryService.GetCategoryViewModelListAsync();
     }
 
 
