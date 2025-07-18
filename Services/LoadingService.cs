@@ -1,7 +1,7 @@
 ﻿namespace PhrazorApp.Services
 {
     /// <summary>
-    /// オーバーレイ状態サービス
+    /// ローディング状態サービス
     /// </summary>
     public class LoadingService
     {
