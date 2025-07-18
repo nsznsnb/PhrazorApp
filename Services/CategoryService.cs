@@ -53,6 +53,7 @@ namespace PhrazorApp.Services
             var categories = await context.MLargeCategories
                 .Where(x => x.UserId == userId)
                 .Include(x => x.MSmallCategories)
+                .OrderBy(x => x.CreatedAt)
                 .ToListAsync();
 
             // エンティティ => モデル
@@ -63,9 +64,13 @@ namespace PhrazorApp.Services
                 SubCategories = x.MSmallCategories.Select(xc => new SmallCategoryModel
                 {
                     Id = xc.SmallId,
-                    Name = xc.SmallCategoryName
-                }).ToList()
-            }).ToList();
+                    Name = xc.SmallCategoryName,
+                    SortOrder = xc.SortOrder
+                })
+                .OrderBy(x => x.SortOrder)
+                .ToList()
+            })
+            .ToList();
         }
 
         /// <summary>
@@ -93,7 +98,10 @@ namespace PhrazorApp.Services
                 {
                     Id = x.SmallId,
                     Name = x.SmallCategoryName,
-                }).ToList()
+                    SortOrder = x.SortOrder
+                })
+                .OrderBy(x => x.SortOrder)
+                .ToList()
             };
 
             return largeModel;
@@ -120,11 +128,12 @@ namespace PhrazorApp.Services
                 UserId = userId
             };
 
-            var smallCategoryEntities = model.SubCategories.Select(s => new MSmallCategory
+            var smallCategoryEntities = model.SubCategories.Select(x => new MSmallCategory
             {
                 LargeId = model.Id,
-                SmallId = s.Id,
-                SmallCategoryName = s.Name,
+                SmallId = x.Id,
+                SmallCategoryName = x.Name,
+                SortOrder = x.SortOrder,
                 CreatedAt = sysDateTime,
                 UpdatedAt = sysDateTime,
                 UserId = userId
@@ -193,6 +202,7 @@ namespace PhrazorApp.Services
                     LargeId = model.Id,
                     SmallId = x.Id,
                     SmallCategoryName = x.Name,
+                    SortOrder = x.SortOrder,
                     CreatedAt = sysDateTime,
                     UpdatedAt = sysDateTime,
                     UserId = userId,

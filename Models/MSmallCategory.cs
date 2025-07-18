@@ -24,6 +24,11 @@ public partial class MSmallCategory
     public string SmallCategoryName { get; set; } = null!;
 
     /// <summary>
+    /// ソート順
+    /// </summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>
     /// ユーザーId
     /// </summary>
     public string? UserId { get; set; }

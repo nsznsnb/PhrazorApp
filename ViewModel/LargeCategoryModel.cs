@@ -31,8 +31,9 @@ namespace PhrazorApp.ViewModel
         [Display(Name = "サブジャンル名")]
         public string Name { get; set; } = string.Empty;
 
+        [Display(Name = "ソート順")]
+        public int SortOrder { get; set; }
 
-        public bool IsEditing { get; set; }
 
     }
 

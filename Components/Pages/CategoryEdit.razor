@@ -81,15 +81,18 @@
                             </MudTd>
                             <MudTd>
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
+                                           Disabled="@isFirst(context)"
+                                           OnClick="@(() => MoveUp(context))">上へ</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                                           Disabled="@isLast(context)"
+                                           OnClick="@(() => MoveDown(context))">下へ</MudButton>
                             </MudTd>
                         </RowTemplate>
 
                     </MudTable>
                 </MudCardContent>
             </MudCard>
-
-
-
         </MudStack>
     </MudForm>
 
@@ -154,8 +157,16 @@
     {
 
 
-        var newSub = new SmallCategoryModel { Id = Guid.NewGuid(), Name = "", IsEditing = true };
-        model.SubCategories.Add(newSub);
+        int nextSortOrder = model.SubCategories.Count > 0
+            ? model.SubCategories.Max(x => x.SortOrder) + 1
+            : 0;
+
+        model.SubCategories.Add(new SmallCategoryModel
+        {
+            Id = Guid.NewGuid(), // 新規作成
+            Name = string.Empty,
+            SortOrder = nextSortOrder
+        });
 
     }
 
@@ -166,10 +177,58 @@
     private void OnDeleteButtonClicked(SmallCategoryModel item)
     {
         model.SubCategories.Remove(item);
+        ReorderSortOrder();
     }
 
+    /// <summary>
+    /// ソート順再採番
+    /// </summary>
+    private void ReorderSortOrder()
+    {
+        for (int i = 0; i < model.SubCategories.Count; i++)
+        {
+            model.SubCategories[i].SortOrder = i;
+        }
+    }
+
+    /// <summary>
+    /// 行の上移動
+    /// </summary>
+    /// <param name="item"></param>
+    private void MoveUp(SmallCategoryModel item)
+    {
+        var index = model.SubCategories.IndexOf(item);
+        if (index > 0)
+        {
+            (model.SubCategories[index], model.SubCategories[index - 1]) = (model.SubCategories[index - 1], model.SubCategories[index]);
+            (model.SubCategories[index].SortOrder, model.SubCategories[index - 1].SortOrder) = (model.SubCategories[index - 1].SortOrder, model.SubCategories[index].SortOrder);
+
+        }
+    }
+
+    /// <summary>
+    /// 行の下移動
+    /// </summary>
+    /// <param name="item"></param>
+    private void MoveDown(SmallCategoryModel item)
+    {
+        var index = model.SubCategories.IndexOf(item);
+        if (index < model.SubCategories.Count - 1)
+        {
+            (model.SubCategories[index], model.SubCategories[index + 1]) = (model.SubCategories[index + 1], model.SubCategories[index]);
+            (model.SubCategories[index].SortOrder, model.SubCategories[index + 1].SortOrder) = (model.SubCategories[index + 1].SortOrder, model.SubCategories[index].SortOrder);
+
+        }
+    }
+
+    private bool isFirst(SmallCategoryModel item) => model.SubCategories.First() == item;
+    private bool isLast(SmallCategoryModel item) => model.SubCategories.Last() == item;
 
 
+    /// <summary>
+    /// 登録処理
+    /// </summary>
+    /// <returns></returns>
     private async Task Submit()
     {
         await form.Validate();

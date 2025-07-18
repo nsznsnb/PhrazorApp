@@ -7,10 +7,6 @@ namespace PhrazorApp.Data;
 
 public partial class EngDbContext : DbContext
 {
-    public EngDbContext()
-    {
-    }
-
     public EngDbContext(DbContextOptions<EngDbContext> options)
         : base(options)
     {
@@ -666,6 +662,9 @@ public partial class EngDbContext : DbContext
                 .HasMaxLength(30)
                 .HasComment("小分類名")
                 .HasColumnName("small_category_name");
+            entity.Property(e => e.SortOrder)
+                .HasComment("ソート順")
+                .HasColumnName("sort_order");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("更新日時")
