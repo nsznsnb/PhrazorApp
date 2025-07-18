@@ -25,6 +25,15 @@
         /// アイテム削除
         /// </summary>
         public static readonly EventId DeleteItem = new(1400, nameof(DeleteItem));
-
+        /// <summary>
+        /// アイテムダウンロード
+        /// </summary>
+        /// 
+        public static readonly EventId DownloadItem = new(1500, nameof(DownloadItem));
+        /// <summary>
+        /// アイテムアップロード
+        /// </summary>
+        /// 
+        public static readonly EventId UploadItem = new(1600, nameof(UploadItem));
     }
 }
