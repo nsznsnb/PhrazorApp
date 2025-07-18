@@ -1,0 +1,144 @@
+﻿@page "/phrases/create"
+@page "/phrases/edit/{Id:guid}"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ICategoryService CategoryService
+@inject LoadingService OverlayService
+
+
+<MudContainer>
+    <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
+
+        <MudStack Spacing="2">
+            <MudStack Row Spacing="0">
+                <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Dark" Title="Favorite" Style="transform: translateY(2px)" />
+                <h2>@string.Format(isEdit ? ComDefine.LABEL_EDIT_PAGE_TITLE : ComDefine.LABEL_CREATE_PAGE_TITLE, "フレーズカテゴリ")</h2>
+            </MudStack>
+            <MudCard>
+                <MudCardContent Class="py-2">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" >@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+            <MudCard>
+                <MudCardHeader Class="py-2">
+                    <CardHeaderContent>
+                        <MudStack Row="true">
+                            <h3>
+                                カテゴリ入力
+                            </h3>
+                        </MudStack>
+
+
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent Class="py-2">
+                    <MudGrid Spacing="1">
+                        <MudItem xs="12" md="12">
+                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Text="@model.Name" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                        </MudItem>
+                        <MudFlexBreak />
+                        <MudItem xs="12" md="12">
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Name" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+
+            </MudCard>
+
+        </MudStack>
+    </MudForm>
+
+</MudContainer>
+
+
+
+@code {
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    MudForm form;
+
+
+    LargeCategoryModelValidator largeCategoryValidator = new LargeCategoryModelValidator();
+    SmallCategoryModelValidator smallCategoryValidator = new SmallCategoryModelValidator();
+
+
+    /// <summary>
+    /// 編集かどうか
+    /// </summary>
+    private bool isEdit = false;
+    /// <summary>
+    /// 作成対象モデル
+    /// </summary>
+    private LargeCategoryModel model = new LargeCategoryModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        isEdit = Id != null ? true : false;
+        await ClearAsync();
+
+    }
+
+
+    private async Task ClearAsync()
+    {
+        if (isEdit)
+        {
+            model = await CategoryService.GetCategoryViewModelAsync(Id.Value);
+        }
+        else
+        {
+            model = new() { Id = Guid.NewGuid() };
+        }
+
+        if (form != null)
+        {
+            // バリデーションエラークリア
+            form.ResetValidation();
+        }
+
+    }
+
+
+  
+    // /// <summary>
+    // /// 登録処理
+    // /// </summary>
+    // /// <returns></returns>
+    // private async Task Submit()
+    // {
+    //     await form.Validate();
+
+    //     if (!form.IsValid)
+    //     {
+    //         return;
+    //     }
+
+    //     // 確認ダイアログ表示
+    //     var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.RegisterConfirm, string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Name));
+    //     var dialogResult = await dialog.Result;
+
+    //     if (dialogResult!.Canceled)
+    //     {
+    //         return;
+    //     }
+
+    //     var result = isEdit ? await CategoryService.UpdateCategoryAsync(model) : await CategoryService.CreateCategoryAsync(model);
+    //     Snackbar.AddServiceResult(result);
+
+    //     if (!result.IsSuccess)
+    //     {
+    //         return;
+    //     }
+
+    //     NavigationManager.NavigateTo("/categories");
+    // }
+
+}

@@ -49,12 +49,12 @@
 
     protected override void OnInitialized()
     {
-        LoadingService.OnChange += StateHasChanged;
+        LoadingService.VisiblityChanged += StateHasChanged;
     }
 
     public void Dispose()
     {
-        LoadingService.OnChange -= StateHasChanged;
+        LoadingService.VisiblityChanged -= StateHasChanged;
     }
 
 }
