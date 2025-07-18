@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using PhrazorApp.Common;
 using PhrazorApp.Models;
-using PhrazorApp.ViewModel;
+using PhrazorApp.ViewModels;
 using System.ComponentModel.DataAnnotations;
 
-namespace PhrazorApp.ViewModel
+namespace PhrazorApp.ViewModels
 {
 
     public class LargeCategoryModel
@@ -23,11 +23,10 @@ namespace PhrazorApp.ViewModel
     public class SmallCategoryModel
     {
 
-        [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
+
         [Display(Name = "サブジャンルId")]
         public Guid Id { get; set; }
 
-        [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
         [Display(Name = "サブジャンル名")]
         public string Name { get; set; } = string.Empty;
 
