@@ -1,24 +1,35 @@
-﻿using System.Net.Http.Headers;
+﻿using Azure;
+using PhrazorApp.Common;
+using PhrazorApp.Extensions;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace PhrazorApp.Services
 {
 
     /// <summary>
-    /// 画像生成サービス
+    /// OpenAIクライアント
     /// </summary>
-    public class ImageGeneratorService 
+    public class OpenAiClient
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _config;
+        private readonly ILogger<ImageService> _logger;
 
-        public ImageGeneratorService(HttpClient httpClient, IConfiguration config)
+        public OpenAiClient(HttpClient httpClient, IConfiguration config, ILogger<ImageService> logger)
         {
             _httpClient = httpClient;
             _config = config;
+            _logger = logger;
         }
 
-        public async Task<string?> GenerateImageAsync(string prompt)
+
+        /// <summary>
+        /// 画像Urlを生成します
+        /// </summary>
+        /// <param name="prompt"></param>
+        /// <returns></returns>
+        public async Task<string?> GenerateImageUrlAsync(string prompt)
         {
             var apiKey = _config["OpenAI:ApiKey"];
             var size = _config["OpenAI:ImageSize"] ?? "256x256";
@@ -41,12 +52,15 @@ namespace PhrazorApp.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                return null;
+                _logger.LogErrorWithContext(ComLogEvents.GetItem, string.Format(ComMessage.MSG_E_ERROR_EXECUTE_DETAIL, "画像生成", $"ステータスコード({response.StatusCode})"));
             }
 
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
             return doc.RootElement.GetProperty("data")[0].GetProperty("url").GetString();
         }
+
+
     }
+
 }

@@ -1,11 +1,12 @@
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
-using PhrazorApp.Data;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
+using PhrazorApp.Data;
 using PhrazorApp.Services;
 
 namespace PhrazorApp
@@ -66,13 +67,25 @@ namespace PhrazorApp
             builder.Services.Configure<SeedUserOptions>(
                 builder.Configuration.GetSection("SeedUser"));
 
-            builder.Services.AddHttpClient<ImageGeneratorService>();
+            builder.Services.AddHttpClient<OpenAiClient>();
             builder.Services.AddHttpContextAccessor();
+
+            // ユーザーサービス：DIの優先度(高)
+            builder.Services.AddScoped<IUserService, UserService>();
 
             builder.Services.AddScoped<LoadingService>();
 
-            builder.Services.AddTransient<IUserService, UserService>();
-            builder.Services.AddTransient<ICategoryService, CategoryService>();
+            builder.Services.AddSingleton(x =>
+            {
+                var config = x.GetRequiredService<IConfiguration>();
+                var connectionString = config["AzureBlob:ConnectionString"];
+                return new BlobServiceClient(connectionString);
+            });
+            builder.Services.AddSingleton<BlobStorageClient>(); 
+            // OpenAiClientとBlogClientをDIしているためDIの順序関係に注意
+            builder.Services.AddScoped<IImageService, ImageService>();
+
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 
             var app = builder.Build();
