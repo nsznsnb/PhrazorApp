@@ -1,35 +1,72 @@
 ﻿@inject IImageService ImageService
 
-<h3>英文から画像生成</h3>
+<MudPaper Class="pa-2" Outlined="true" Style="width: 100%; max-width: 286px;">
+    <MudStack Spacing="2" AlignItems="AlignItems.Start" Class="pa-1">
+        <MudButton StartIcon="@Icons.Material.Filled.ImageSearch"
+                   Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Size="Size.Small"
+                   OnClick="Generate"
+                   Disabled="IsLoading || string.IsNullOrWhiteSpace(Prompt)">
+            画像生成
+        </MudButton>
 
-<MudTextField @bind-Value="Prompt" Label="英文を入力" />
-<MudButton OnClick="Generate">画像生成</MudButton>
+        @if (IsLoading)
+        {
+            <MudSkeleton Width="100%" Height="auto" Style="aspect-ratio: 1;" Animation="Animation.Wave" />
+        }
+        else
+        {
+            <MudImage Src="@(string.IsNullOrWhiteSpace(ImageUrlInternal) ? "/image/no_img.png" : ImageUrlInternal)"
+                      Alt="生成画像"
+                      Elevation="25"
+                      Fluid="true"
+                      Style="aspect-ratio: 1; object-fit: contain;"
+                      Class="rounded-lg" />
+        }
+    </MudStack>
+</MudPaper>
 
-@if (IsLoading)
-{
-    <MudSkeleton Width="512px" Height="512px" Animation="Animation.Wave" />
-}
-else if (!string.IsNullOrEmpty(ImageUrl))
-{
-    <img src="@ImageUrl" alt="生成画像" style="max-width: 100%; margin-top: 1rem;" />
-}
 
 @code {
-    private string? Prompt;
-    private string? ImageUrl;
     private bool IsLoading = false;
+    private string? ImageUrlInternal;
+    private string? ErrorMessage;
+
+    [Parameter, EditorRequired]
+    public string? Prompt { get; set; }
+
+    [Parameter, EditorRequired]
+    public string? ImageUrl { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ImageUrlChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        ImageUrlInternal = ImageUrl;
+    }
 
     private async Task Generate()
     {
         if (string.IsNullOrWhiteSpace(Prompt))
             return;
 
-        ImageUrl = null;
         IsLoading = true;
+        ErrorMessage = null;
+        ImageUrlInternal = null;
 
         try
         {
-            ImageUrl = await ImageService.GenerateImageAsync(Prompt);
+            var imageUrl = await ImageService.GenerateImageAsync(Prompt);
+            ImageUrlInternal = imageUrl;
+
+            await ImageUrlChanged.InvokeAsync(imageUrl);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "画像生成に失敗しました。もう一度お試しください。";
+            Console.Error.WriteLine($"[ImageGenerator] 画像生成エラー: {ex.Message}");
         }
         finally
         {
