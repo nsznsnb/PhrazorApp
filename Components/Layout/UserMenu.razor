@@ -1,0 +1,67 @@
+﻿@implements IDisposable
+
+@inject NavigationManager NavigationManager
+<AuthorizeView>
+    <Authorized>
+        <MudMenu>
+            <ActivatorContent>
+                <MudChip T="string" Icon="@Icons.Material.Filled.Person" Color="Color.Secondary">@context.User.Identity?.Name</MudChip>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Href="Account/Manage"
+                             ForceLoad
+                             Icon="@Icons.Material.TwoTone.Settings"
+                             IconColor="Color.Info"
+                             Label="プロフィール" />
+                <form action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                    <button type="submit" class="mud-nav-link mud-ripple">
+                        <MudIcon Icon="@Icons.Material.Filled.Logout" Color="Color.Info" Class="mr-3"></MudIcon> Logout
+                    </button>
+                </form>
+            </ChildContent>
+        </MudMenu>
+    </Authorized>
+    <NotAuthorized>
+        <MudMenu>
+            <ActivatorContent>
+                <MudChip T="string" Icon="@Icons.Material.Filled.Person" Color="Color.Secondary">???</MudChip>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Href="Account/Register"
+                             ForceLoad
+                             Icon="@Icons.Material.TwoTone.Person"
+                             IconColor="Color.Info"
+                             Label="ユーザー登録" />
+                <MudMenuItem Href="Account/Register"
+                             ForceLoad
+                             Icon="@Icons.Material.TwoTone.Password"
+                             IconColor="Color.Info"
+                             Label="ログイン" />
+            </ChildContent>
+        </MudMenu>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
+
