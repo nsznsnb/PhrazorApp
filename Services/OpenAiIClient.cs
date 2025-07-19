@@ -27,9 +27,9 @@ namespace PhrazorApp.Services
         /// <summary>
         /// 画像Urlを生成します
         /// </summary>
-        /// <param name="prompt"></param>
+        /// <param name="phrase"></param>
         /// <returns></returns>
-        public async Task<string?> GenerateImageUrlAsync(string prompt)
+        public async Task<string?> GenerateImageUrlAsync(string phrase)
         {
             var apiKey = _config["OpenAI:ApiKey"];
             var size = _config["OpenAI:ImageSize"] ?? "256x256";
@@ -37,9 +37,11 @@ namespace PhrazorApp.Services
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", apiKey);
 
+            var prompt = await BuildPromptAsync(phrase);
+
             var requestBody = new
             {
-                prompt = prompt + ", cartoon illustration",
+                prompt = prompt,
                 n = 1,
                 size = size
             };
@@ -59,8 +61,32 @@ namespace PhrazorApp.Services
             using var doc = JsonDocument.Parse(json);
             return doc.RootElement.GetProperty("data")[0].GetProperty("url").GetString();
         }
+        
+        /// <summary>
+        /// フレーズから画像生成のためのプロンプトを組み立てます
+        /// </summary>
+        /// <param name="phrase">フレーズ</param>
+        /// <returns></returns>
+        public async Task<string> BuildPromptAsync(string phrase)
+        {
+            // 一旦GPTを挟んで、最適な画像作成指示ができるようにする
+            var request = new
+            {
+                model = "gpt-3.5-turbo",
+                messages = new[]
+                {
+                    // 画像生成エンドポイントに最適なプロンプトになるよう指示
+                    new { role = "system", content = "You convert short English sentences into detailed prompts suitable for generating illustrations using DALL·E" },
+                    new { role = "user", content = $"Convert this sentence into a detailed image prompt: {phrase}" }
+                },
+                // 出力のランダム加減
+                temperature = 0.7
+            };
 
-
+            var response = await _httpClient.PostAsJsonAsync("https://api.openai.com/v1/chat/completions", request);
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+            return json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()!;
+        }
     }
 
 }
