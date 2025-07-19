@@ -49,8 +49,6 @@ public partial class DUserPhrase
 
     public virtual ICollection<DReviewLog> DReviewLogs { get; set; } = new List<DReviewLog>();
 
-    public virtual ICollection<DReviewSchedule> DReviewSchedules { get; set; } = new List<DReviewSchedule>();
-
     public virtual ICollection<DTestResultDetail> DTestResultDetails { get; set; } = new List<DTestResultDetail>();
 
     public virtual ICollection<MPhraseCategory> MPhraseCategories { get; set; } = new List<MPhraseCategory>();

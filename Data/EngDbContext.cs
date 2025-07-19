@@ -12,6 +12,8 @@ public partial class EngDbContext : DbContext
     {
     }
 
+    public virtual DbSet<DDailyUsage> DDailyUsages { get; set; }
+
     public virtual DbSet<DEnglishDiary> DEnglishDiarys { get; set; }
 
     public virtual DbSet<DEnglishDiaryTag> DEnglishDiaryTags { get; set; }
@@ -21,8 +23,6 @@ public partial class EngDbContext : DbContext
     public virtual DbSet<DPhraseImage> DPhraseImages { get; set; }
 
     public virtual DbSet<DReviewLog> DReviewLogs { get; set; }
-
-    public virtual DbSet<DReviewSchedule> DReviewSchedules { get; set; }
 
     public virtual DbSet<DTestResult> DTestResults { get; set; }
 
@@ -36,6 +36,8 @@ public partial class EngDbContext : DbContext
 
     public virtual DbSet<MLargeCategory> MLargeCategories { get; set; }
 
+    public virtual DbSet<MOperationType> MOperationTypes { get; set; }
+
     public virtual DbSet<MPhraseBook> MPhraseBooks { get; set; }
 
     public virtual DbSet<MPhraseCategory> MPhraseCategories { get; set; }
@@ -48,6 +50,33 @@ public partial class EngDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<DDailyUsage>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.OperationDate, e.OperationTypeId }).HasName("D_DAILY_USAGE_PKC");
+
+            entity.ToTable("D_DAILY_USAGE", tb => tb.HasComment("操作履歴"));
+
+            entity.HasIndex(e => new { e.UserId, e.OperationDate, e.OperationTypeId }, "D_DAILY_USAGE_PKI").IsUnique();
+
+            entity.Property(e => e.UserId)
+                .HasComment("ユーザーID")
+                .HasColumnName("user_id");
+            entity.Property(e => e.OperationDate)
+                .HasComment("操作日")
+                .HasColumnName("operation_date");
+            entity.Property(e => e.OperationTypeId)
+                .HasComment("操作種別ID")
+                .HasColumnName("operation_type_id");
+            entity.Property(e => e.OperationCount)
+                .HasComment("操作回数")
+                .HasColumnName("operation_count");
+
+            entity.HasOne(d => d.OperationType).WithMany(p => p.DDailyUsages)
+                .HasForeignKey(d => d.OperationTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("D_DAILY_USAGE_FK1");
+        });
+
         modelBuilder.Entity<DEnglishDiary>(entity =>
         {
             entity.HasKey(e => e.DiaryId).HasName("D_ENGLISH_DIARYS_PKC");
@@ -61,13 +90,26 @@ public partial class EngDbContext : DbContext
                 .HasComment("英語日記ID")
                 .HasColumnName("diary_id");
             entity.Property(e => e.Content)
+                .HasMaxLength(1000)
                 .HasComment("内容")
                 .HasColumnName("content");
+            entity.Property(e => e.Correction)
+                .HasMaxLength(1000)
+                .HasComment("添削結果")
+                .HasColumnName("correction");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("作成日時")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.Explanation)
+                .HasMaxLength(1000)
+                .HasComment("解説")
+                .HasColumnName("explanation");
+            entity.Property(e => e.Note)
+                .HasMaxLength(1000)
+                .HasComment("補足")
+                .HasColumnName("note");
             entity.Property(e => e.Title)
                 .HasMaxLength(100)
                 .HasComment("タイトル")
@@ -248,42 +290,6 @@ public partial class EngDbContext : DbContext
                 .HasForeignKey(d => new { d.TestId, d.TestResultDetailNo })
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("D_REVIEW_LOGS_FK2");
-        });
-
-        modelBuilder.Entity<DReviewSchedule>(entity =>
-        {
-            entity.HasKey(e => e.ScheduleId).HasName("D_REVIEW_SCHEDULES_PKC");
-
-            entity.ToTable("D_REVIEW_SCHEDULES", tb => tb.HasComment("復習スケジュール"));
-
-            entity.HasIndex(e => e.ScheduleId, "D_REVIEW_SCHEDULES_PKI").IsUnique();
-
-            entity.Property(e => e.ScheduleId)
-                .ValueGeneratedNever()
-                .HasComment("スケジュールID")
-                .HasColumnName("schedule_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("作成日時")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.NextReviewDate)
-                .HasComment("次回復習日")
-                .HasColumnType("datetime")
-                .HasColumnName("next_review_date");
-            entity.Property(e => e.PhraseId)
-                .HasComment("フレーズID")
-                .HasColumnName("phrase_id");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("更新日時")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.Phrase).WithMany(p => p.DReviewSchedules)
-                .HasForeignKey(d => d.PhraseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("D_REVIEW_SCHEDULES_FK1");
         });
 
         modelBuilder.Entity<DTestResult>(entity =>
@@ -500,6 +506,43 @@ public partial class EngDbContext : DbContext
                 .HasColumnName("user_id");
         });
 
+        modelBuilder.Entity<MOperationType>(entity =>
+        {
+            entity.HasKey(e => e.OperationTypeId).HasName("M_OPERATION_TYPES_PKC");
+
+            entity.ToTable("M_OPERATION_TYPES", tb => tb.HasComment("操作種別マスタ"));
+
+            entity.HasIndex(e => e.OperationTypeName, "M_OPERATION_TYPES_IX1").IsUnique();
+
+            entity.HasIndex(e => e.OperationTypeId, "M_OPERATION_TYPES_PKI").IsUnique();
+
+            entity.Property(e => e.OperationTypeId)
+                .ValueGeneratedNever()
+                .HasComment("操作種別ID")
+                .HasColumnName("operation_type_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("作成日時")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.OperationTypeCode)
+                .HasMaxLength(50)
+                .HasComment("操作種別コード")
+                .HasColumnName("operation_type_code");
+            entity.Property(e => e.OperationTypeLimit)
+                .HasComment("操作回数上限")
+                .HasColumnName("operation_type_limit");
+            entity.Property(e => e.OperationTypeName)
+                .HasMaxLength(20)
+                .HasComment("操作種別名")
+                .HasColumnName("operation_type_name");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("更新日時")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+        });
+
         modelBuilder.Entity<MPhraseBook>(entity =>
         {
             entity.HasKey(e => e.PhraseBookId).HasName("M_PHRASE_BOOKS_PKC");
@@ -581,7 +624,7 @@ public partial class EngDbContext : DbContext
 
             entity.Property(e => e.ProverbId)
                 .ValueGeneratedNever()
-                .HasComment("格言Id")
+                .HasComment("格言ID")
                 .HasColumnName("proverb_id");
             entity.Property(e => e.Author)
                 .HasMaxLength(100)

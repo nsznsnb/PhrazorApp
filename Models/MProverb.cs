@@ -9,7 +9,7 @@ namespace PhrazorApp.Models;
 public partial class MProverb
 {
     /// <summary>
-    /// 格言Id
+    /// 格言ID
     /// </summary>
     public Guid ProverbId { get; set; }
 
