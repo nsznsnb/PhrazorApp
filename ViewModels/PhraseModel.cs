@@ -3,7 +3,7 @@
     public class PhraseModel
     {
 
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string Phrase { get; set; }
 
         public string Meaning { get; set; }

@@ -8,7 +8,7 @@
 
 
 <MudContainer>
-    <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
+    <MudForm Model="@model" @ref="@form" ValidationDelay="0">
 
         <MudStack Spacing="2">
             <MudStack Row Spacing="0">
@@ -18,7 +18,7 @@
             <MudCard>
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" >@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
                         <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     </MudStack>
@@ -40,17 +40,43 @@
                 <MudCardContent Class="py-2">
                     <MudGrid Spacing="1">
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Text="@model.Name" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true" Text="@model.Phrase" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                        </MudItem>
+                        <MudItem xs="12" md="12">
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <ItemDropSelector Items="@_categoryItems" MaxSelection="3" UnassignedLabel="カテゴリ">
+                                <ItemTemplate Context="item">
+                                    <MudPaper Elevation="1" Class="pa-0 ma-1">
+                                        <MudChip T="string"
+                                                 Color="@(item.Group == "Large" ? Color.Info : Color.Secondary)"
+                                                 Size="Size.Small"
+                                                 Text="@(item.Group == "Large" ? "大" : "小")">
+                                            @item.Name
+                                        </MudChip>
+                                    </MudPaper>
+                                </ItemTemplate>
+                            </ItemDropSelector>
                         </MudItem>
                         <MudFlexBreak />
-                        <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Name" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
-                        </MudItem>
+
                     </MudGrid>
                 </MudCardContent>
 
             </MudCard>
-
+            <MudCard>
+                <MudCardContent Class="py-2">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
         </MudStack>
     </MudForm>
 
@@ -66,10 +92,6 @@
     MudForm form;
 
 
-    LargeCategoryModelValidator largeCategoryValidator = new LargeCategoryModelValidator();
-    SmallCategoryModelValidator smallCategoryValidator = new SmallCategoryModelValidator();
-
-
     /// <summary>
     /// 編集かどうか
     /// </summary>
@@ -77,7 +99,7 @@
     /// <summary>
     /// 作成対象モデル
     /// </summary>
-    private LargeCategoryModel model = new LargeCategoryModel();
+    private PhraseModel model = new PhraseModel();
 
     protected override async Task OnInitializedAsync()
     {
@@ -91,7 +113,9 @@
     {
         if (isEdit)
         {
-            model = await CategoryService.GetCategoryViewModelAsync(Id.Value);
+            // model = await CategoryService.GetCategoryViewModelAsync(Id.Value);
+            model = new() { Id = Guid.NewGuid() };
+
         }
         else
         {
@@ -101,13 +125,48 @@
         if (form != null)
         {
             // バリデーションエラークリア
-            form.ResetValidation();
+            // form.ResetValidation();
         }
 
     }
 
+    private List<DropItemModel> _categoryItems = new()
+{
+    new() { Id = Guid.NewGuid(), Name = "Grammar", Group = "Large", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Vocabulary", Group = "Large", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Fruits", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
+    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
 
-  
+
+};
+
+    private void OnCategoryDropped(MudItemDropInfo<DropItemModel> dropInfo)
+    {
+        dropInfo.Item.DropTarget = dropInfo.DropzoneIdentifier;
+    }
+
+
+
+
     // /// <summary>
     // /// 登録処理
     // /// </summary>
