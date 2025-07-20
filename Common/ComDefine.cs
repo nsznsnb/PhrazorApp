@@ -8,6 +8,8 @@ namespace PhrazorApp.Common
 {
     public class ComDefine
     {
+        // アプリケーション名
+        public const string APP_NAME = "Phrazor App";
 
         // フォント
         public const string FONT_FAMILY_1 = "BIZ UDPGothic";
