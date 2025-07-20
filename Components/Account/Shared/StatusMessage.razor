@@ -1,19 +1,36 @@
-﻿@if (!string.IsNullOrEmpty(DisplayMessage))
+﻿@using Microsoft.AspNetCore.Identity
+@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-
-    <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">@DisplayMessage</MudAlert>
+    <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">
+        @DisplayMessage
+    </MudAlert>
+}
+else if (IdentityErrors is not null && IdentityErrors.Any())
+{
+    <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">
+        <ul class="mud-list">
+            @foreach (var error in IdentityErrors)
+            {
+                <li>@error.Description</li>
+            }
+        </ul>
+    </MudAlert>
 }
 
 @code {
+
     private string? messageFromCookie;
 
     [Parameter]
     public string? Message { get; set; }
 
+    [Parameter]
+    public IEnumerable<IdentityError>? IdentityErrors { get; set; }
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    private string? DisplayMessage => Message ?? messageFromCookie;
+    private string? DisplayMessage;
 
     protected override void OnInitialized()
     {
@@ -22,6 +39,15 @@
         if (messageFromCookie is not null)
         {
             HttpContext.Response.Cookies.Delete(IdentityRedirectManager.StatusCookieName);
+        }
+
+        if (Message != null)
+        {
+            DisplayMessage = Message;
+        }
+        else
+        {
+            DisplayMessage = messageFromCookie;
         }
     }
 }
