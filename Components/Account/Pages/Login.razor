@@ -37,7 +37,7 @@
                     </MudStack>
 
                     <MudStaticTextField @bind-Value="@Input.UserId" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Person" autocomplete="username"
-                    Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーId" For="() => Input.UserId" ShrinkLabel />
+                    Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーID" For="() => Input.UserId" ShrinkLabel />
 
                     <MudStaticTextField @bind-Value="@Input.Password" autocomplete="current-password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
@@ -104,7 +104,7 @@
         }
         else
         {
-            errorMessage = ComMessage.MSG_E_INVALID_ACCOUNT;
+            errorMessage = string.Format(ComMessage.MSG_E_MISMATCH_DETAIL, "ユーザーIDまたはパスワード"); 
         }
     }
 
@@ -114,7 +114,7 @@
     private sealed class InputModel
     {
         [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
-        [Display(Name = "ユーザーId")]
+        [Display(Name = "ユーザーID")]
         public string UserId { get; set; } = "";
 
         [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
