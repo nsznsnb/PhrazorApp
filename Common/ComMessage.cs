@@ -14,7 +14,17 @@
         public const string MSG_I_CONFIRM_DELETE = "{0}を削除します。よろしいですか?";
 
         public const string MSG_E_REQUIRED_DETAIL = "{0}を入力してください。";
+        public const string MSG_E_RANGE_LESS_THAN = "{0}は{1}文字以内で入力してください。";
+        public const string MSG_E_HANKAKU_LESS_THAN10 = "{0}は半角10文字以内で入力してください。";
+        public const string MSG_E_HANKAKU_LESS_THAN20 = "{0}は半角20文字以内で入力してください。";
+        public const string MSG_E_HANKAKU_LESS_THAN30 = "{0}は半角30文字以内で入力してください。";
+        public const string MSG_E_HANKAKU_LESS_THAN40 = "{0}は半角40文字以内で入力してください。";
+        public const string MSG_E_HANKAKU_LESS_THAN50 = "{0}は半角50文字以内で入力してください。";
+
+
+        public const string MSG_E_RANGE_BETWEEN = "{0}は{2}文字以上{1}文字以下で入力してください。";
         public const string MSG_E_INVALID_FORMAT = "{0}の形式に誤りがあります。";
+        public const string MSG_E_MISMATCH_DETAIL = "{0}が一致しません。";
         public const string MSG_E_NOT_FOUND = "{0}が見つかりませんでした。";
         public const string MSG_E_ERROR_CREATE_DETAIL = "{0}の作成中にエラーが発生しました。";
         public const string MSG_E_ERROR_UPDATE_DETAIL = "{0}の更新中にエラーが発生しました。";
