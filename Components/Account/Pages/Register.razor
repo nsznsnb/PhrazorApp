@@ -192,7 +192,7 @@
 
         [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
         [EmailAddress]
-        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN30, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN30)]
+        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN50, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN50)]
         [Display(Name = "メールアドレス")]
         public string Email { get; set; } = "";
 
