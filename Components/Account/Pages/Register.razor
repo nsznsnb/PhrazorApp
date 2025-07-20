@@ -1,10 +1,12 @@
 ﻿@page "/Account/Register"
+@layout EmptyLayout
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
+@using PhrazorApp.Components.Layout
 @using PhrazorApp.Data
 
 @inject UserManager<ApplicationUser> UserManager
@@ -17,45 +19,95 @@
 
 <PageTitle>Register</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Register</MudText>
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudPaper Elevation="5" Class="pa-16">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                    <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">@ComDefine.APP_NAME</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem>
+                <StatusMessage Message="@Message" IdentityErrors="identityErrors" />
+                <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
+                    <DataAnnotationsValidator />
 
-<MudGrid>
-    <MudItem md="6">
-        <StatusMessage Message="@Message" />
-        <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
-            <DataAnnotationsValidator />
+                    <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                            <MudIcon Icon="@Icons.Material.TwoTone.Lock" Color="Color.Dark" />
+                            <MudText Typo="Typo.h5">アカウント作成</MudText>
+                        </MudStack>
+                    </MudStack>
 
-            <MudText Typo="Typo.body1" GutterBottom="true">Create a new account.</MudText>
 
-            <MudGrid>
-                <MudItem md="12">
-                    <MudStaticTextField For="@(() => Input.Email)" @bind-Value="Input.Email"
-                                        Label="Email" Placeholder="name@example.com"
-                                        UserAttributes="@(new() { { "autocomplete", "username" }, { "aria-required", "true" } } )" />
-                </MudItem>
-                <MudItem md="12">
-                    <MudStaticTextField For="@(() => Input.Password)" @bind-Value="Input.Password"
-                                        Label="Password" InputType="InputType.Password" Placeholder="password"
-                                        UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } } )" />
-                </MudItem>
-                <MudItem md="12">
-                    <MudStaticTextField For="@(() => Input.ConfirmPassword)" @bind-Value="Input.ConfirmPassword"
-                                        Label="Confirm Password" InputType="InputType.Password" Placeholder="confirm password"
-                                        UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } } )" />
-                </MudItem>
-                <MudItem md="12">
-                    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Register</MudStaticButton>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </MudItem>
-    <MudItem md="6">
-        <MudText Typo="Typo.body1" GutterBottom="true">Use another service to register.</MudText>
-        <ExternalLoginPicker />
-    </MudItem>
-</MudGrid>
+
+                    <MudStaticTextField @bind-Value="@Input.UserName" For="() => Input.UserName" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Person"
+                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーID" ShrinkLabel
+                                        UserAttributes="@(new() { { "autocomplete", "username" }, { "aria-required", "true" } })" />
+
+                    <MudStaticTextField @bind-Value="@Input.Email" For="() => Input.Email" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Email"
+                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="メールアドレス" ShrinkLabel　Placeholder="name@example.com"
+                                        UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
+                    <MudGrid Spacing="1">
+                        <MudItem xs="12" sm="6">
+                            <MudStaticTextField @bind-Value="@Input.LastName" For="() => Input.LastName"
+                                                Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="姓" ShrinkLabel　Placeholder="例)山田"
+                                                UserAttributes="@(new() { { "autocomplete", "name" } })" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudStaticTextField @bind-Value="@Input.FirstName" For="() => Input.FirstName"
+                                                Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="名" ShrinkLabel　Placeholder="例)太郎"
+                                                UserAttributes="@(new() { { "autocomplete", "name" } })" />
+                        </MudItem>
+                    </MudGrid>
+
+
+
+                    <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
+                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
+                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel
+                                        UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } })" />
+
+                    <MudStaticTextField @bind-Value="@Input.ConfirmPassword" For="() => Input.ConfirmPassword" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="確認用パスワード"
+                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
+                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel
+                                        UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } })" />
+
+
+
+                    <MudStaticButton Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">登録</MudStaticButton>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
+                        <MudLink Href="/Account/Login" Typo="Typo.body2" Color="Color.Primary"><b>ログイン画面に戻る</b></MudLink>
+                    </MudStack>
+
+                </EditForm>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+<script>
+    let timeoutId;
+
+
+    function showPassword(inputElement, button) {
+        if (inputElement.type === 'password') {
+            inputElement.type = 'text';
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(function () {
+                inputElement.type = 'password';
+            }, 5000);
+        } else {
+            inputElement.type = 'password';
+            clearTimeout(timeoutId);
+        }
+    }
+</script>
+
 
 @code {
+
     private IEnumerable<IdentityError>? identityErrors;
 
     [SupplyParameterFromForm]
@@ -70,7 +122,11 @@
     {
         var user = CreateUser();
 
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+
+        user.FirstName = Input.FirstName;
+        user.LastName = Input.LastName;
+
+        await UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
         var result = await UserManager.CreateAsync(user, Input.Password);
@@ -103,6 +159,8 @@
         RedirectManager.RedirectTo(ReturnUrl);
     }
 
+
+
     private static ApplicationUser CreateUser()
     {
         try
@@ -127,20 +185,34 @@
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN20, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN20)]
+        [Display(Name = "ユーザーID")]
+        public string UserName { get; set; } = "";
+
+        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
         [EmailAddress]
-        [Display(Name = "Email")]
+        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN30, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN30)]
+        [Display(Name = "メールアドレス")]
         public string Email { get; set; } = "";
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [Display(Name = "名")]
+        public string? FirstName { get; set; }
+        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [Display(Name = "姓")]
+        public string? LastName { get; set; }
+
+        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [StringLength(100, ErrorMessage = ComMessage.MSG_E_RANGE_BETWEEN, MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "パスワード")]
         public string Password { get; set; } = "";
 
+        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Display(Name = "確認用パスワード")]
+        [Compare("Password", ErrorMessage = "パスワードと確認用パスワードが一致しません。")]
         public string ConfirmPassword { get; set; } = "";
     }
 }
