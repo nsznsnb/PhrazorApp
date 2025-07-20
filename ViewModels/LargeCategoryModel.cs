@@ -46,9 +46,9 @@ public class LargeCategoryModelValidator : AbstractValidator<LargeCategoryModel>
         RuleFor(x => x.Id)
             .NotEmpty()
             .WithName("カテゴリId")
-            .WithMessage(string.Format(ComMessage.REQUIRED_DETAIL, "カテゴリId"));
+            .WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "カテゴリId"));
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage(string.Format(ComMessage.REQUIRED_DETAIL, "カテゴリ名"));
+            .NotEmpty().WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "カテゴリ名"));
 
         RuleForEach(x => x.SubCategories)
             .SetValidator(new SmallCategoryModelValidator());

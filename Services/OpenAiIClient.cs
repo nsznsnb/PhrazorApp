@@ -1,6 +1,8 @@
 ﻿using Azure;
+using Microsoft.Extensions.Options;
 using PhrazorApp.Common;
 using PhrazorApp.Extensions;
+using PhrazorApp.Options;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -15,12 +17,14 @@ namespace PhrazorApp.Services
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _config;
         private readonly ILogger<ImageService> _logger;
+        private readonly OpenAiOptions _options;
 
-        public OpenAiClient(HttpClient httpClient, IConfiguration config, ILogger<ImageService> logger)
+        public OpenAiClient(HttpClient httpClient, IConfiguration config, ILogger<ImageService> logger, IOptions<OpenAiOptions> options)
         {
             _httpClient = httpClient;
             _config = config;
             _logger = logger;
+            _options = options.Value;
         }
 
 
@@ -31,8 +35,8 @@ namespace PhrazorApp.Services
         /// <returns></returns>
         public async Task<string?> GenerateImageUrlAsync(string phrase)
         {
-            var apiKey = _config["OpenAI:ApiKey"];
-            var size = _config["OpenAI:ImageSize"] ?? "256x256";
+            var apiKey = _options.ApiKey;
+            var size = _options.ImageSize;
 
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", apiKey);
@@ -54,7 +58,7 @@ namespace PhrazorApp.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogErrorWithContext(ComLogEvents.GetItem, string.Format(ComMessage.MSG_E_ERROR_EXECUTE_DETAIL, "画像生成", $"ステータスコード({response.StatusCode})"));
+                _logger.LogErrorWithContext(ComLogEvents.GetItem, string.Format(ComMessage.MSG_E_FAILURE_DETAIL, "画像生成", $"ステータスコード({response.StatusCode})"));
             }
 
             var json = await response.Content.ReadAsStringAsync();

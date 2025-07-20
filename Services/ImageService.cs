@@ -66,7 +66,7 @@ namespace PhrazorApp.Services
             }
             catch (Exception ex)
             {
-                _logger.LogErrorWithContext(ComLogEvents.DownloadItem, string.Format(ComMessage.MSG_E_ERROR_EXECUTE_DETAIL, "画像ダウンロード"));
+                _logger.LogErrorWithContext(ComLogEvents.DownloadItem, string.Format(ComMessage.MSG_E_FAILURE_DETAIL, "画像ダウンロード"));
                 return null;
             }
         }

@@ -7,7 +7,9 @@ using MudBlazor.Services;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
+using PhrazorApp.Options;
 using PhrazorApp.Services;
+using Resend;
 
 namespace PhrazorApp
 {
@@ -64,29 +66,48 @@ namespace PhrazorApp
             // ユーザーシークレットを使用（開発時のみ）
             builder.Configuration.AddUserSecrets<Program>();
 
-            builder.Services.Configure<SeedUserOptions>(
-                builder.Configuration.GetSection("SeedUser"));
 
+            // Http関連
             builder.Services.AddHttpClient<OpenAiClient>();
+            builder.Services.AddHttpClient<ResendClient>();
             builder.Services.AddHttpContextAccessor();
+
+
+
 
             // ユーザーサービス：DIの優先度(高)
             builder.Services.AddScoped<IUserService, UserService>();
 
-            builder.Services.AddScoped<LoadingService>();
+            // Resend関連
+            var resendApiToken = builder.Configuration["Resend:ApiKey"]!;
+            builder.Services.Configure<ResendClientOptions>(o =>
+            {
+                o.ApiToken = resendApiToken;
+            });
+            builder.Services.AddScoped<IResend, ResendClient>();
+            builder.Services.AddScoped<ResendEmailSender>();
 
+            // BlobStorase関連
             builder.Services.AddSingleton(x =>
             {
                 var config = x.GetRequiredService<IConfiguration>();
                 var connectionString = config["AzureBlob:ConnectionString"];
                 return new BlobServiceClient(connectionString);
             });
-            builder.Services.AddSingleton<BlobStorageClient>(); 
+            builder.Services.AddSingleton<BlobStorageClient>();
+
+
+            builder.Services.AddScoped<LoadingService>();
             // OpenAiClientとBlogClientをDIしているためDIの順序関係に注意
             builder.Services.AddScoped<IImageService, ImageService>();
-
             builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+
+            // オプションパターン
+            builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));
+            builder.Services.Configure<AzureBlobOptions>(builder.Configuration.GetSection("AzureBlob"));
+            builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
+            builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
 
             var app = builder.Build();
 

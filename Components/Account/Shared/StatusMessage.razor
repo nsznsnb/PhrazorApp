@@ -1,8 +1,7 @@
 ﻿@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var severity = DisplayMessage.IndexOf("一致しません") != -1 ? Severity.Error : Severity.Success;
 
-    <MudAlert Variant="Variant.Outlined" Severity="@severity">@DisplayMessage</MudAlert>
+    <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">@DisplayMessage</MudAlert>
 }
 
 @code {

@@ -1,7 +1,9 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Microsoft.Extensions.Options;
 using PhrazorApp.Common;
 using PhrazorApp.Extensions;
+using PhrazorApp.Options;
 using System.Net.Http;
 
 namespace PhrazorApp.Services
@@ -15,12 +17,14 @@ namespace PhrazorApp.Services
         private readonly BlobServiceClient _blobServiceClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<BlobStorageClient> _logger;
+        private readonly AzureBlobOptions _options;
 
-        public BlobStorageClient(BlobServiceClient blobServiceClient, IConfiguration configuration, ILogger<BlobStorageClient> logger)
+        public BlobStorageClient(BlobServiceClient blobServiceClient, IConfiguration configuration, ILogger<BlobStorageClient> logger, IOptions<AzureBlobOptions> options)
         {
             _blobServiceClient = blobServiceClient;
             _configuration = configuration;
             _logger = logger;
+            _options = options.Value;
         }
 
         /// <summary>
@@ -36,7 +40,7 @@ namespace PhrazorApp.Services
             try
             {
                 // コンテナ名
-                var containerName = _configuration["AzureBlob:ContainerName"] ?? "images";
+                var containerName = _options.ContainerName;
 
 
                 // コンテナクライアント取得

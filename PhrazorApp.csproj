@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.*" />
     <PackageReference Include="MudBlazor" Version="8.*" />
     <PackageReference Include="Extensions.MudBlazor.StaticInput" Version="3.*" />
+    <PackageReference Include="Resend" Version="0.1.4" />
   </ItemGroup>
 
 </Project>

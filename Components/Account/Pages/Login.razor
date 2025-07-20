@@ -21,19 +21,20 @@
             <MudItem xs="12">
                 <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
                     <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">Phrazor App</MudText>
+                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">@ComDefine.APP_NAME</MudText>
                 </MudStack>
             </MudItem>
             <MudItem>
                 <StatusMessage Message="@errorMessage" />
                 <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                     <DataAnnotationsValidator />
-                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
-                        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Dark" />
-                        <MudText Typo="Typo.h5">ログイン</MudText>
+                    <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Dark" />
+                            <MudText Typo="Typo.h5">ログイン</MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.caption">@ComDefine.APP_NAME を使用するにはアカウントにログインしてください。</MudText>
                     </MudStack>
-                    <MudText Typo="Typo.caption">Phrazor Appを使用するにはアカウントにログインしてください。</MudText>
-
 
                     <MudStaticTextField @bind-Value="@Input.UserId" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Person" autocomplete="username"
                     Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ユーザーId" For="() => Input.UserId" ShrinkLabel />
@@ -112,11 +113,11 @@
     /// </summary>
     private sealed class InputModel
     {
-        [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
+        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
         [Display(Name = "ユーザーId")]
         public string UserId { get; set; } = "";
 
-        [Required(ErrorMessage = ComMessage.REQUIRED_DETAIL)]
+        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
         [DataType(DataType.Password)]
         [Display(Name = "パスワード")]
         public string Password { get; set; } = "";

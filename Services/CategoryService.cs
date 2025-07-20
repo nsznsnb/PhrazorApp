@@ -184,7 +184,7 @@ namespace PhrazorApp.Services
 
                 if (existingCategory == null)
                 {
-                    var message = string.Format(ComMessage.MSG_E_ERROR_NOT_FOUND, model.Name);
+                    var message = string.Format(ComMessage.MSG_E_NOT_FOUND, model.Name);
                     _logger.LogWarningWithContext(ComLogEvents.UpdateItem, message);
                     return ServiceResult.Warning(message);
                 }
@@ -242,7 +242,7 @@ namespace PhrazorApp.Services
 
                 if (largeCategory == null)
                 {
-                    var message = string.Format(ComMessage.MSG_E_ERROR_NOT_FOUND, largeCategoryId);
+                    var message = string.Format(ComMessage.MSG_E_NOT_FOUND, largeCategoryId);
                     _logger.LogWarningWithContext(ComLogEvents.DeleteItem, message);
                     return ServiceResult.Failure(message);
                 }
