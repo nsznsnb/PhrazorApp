@@ -28,12 +28,14 @@
         /// <summary>
         /// アイテムダウンロード
         /// </summary>
-        /// 
         public static readonly EventId DownloadItem = new(1500, nameof(DownloadItem));
         /// <summary>
         /// アイテムアップロード
         /// </summary>
-        /// 
         public static readonly EventId UploadItem = new(1600, nameof(UploadItem));
+        /// <summary>
+        /// アイテム送信
+        /// </summary>
+        public static readonly EventId SendItem = new(1700, nameof(SendItem));
     }
 }
