@@ -3,9 +3,9 @@
 @inject NavigationManager NavigationManager
 <AuthorizeView>
     <Authorized>
-        <MudMenu>
+        <MudMenu　AnchorOrigin ="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
-                <MudChip T="string" Icon="@Icons.Material.Filled.Person" Color="Color.Secondary">@context.User.Identity?.Name</MudChip>
+                <MudChip T="string" Icon="@Icons.Material.Filled.Person" Color="Color.Secondary" >@context.User.Identity?.Name</MudChip>
             </ActivatorContent>
             <ChildContent>
                 <MudMenuItem Href="Account/Manage"
