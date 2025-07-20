@@ -36,5 +36,12 @@ namespace PhrazorApp.Common
         public const string LABEL_DIALOG_TITLE_REGISTER_CONFIRM = "登録確認";
         public const string LABEL_DIALOG_TITLE_DELETE_CONFIRM = "削除確認";
 
+        // 正規表現
+        public const string REGEX_HANKAKU_LESS_THAN10 = @"^[\u0020-\u007e]{1,10}$";
+        public const string REGEX_HANKAKU_LESS_THAN20 = @"^[\u0020-\u007e]{1,20}$";
+        public const string REGEX_HANKAKU_LESS_THAN30 = @"^[\u0020-\u007e]{1,30}$";
+        public const string REGEX_HANKAKU_LESS_THAN40 = @"^[\u0020-\u007e]{1,40}$";
+        public const string REGEX_HANKAKU_LESS_THAN50 = @"^[\u0020-\u007e]{1,50}$";
+
     }
 }
