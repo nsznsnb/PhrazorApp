@@ -26,6 +26,7 @@
         public const string MSG_E_INVALID_FORMAT = "{0}の形式に誤りがあります。";
         public const string MSG_E_MISMATCH_DETAIL = "{0}が一致しません。";
         public const string MSG_E_NOT_FOUND = "{0}が見つかりませんでした。";
+        public const string MSG_E_ERROR_DETEIL = "{0}にエラーが発生しました";
         public const string MSG_E_ERROR_CREATE_DETAIL = "{0}の作成中にエラーが発生しました。";
         public const string MSG_E_ERROR_UPDATE_DETAIL = "{0}の更新中にエラーが発生しました。";
         public const string MSG_E_ERROR_DELETE_DETAIL = "{0}の削除中にエラーが発生しました。";
