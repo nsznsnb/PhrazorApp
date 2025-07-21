@@ -22,7 +22,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>
-        /// メールアドレス確認リンク付きメールを送信します
+        /// アカウント本登録リンク付きメールを送信します
         /// </summary>
         public async Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
         {
@@ -69,20 +69,20 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>
-        /// パスワード再設定コード付きメールを送信します
+        /// パスワードリセットコード付きメールを送信します
         /// </summary>
         public async Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
         {
             var message = new EmailMessage();
             message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
             message.To.Add(email);
-            message.Subject = "パスワード再設定コードのご案内";
+            message.Subject = "パスワードリセットコードのご送付";
 
             var html = $"""
-        <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワード再設定コードのご案内</h2>
+        <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワードリセットコードのご送付</h2>
         <p>{user.UserName} 様</p>
         <p>いつも{ComDefine.APP_NAME}をご利用いただき、ありがとうございます。</p>
-        <p>パスワードの再設定に必要な確認コードは以下の通りです。</p>
+        <p>パスワードリセットに必要な確認コードは以下の通りです。</p>
 
         <p style="margin: 24px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px;">{resetCode}</p>
 
@@ -106,7 +106,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>
-        /// パスワード再設定リンク付きメールを送信します
+        /// パスワードリセットリンク付きメールを送信します
         /// </summary>
         /// <param name="user"></param>
         /// <param name="email"></param>
@@ -117,13 +117,13 @@ namespace PhrazorApp.Services
             var message = new EmailMessage();
             message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
             message.To.Add(email);
-            message.Subject = "パスワード再設定のご案内";
+            message.Subject = "パスワードリセットのご案内";
 
             var html = $"""
-      <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワード再設定のご案内</h2>
+      <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワードリセットのご案内</h2>
       <p>{user.UserName} 様</p>
       <p>いつも{ComDefine.APP_NAME}をご利用いただき、ありがとうございます。</p>
-      <p>パスワードの再設定リクエストを受け付けました。以下のリンクより、新しいパスワードを設定してください。</p>
+      <p>パスワードリセットのリクエストを受け付けました。以下のリンクより、新しいパスワードを設定してください。</p>
 
       <p style="margin: 24px 0;">
         <a href="{resetLink}" style="display: inline-block; padding: 8px 12px; background-color: #1976d2; color: #ffffff; text-decoration: none; border-radius: 4px;">
