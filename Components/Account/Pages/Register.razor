@@ -1,5 +1,5 @@
 ﻿@page "/Account/Register"
-@layout EmptyLayout
+@layout AccountEmptyLayout
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -87,45 +87,7 @@
     </MudPaper>
 </MudContainer>
 
-<script>
-    let timeoutId;
 
-
-    function showPassword(inputElement, button) {
-        if (inputElement.type === 'password') {
-            inputElement.type = 'text';
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(function () {
-                inputElement.type = 'password';
-            }, 5000);
-        } else {
-            inputElement.type = 'password';
-            clearTimeout(timeoutId);
-        }
-    }
-
-    let isSubmitting = false;
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("myForm");
-        if (!form) return;
-
-        form.addEventListener("submit", function (e) {
-            if (isSubmitting) {
-                e.preventDefault();
-                return;
-            }
-
-            isSubmitting = true;
-
-            const btn = document.getElementById("btnSubmit");
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = "送信中...";
-            }
-        });
-    });
-</script>
 
 
 @code {

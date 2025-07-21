@@ -1,5 +1,5 @@
 ﻿@page "/Account/Login"
-@layout EmptyLayout
+@layout AccountEmptyLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -26,7 +26,7 @@
             </MudItem>
             <MudItem>
                 <StatusMessage Message="@errorMessage" />
-                <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+                <EditForm id="@ComDefine.ID_FORM" Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                     <DataAnnotationsValidator />
                     <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
                         <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
@@ -45,7 +45,7 @@
 
 
 
-                    <MudStaticButton Class="my-2" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">ログイン</MudStaticButton>
+                    <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Class="my-2" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">ログイン</MudStaticButton>
 
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
                         <MudText Typo="Typo.body2">アカウントが未登録ですか？</MudText>
@@ -129,20 +129,3 @@
     }
 }
 
-<script>
-    let timeoutId;
-
-    
-    function showPassword(inputElement, button) {
-        if (inputElement.type === 'password') {
-            inputElement.type = 'text';
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(function () {
-                inputElement.type = 'password';
-            }, 5000);
-        } else {
-            inputElement.type = 'password';
-            clearTimeout(timeoutId);
-        }
-    }
-</script>

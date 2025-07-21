@@ -65,7 +65,7 @@
                 </MudCardHeader>
 
                 <MudCardContent Class="py-2">
-
+                    <ValidationMessage For="@(() => model.SubCategories)" />
                     <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true">
                         <HeaderContent>
                             <MudTh>サブカテゴリ名</MudTh>

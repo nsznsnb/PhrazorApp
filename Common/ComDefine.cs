@@ -43,5 +43,8 @@ namespace PhrazorApp.Common
         public const string REGEX_HANKAKU_LESS_THAN40 = @"^[\u0020-\u007e]{1,40}$";
         public const string REGEX_HANKAKU_LESS_THAN50 = @"^[\u0020-\u007e]{1,50}$";
 
+        public const string ID_BUTTON_SUBMIT = "btnSubmit";
+        public const string ID_FORM = "myForm";
+
     }
 }

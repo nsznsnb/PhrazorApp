@@ -50,6 +50,10 @@ public class LargeCategoryModelValidator : AbstractValidator<LargeCategoryModel>
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "カテゴリ名"));
 
+        RuleFor(x => x.SubCategories)
+            .Must(x => x.Count <= 3)
+            .WithMessage("サブカテゴリの追加は3個までです。");
+
         RuleForEach(x => x.SubCategories)
             .SetValidator(new SmallCategoryModelValidator());
 
