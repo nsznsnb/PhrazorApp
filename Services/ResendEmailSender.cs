@@ -5,6 +5,8 @@ using PhrazorApp.Data;
 using PhrazorApp.Extensions;
 using PhrazorApp.Options;
 using Resend;
+using System.Net;
+using System.Text.RegularExpressions;
 
 namespace PhrazorApp.Services
 {
@@ -19,16 +21,88 @@ namespace PhrazorApp.Services
             _resend = resend;
         }
 
-        public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
+        /// <summary>
+        /// メールアドレス確認リンク付きメールを送信します
+        /// </summary>
+        public async Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
         {
-            throw new NotImplementedException();
+            var message = new EmailMessage();
+            message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
+            message.To.Add(email);
+            message.Subject = $"【{ComDefine.APP_NAME}】アカウント本登録のご案内（メールアドレス確認）";
+
+            var html = $"""
+<h2 style="color: #333333;">【{ComDefine.APP_NAME}】アカウント本登録のご案内</h2>
+
+<p>{user.UserName} 様</p>
+
+<p>{ComDefine.APP_NAME}へのご登録ありがとうございます。</p>
+
+<p>現在、アカウントは<strong>仮登録</strong>の状態です。</p>
+<p>以下のボタンをクリックして、<strong>本登録</strong>を完了してください。</p>
+
+<p style="margin: 24px 0;">
+  <a href="{confirmationLink}" style="display: inline-block; padding: 10px 16px; background-color: #1976d2; color: #ffffff; text-decoration: none; border-radius: 4px;">
+    本登録を完了する
+  </a>
+</p>
+
+<p>※この確認リンクの有効期限は <strong>2時間</strong> です。</p>
+<p>※期限が切れた場合は、再度登録手続きを行ってください。</p>
+<p>※このメールに心当たりがない場合は、リンクをクリックせずにこのメールを破棄してください。</p>
+
+<p>引き続き、{ComDefine.APP_NAME}をよろしくお願いいたします。</p>
+""";
+
+            message.HtmlBody = html;
+            message.TextBody = HtmlToPlainText(html);
 
 
+            try
+            {
+                await _resend.EmailSendAsync(message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
+            }
         }
 
-        public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
+        /// <summary>
+        /// パスワード再設定コード付きメールを送信します
+        /// </summary>
+        public async Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
         {
-            throw new NotImplementedException();
+            var message = new EmailMessage();
+            message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
+            message.To.Add(email);
+            message.Subject = "パスワード再設定コードのご案内";
+
+            var html = $"""
+        <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワード再設定コードのご案内</h2>
+        <p>{user.UserName} 様</p>
+        <p>いつも{ComDefine.APP_NAME}をご利用いただき、ありがとうございます。</p>
+        <p>パスワードの再設定に必要な確認コードは以下の通りです。</p>
+
+        <p style="margin: 24px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px;">{resetCode}</p>
+
+        <p>※この確認リンクの有効期限は <strong>2時間</strong> です。</p>
+        <p>※期限が切れた場合は、再度登録手続きを行ってください。</p>
+        <p>※このメールに心当たりがない場合は、リンクをクリックせずにこのメールを破棄してください。</p>
+        """;
+
+            message.HtmlBody = html;
+            message.TextBody = HtmlToPlainText(html);
+
+
+            try
+            {
+                await _resend.EmailSendAsync(message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
+            }
         }
 
         /// <summary>
@@ -57,11 +131,13 @@ namespace PhrazorApp.Services
         </a>
       </p>
 
-      <p>※このリンクの有効期限は <strong>2時間</strong> です。期限を過ぎた場合は、再度設定手続きを行ってください。</p>
-      <p>※このメールに心当たりがない場合は、リンクをクリックせずにこのメールを破棄してください。</p>
+    <p>※この確認リンクの有効期限は <strong>2時間</strong> です。</p>
+    <p>※期限が切れた場合は、再度登録手続きを行ってください。</p>
+    <p>※このメールに心当たりがない場合は、リンクをクリックせずにこのメールを破棄してください。</p>
     """;
 
             message.HtmlBody = html;
+            message.TextBody = HtmlToPlainText(html);
 
             try
             {
@@ -72,5 +148,35 @@ namespace PhrazorApp.Services
                 _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
             }
         }
+
+        /// <summary>
+        /// HTML本文からプレーンテキストを生成します
+        /// </summary>
+        public string HtmlToPlainText(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+                return string.Empty;
+
+            // 1. <style>, <script> など無視したいタグを除去
+            html = Regex.Replace(html, "<(script|style)[^>]*?>.*?</\\1>", "", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+            // 2. <br>, <p> などを改行に変換
+            html = Regex.Replace(html, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+            html = Regex.Replace(html, @"</p\s*>", "\n", RegexOptions.IgnoreCase);
+
+            // 3. 残りのタグをすべて除去
+            html = Regex.Replace(html, "<.*?>", "");
+
+            // 4. HTMLエンティティのデコード（&nbsp; → 空白など）
+            html = WebUtility.HtmlDecode(html);
+
+            // 5. 複数の改行や空白を整理
+            html = Regex.Replace(html, @"\n{2,}", "\n\n");
+            html = Regex.Replace(html, @"[ \t]{2,}", " ");
+            html = html.Trim();
+
+            return html;
+        }
     }
+
 }
