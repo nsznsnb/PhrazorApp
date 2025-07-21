@@ -20,9 +20,9 @@
             <MudCard>
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="@(async () => await Submit())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.Filled.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/categories"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await Submit())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/categories"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     </MudStack>
                 </MudCardContent>
             </MudCard>
@@ -54,11 +54,11 @@
                 <MudCardHeader Class="py-2">
                     <CardHeaderContent>
                         <MudStack Row="true" Class="align-center">
-                            <MudIcon Icon="@Icons.Material.Filled.ListAlt" Title="ListAlt" />
+                            <MudIcon Icon="@Icons.Material.TwoTone.ListAlt" Title="ListAlt" />
                             <h3>
                                 サブカテゴリ一覧入力
                             </h3>
-                            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_ROW_ADD</MudButton>
+                            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_ROW_ADD</MudButton>
                         </MudStack>
 
                     </CardHeaderContent>
@@ -80,11 +80,11 @@
                                 </MudForm>
                             </MudTd>
                             <MudTd>
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_ROW_DELETE</MudButton>
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_ROW_DELETE</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp"
                                            Disabled="@isFirst(context)"
                                            OnClick="@(() => MoveUp(context))">上へ</MudButton>
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown"
                                            Disabled="@isLast(context)"
                                            OnClick="@(() => MoveDown(context))">下へ</MudButton>
                             </MudTd>

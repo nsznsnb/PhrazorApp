@@ -5,7 +5,7 @@
     <Authorized>
         <MudMenu　AnchorOrigin ="Origin.BottomRight" TransformOrigin="Origin.TopRight">
             <ActivatorContent>
-                <MudChip T="string" Icon="@Icons.Material.Filled.Person" Color="Color.Secondary" >@context.User.Identity?.Name</MudChip>
+                <MudChip T="string" Icon="@Icons.Material.TwoTone.Person" Color="Color.Secondary">@context.User.Identity?.Name</MudChip>
             </ActivatorContent>
             <ChildContent>
                 <MudMenuItem Href="Account/Manage"
@@ -17,7 +17,7 @@
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                     <button type="submit" class="mud-nav-link mud-ripple">
-                        <MudIcon Icon="@Icons.Material.Filled.Logout" Color="Color.Info" Class="mr-3"></MudIcon> Logout
+                        <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Info" Class="mr-3"></MudIcon> Logout
                     </button>
                 </form>
             </ChildContent>
@@ -26,7 +26,7 @@
     <NotAuthorized>
         <MudMenu>
             <ActivatorContent>
-                <MudChip T="string" Icon="@Icons.Material.Filled.Person" Color="Color.Secondary">???</MudChip>
+                <MudChip T="string" Icon="@Icons.Material.TwoTone.Person" Color="Color.Secondary">???</MudChip>
             </ActivatorContent>
             <ChildContent>
                 <MudMenuItem Href="Account/Register"

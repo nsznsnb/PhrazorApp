@@ -66,7 +66,7 @@
 
                     <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
                                         Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
-                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel
+                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
                                         UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } })" />
 
                     <MudStaticTextField @bind-Value="@Input.ConfirmPassword" For="() => Input.ConfirmPassword" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="確認用パスワード"
