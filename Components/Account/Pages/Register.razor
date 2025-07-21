@@ -12,12 +12,12 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
-@inject IEmailSender<ApplicationUser> EmailSender
+@inject ResendEmailSender EmailSender
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register</PageTitle>
+<PageTitle>アカウント作成</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small">
     <MudPaper Elevation="5" Class="pa-16">
@@ -30,7 +30,7 @@
             </MudItem>
             <MudItem>
                 <StatusMessage Message="@Message" IdentityErrors="identityErrors" />
-                <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
+                <EditForm id="myForm" Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
                     <DataAnnotationsValidator />
 
                     <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
@@ -76,7 +76,7 @@
 
 
 
-                    <MudStaticButton Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">登録</MudStaticButton>
+                    <MudStaticButton id="btnSubmit" Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">登録</MudStaticButton>
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
                         <MudLink Href="/Account/Login" Typo="Typo.body2" Color="Color.Primary"><b>ログイン画面に戻る</b></MudLink>
                     </MudStack>
@@ -103,6 +103,28 @@
             clearTimeout(timeoutId);
         }
     }
+
+    let isSubmitting = false;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("myForm");
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return;
+            }
+
+            isSubmitting = true;
+
+            const btn = document.getElementById("btnSubmit");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "送信中...";
+            }
+        });
+    });
 </script>
 
 
@@ -118,8 +140,10 @@
 
     private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
+
     public async Task RegisterUser(EditContext editContext)
     {
+
         var user = CreateUser();
 
 
@@ -137,7 +161,6 @@
             return;
         }
 
-        Logger.LogInformation("User created a new account with password.");
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);

@@ -13,7 +13,7 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>英作文練習アプリ</PageTitle>
+<PageTitle>ログイン</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small">
     <MudPaper Elevation="5" Class="pa-16">
@@ -43,15 +43,19 @@
                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
                     AdornmentClickFunction="showPassword" InputType="InputType.Password" For="() => Input.Password" ShrinkLabel />
 
-                    <MudLink Href="Account/ForgotPassword" Typo="Typo.body2" Color="Color.Primary"><b>パスワードをお忘れですか？</b></MudLink>
 
 
-                    <MudStaticButton Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">続ける</MudStaticButton>
+                    <MudStaticButton Class="my-2" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true">ログイン</MudStaticButton>
 
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
                         <MudText Typo="Typo.body2">アカウントが未登録ですか？</MudText>
                         <MudLink Href="/Account/Register" Typo="Typo.body2" Color="Color.Primary"><b>アカウントの作成</b></MudLink>
                     </MudStack>
+                    <MudStack Row="true" Justify="Justify.Center" Class="mt-2">
+                        <MudLink Href="Account/ForgotPassword" Typo="Typo.body2" Color="Color.Primary"><b>パスワードをお忘れですか？</b></MudLink>
+
+                    </MudStack>
+
 
                 </EditForm>
             </MudItem>

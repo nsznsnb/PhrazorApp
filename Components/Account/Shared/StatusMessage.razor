@@ -1,11 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Identity
-@if (!string.IsNullOrEmpty(DisplayMessage))
-{
-    <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">
-        @DisplayMessage
-    </MudAlert>
-}
-else if (IdentityErrors is not null && IdentityErrors.Any())
+@if (IdentityErrors is not null && IdentityErrors.Any())
 {
     <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">
         <ul class="mud-list">
@@ -14,6 +8,12 @@ else if (IdentityErrors is not null && IdentityErrors.Any())
                 <li>@error.Description</li>
             }
         </ul>
+    </MudAlert>
+}
+else if (!string.IsNullOrEmpty(DisplayMessage))
+{
+    <MudAlert Variant="Variant.Outlined" Severity="Severity.Error">
+        @DisplayMessage
     </MudAlert>
 }
 
@@ -32,7 +32,7 @@ else if (IdentityErrors is not null && IdentityErrors.Any())
 
     private string? DisplayMessage;
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
         messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
 
@@ -49,5 +49,10 @@ else if (IdentityErrors is not null && IdentityErrors.Any())
         {
             DisplayMessage = messageFromCookie;
         }
+    }
+
+    protected override void OnInitialized()
+    {
+
     }
 }

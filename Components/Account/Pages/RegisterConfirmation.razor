@@ -1,36 +1,54 @@
 ﻿@page "/Account/RegisterConfirmation"
+@using PhrazorApp.Components.Layout
+@layout EmptyLayout
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using PhrazorApp.Data
-
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register confirmation</PageTitle>
+<PageTitle>アカウント仮登録完了</PageTitle>
 
-<h1>Register confirmation</h1>
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudPaper Elevation="5" Class="pa-16">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                    <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">@ComDefine.APP_NAME</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem>
+                <StatusMessage Message="@errorMessage" />
+                @if(string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                        <MudIcon Icon="@Icons.Material.Filled.Email" Color="Color.Dark" />
+                        <MudText Typo="Typo.h5">アカウント仮登録完了</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body1" Class="mt-4" GutterBottom="true">まだ登録は完了しておりません。</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-4" GutterBottom="true">ご登録いただいたメールアドレス宛に、本人確認メールを送信しました。</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-0" GutterBottom="true">メール本文に記載のURLをクリックしてアカウント登録を完了させてください。</MudText>
+                }
 
-<StatusMessage Message="@statusMessage" />
+                <MudDivider Class="mt-4" />
+                <MudText Typo="Typo.body2" Class="mt-4" GutterBottom="true" Style="max-width: 500px;">※しばらく経ってもメールが届かない場合は、迷惑フォルダに振り分けられているか、メールアドレスの入力間違いの可能性がございます。</MudText>
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a class="mud-link mud-primary-text mud-link-underline-hover" href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a class="mud-link mud-primary-text mud-link-underline-hover" href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p role="alert">Please check your email to confirm your account.</p>
-}
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Class="mt-4">
+                    <MudLink Href="/Account/Login" Typo="Typo.body2" Color="Color.Primary"><b>ログイン画面に戻る</b></MudLink>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string? emailConfirmationLink;
-    private string? statusMessage;
+    private string? errorMessage;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -52,7 +70,7 @@ else
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = "Error finding user for unspecified email";
+            errorMessage =　string.Format(ComMessage.MSG_E_ERROR_DETEIL,"仮登録中");
         }
         else if (EmailSender is IdentityNoOpEmailSender)
         {
