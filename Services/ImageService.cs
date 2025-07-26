@@ -50,6 +50,10 @@ namespace PhrazorApp.Services
         public async Task<string?> SaveImageFromUrlAsync(string prompt, string imageUrl)
         {
             var imageBytes = await DownloadImageAsync(imageUrl);
+            if (imageBytes == null)
+            {
+                return string.Empty;
+            }
             return await _blob.UploadImageAsync(prompt, imageBytes);
         }
 

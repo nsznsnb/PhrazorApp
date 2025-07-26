@@ -33,13 +33,13 @@
                 <MudItem xs="12" sm="6">
                     <MudStaticTextField @bind-Value="@Input.LastName" For="() => Input.LastName"
                                         Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="姓" ShrinkLabel　
-                                        HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "姓")"
+                                        HelperText="@string.Format(ComMessage.MSG_I_HELPER_ARBITRAY_DETAIL, "姓")"
                                         UserAttributes="@(new() { { "autocomplete", "name" } })" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudStaticTextField @bind-Value="@Input.FirstName" For="() => Input.FirstName"
                                         Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="名" ShrinkLabel　
-                                        HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "名")"
+                                        HelperText="@string.Format(ComMessage.MSG_I_HELPER_ARBITRAY_DETAIL, "名")"
                                         UserAttributes="@(new() { { "autocomplete", "name" } })" />
                 </MudItem>
             </MudGrid>

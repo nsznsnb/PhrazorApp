@@ -30,7 +30,7 @@
                 <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
                                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
                                     AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
-                                    HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "アカウントを削除するにはパスワード")"
+                                    HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_DETAIL, "アカウントを削除するにはパスワード")"
                                     UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })" />
             </MudItem>
         }

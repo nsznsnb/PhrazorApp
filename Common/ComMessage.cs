@@ -12,7 +12,11 @@
         public const string MSG_I_SUCCESS_DOWNLOAD_DETAIL = "{0}をダウンロードしました。";
         public const string MSG_I_CONFIRM_REGIST = "{0}を登録します。よろしいですか?";
         public const string MSG_I_CONFIRM_DELETE = "{0}を削除します。よろしいですか?";
-        public const string MSG_I_REQUIRED_HELPER_TEXT_DETAIL = "{0}を入力してください。";
+        public const string MSG_I_HELPER_REQUIRED_DETAIL = "{0}を入力してください。(必須)";
+        public const string MSG_I_HELPER_ARBITRAY_DETAIL = "{0}を入力してください。(任意)";
+        public const string MSG_I_HELPER_REQUIRED_LESS_THAN = "{0}を{1}字以内で入力してください。(必須)";
+        public const string MSG_I_HELPER_ARBITRARY_LESS_TAHN = "{0}を{1}字以内で入力してください。(任意)";
+
 
         public const string MSG_E_REQUIRED_DETAIL = "{0}を入力してください。";
         public const string MSG_E_RANGE_LESS_THAN = "{0}は{1}文字以内で入力してください。";

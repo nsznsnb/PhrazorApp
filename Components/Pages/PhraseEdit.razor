@@ -13,6 +13,7 @@
     <MudForm Model="@model" @ref="@form" ValidationDelay="0">
 
         <MudStack Spacing="2">
+            <SectionTitle  Title="@(isEdit ? "フレーズ編集" : "フレーズ新規作成")" />
 
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardContent Class="py-2">
@@ -24,25 +25,19 @@
                 </MudCardContent>
             </MudCard>
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
-                <MudCardHeader Class="py-2">
-                    <CardHeaderContent>
-                        <MudStack Row="true">
-                            <h3>
-                                カテゴリ入力
-                            </h3>
-                        </MudStack>
 
-
-                    </CardHeaderContent>
-                </MudCardHeader>
 
                 <MudCardContent Class="py-2">
                     <MudGrid Spacing="1">
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true" Text="@model.Phrase" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Lines="3" Immediate="true" ShrinkLabel MaxLength="200"
+                                          @bind-Value="@model.Phrase"
+                                          HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文", "200")" />
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3" HelperText="This field grows when you enter new lines" ShrinkLabel />
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3" MaxLength="200" Immediate="true" ShrinkLabel
+                                          @bind-Value="@model.Meaning"
+                                          HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文の意味", "200")"/>
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
@@ -62,6 +57,11 @@
                             </ItemDropSelector>
                         </MudItem>
                         <MudFlexBreak />
+                        <MudItem xs="12" md="12">
+                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3" MaxLength="200" Immediate="true" ShrinkLabel
+                                          @bind-Value="@model.Meaning"
+                                          HelperText="@string.Format(ComMessage.MSG_I_HELPER_ARBITRARY_LESS_TAHN, "解説や備考", "200")" />
+                        </MudItem>
 
                     </MudGrid>
                 </MudCardContent>

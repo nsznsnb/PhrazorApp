@@ -103,6 +103,7 @@ namespace PhrazorApp
 
 
             builder.Services.AddScoped<LoadingService>();
+            builder.Services.AddScoped<ScriptService>();
             // OpenAiClient‚ÆBlogClient‚ğDI‚µ‚Ä‚¢‚é‚½‚ßDI‚Ì‡˜ŠÖŒW‚É’ˆÓ
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();

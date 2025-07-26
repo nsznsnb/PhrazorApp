@@ -54,7 +54,7 @@ else
             <MudItem xs="12">
                 <MudStaticTextField @bind-Value="@Input.NewEmail" For="@(() => Input.NewEmail)" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="新しいメールアドレス"
                                     ShrinkLabel
-                                    HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "新しいメールアドレス")"
+                                    HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_DETAIL, "新しいメールアドレス")"
                                     UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
             </MudItem>
 
