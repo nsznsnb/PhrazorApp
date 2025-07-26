@@ -53,21 +53,7 @@ namespace PhrazorApp.Services
                 .OrderBy(x => x.CreatedAt)
                 .ToListAsync();
 
-            // エンティティ => モデル
-            return categories.Select(x => new LargeCategoryModel
-            {
-                Id = x.LargeId,
-                Name = x.LargeCategoryName,
-                SubCategories = x.MSmallCategories.Select(xc => new SmallCategoryModel
-                {
-                    Id = xc.SmallId,
-                    Name = xc.SmallCategoryName,
-                    SortOrder = xc.SortOrder
-                })
-                .OrderBy(x => x.SortOrder)
-                .ToList()
-            })
-            .ToList();
+            return categories.Select(x => CategoryMapper.ToModel(x)).ToList();
         }
 
         /// <summary>
@@ -86,20 +72,8 @@ namespace PhrazorApp.Services
 
             if (largeCategory == null) return new();
 
-            // エンティティ => モデル
-            var largeModel = new LargeCategoryModel
-            {
-                Id = largeCategoryId,
-                Name = largeCategory.LargeCategoryName,
-                SubCategories = largeCategory.MSmallCategories.Select(x => new SmallCategoryModel
-                {
-                    Id = x.SmallId,
-                    Name = x.SmallCategoryName,
-                    SortOrder = x.SortOrder
-                })
-                .OrderBy(x => x.SortOrder)
-                .ToList()
-            };
+            var largeModel = CategoryMapper.ToModel(largeCategory);
+
 
             return largeModel;
         }
@@ -114,27 +88,11 @@ namespace PhrazorApp.Services
         {
             var userId = _userService.GetUserId();
             var sysDateTime = DateTime.Now;
-            
-            // モデル => エンティティ
-            var largeCategoryEntity = new MLargeCategory
-            {
-                LargeId = model.Id,
-                LargeCategoryName = model.Name,
-                CreatedAt = sysDateTime,
-                UpdatedAt = sysDateTime,
-                UserId = userId
-            };
 
-            var smallCategoryEntities = model.SubCategories.Select(x => new MSmallCategory
-            {
-                LargeId = model.Id,
-                SmallId = x.Id,
-                SmallCategoryName = x.Name,
-                SortOrder = x.SortOrder,
-                CreatedAt = sysDateTime,
-                UpdatedAt = sysDateTime,
-                UserId = userId
-            }).ToList();
+            // モデル => エンティティ
+            var largeCategoryEntity = CategoryMapper.ToEntity(model, userId, sysDateTime);
+
+            var smallCategoryEntities = CategoryMapper.ToSmallEntities(model, userId, sysDateTime);
 
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             await using var transaction = await context.Database.BeginTransactionAsync();
@@ -143,7 +101,10 @@ namespace PhrazorApp.Services
             {
                 // エンティティ追加
                 context.MLargeCategories.Add(largeCategoryEntity);
-                context.MSmallCategories.AddRange(smallCategoryEntities);
+                if (smallCategoryEntities != null)
+                {
+                    context.MSmallCategories.AddRange(smallCategoryEntities);
+                }
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -194,18 +155,11 @@ namespace PhrazorApp.Services
                 context.MSmallCategories.RemoveRange(existingCategory.MSmallCategories);
 
                 // 新しいサブカテゴリを追加
-                var newSubCategories = model.SubCategories.Select(x => new MSmallCategory
+                var newSubCategories = CategoryMapper.ToSmallEntities(model, userId, sysDateTime);
+                if (newSubCategories != null)
                 {
-                    LargeId = model.Id,
-                    SmallId = x.Id,
-                    SmallCategoryName = x.Name,
-                    SortOrder = x.SortOrder,
-                    CreatedAt = sysDateTime,
-                    UpdatedAt = sysDateTime,
-                    UserId = userId,
-                }).ToList();
-
-                context.MSmallCategories.AddRange(newSubCategories);
+                    context.MSmallCategories.AddRange(newSubCategories);
+                }
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();

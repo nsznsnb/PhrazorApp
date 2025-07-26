@@ -15,7 +15,7 @@ namespace PhrazorApp.Models.ViewModels
         [Display(Name = "ジャンル名")]
         public string Name { get; set; } = string.Empty;
 
-        public List<SmallCategoryModel> SubCategories { get; set; } = new();
+        public List<SmallCategoryModel>? SubCategories { get; set; } = new();
 
 
     }
