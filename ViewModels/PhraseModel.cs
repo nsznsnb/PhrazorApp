@@ -1,16 +1,23 @@
-﻿namespace PhrazorApp.ViewModels
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace PhrazorApp.ViewModels
 {
     public class PhraseModel
     {
 
         public Guid Id { get; set; }
-        public string Phrase { get; set; }
 
-        public string Meaning { get; set; }
+        [Display(Name = "フレーズ")]
+        public string Phrase { get; set; } = string.Empty;
 
-        public string ImageUrl { get; set; }
+        [Display(Name = "意味")]
+        public string Meaning { get; set; } = string.Empty;
 
-        public string Note { get; set; }
+        [Display(Name = "画像")]
+        public string ImageUrl { get; set; } = string.Empty;
+
+        [Display(Name = "Note")]
+        public string Note { get; set; } = string.Empty;
 
         public List<LargeCategoryModel> LargeCategories { get; set; }
 

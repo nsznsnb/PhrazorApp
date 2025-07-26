@@ -1,0 +1,52 @@
+﻿@using MudBlazor
+
+<MudStack Row Spacing="1" Class="align-center">
+    <MudIcon Icon="@Icon" Color="@IconColor" Title="@(Icon?.Split('.').Last() ?? "")" />
+
+    @if (HeadingLevel is >= 1 and <= 6)
+    {
+        @switch (HeadingLevel)
+        {
+            case 1:
+                <h1 class="@TextClass">@Title</h1>
+                break;
+            case 2:
+                <h2 class="@TextClass">@Title</h2>
+                break;
+            case 3:
+                <h3 class="@TextClass">@Title</h3>
+                break;
+            case 4:
+                <h4 class="@TextClass">@Title</h4>
+                break;
+            case 5:
+                <h5 class="@TextClass">@Title</h5>
+                break;
+            case 6:
+                <h6 class="@TextClass">@Title</h6>
+                break;
+        }
+    }
+    else
+    {
+        <h2 class="@TextClass">@Title</h2> @* fallback *@
+    }
+</MudStack>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = Icons.Custom.Uncategorized.ChessQueen;
+
+    [Parameter]
+    public Color IconColor { get; set; } = Color.Secondary;
+
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public int HeadingLevel { get; set; } = 2; // h2 がデフォルト
+
+    [Parameter]
+    public string? TextClass { get; set; } = "fw-bold";
+
+}

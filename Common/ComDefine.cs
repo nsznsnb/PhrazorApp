@@ -16,11 +16,6 @@ namespace PhrazorApp.Common
         public const string FONT_FAMILY_2 = "sans-serif";
         public const string FONT_FAMILY_3 = "";
 
-        // ページタイトル
-        public const string LABEL_LIST_PAGE_TITLE = "{0}一覧";
-        public const string LABEL_EDIT_PAGE_TITLE = "{0}編集";
-        public const string LABEL_CREATE_PAGE_TITLE = "{0}新規作成";
-
         // ボタンテキスト
         public const string LABEL_BUTTON_EDIT = "編集";
         public const string LABEL_BUTTON_CREATE = "新規作成";
@@ -49,5 +44,8 @@ namespace PhrazorApp.Common
 
         // アカウント関連画面：Info情報プレフィックス
         public const string PREFIX_ACCOUNT_INFO_MESSAGE = "info:";
+
+        // カードのデフォルトのElevation値
+        public const int DEFAULT_ELEVATION_CARD = 2;
     }
 }

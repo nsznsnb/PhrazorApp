@@ -13,11 +13,8 @@
     <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
 
         <MudStack Spacing="2">
-            <MudStack Row Spacing="0">
-                <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Dark" Title="Favorite" Style="transform: translateY(2px)" />
-                <h2>@string.Format(isEdit ? ComDefine.LABEL_EDIT_PAGE_TITLE : ComDefine.LABEL_CREATE_PAGE_TITLE, "フレーズカテゴリ")</h2>
-            </MudStack>
-            <MudCard>
+            <SectionTitle Title="@(isEdit ? "フレーズカテゴリ編集" : "フレーズカテゴリ新規作成")" />
+            <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await Submit())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
@@ -26,16 +23,10 @@
                     </MudStack>
                 </MudCardContent>
             </MudCard>
-            <MudCard>
+            <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardHeader Class="py-2">
                     <CardHeaderContent>
-                        <MudStack Row="true">
-                            <h3>
-                                カテゴリ入力
-                            </h3>
-                        </MudStack>
-
-
+                        <SectionTitle HeadingLevel="3" Title="@(isEdit ? "フレーズカテゴリ編集" : "フレーズカテゴリ新規作成")" />
                     </CardHeaderContent>
                 </MudCardHeader>
 
@@ -50,14 +41,13 @@
 
             </MudCard>
 
-            <MudCard>
+            <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardHeader Class="py-2">
                     <CardHeaderContent>
                         <MudStack Row="true" Class="align-center">
-                            <MudIcon Icon="@Icons.Material.TwoTone.ListAlt" Title="ListAlt" />
-                            <h3>
-                                サブカテゴリ一覧入力
-                            </h3>
+                            <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
+                                          Title="サブカテゴリ一覧入力" />
+
                             <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_ROW_ADD</MudButton>
                         </MudStack>
 
@@ -65,7 +55,6 @@
                 </MudCardHeader>
 
                 <MudCardContent Class="py-2">
-                    <ValidationMessage For="@(() => model.SubCategories)" />
                     <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true">
                         <HeaderContent>
                             <MudTh>サブカテゴリ名</MudTh>

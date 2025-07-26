@@ -9,27 +9,18 @@
 
 <MudContainer>
     <MudStack Spacing="2">
-        <MudStack Row Spacing="1">
-            <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Secondary" Title="Favorite" Style="transform: translateY(2px)" />
-            <h2>@string.Format(ComDefine.LABEL_LIST_PAGE_TITLE, "フレーズカテゴリ")</h2>
-        </MudStack>
-        <MudCard>
+        <SectionTitle HeadingLevel="2" Title="フレーズカテゴリ一覧" />
+        <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
                     <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/categories/create"))">新規追加</MudButton>
                 </MudStack>
             </MudCardContent>
         </MudCard>
-        <MudCard Elevation="3">
+        <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudStack Row="true" Class="align-center">
-                        <MudIcon Icon="@Icons.Material.TwoTone.ListAlt" Title="ListAlt" />
-                        <h3>
-                            @string.Format(ComDefine.LABEL_LIST_PAGE_TITLE, "フレーズカテゴリ")
-                        </h3>
-                    </MudStack>
-
+                    <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="フレーズカテゴリ一覧" />
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
