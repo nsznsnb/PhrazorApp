@@ -9,6 +9,7 @@
 
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="15.0.1" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.*" />
@@ -18,6 +19,11 @@
     <PackageReference Include="MudBlazor" Version="8.*" />
     <PackageReference Include="Extensions.MudBlazor.StaticInput" Version="3.*" />
     <PackageReference Include="Resend" Version="0.1.4" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="新しいフォルダー\" />
   </ItemGroup>
 
 </Project>
