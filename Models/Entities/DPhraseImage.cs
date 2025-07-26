@@ -1,20 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models;
+namespace PhrazorApp.Models.Entities;
 
 /// <summary>
-/// フレーズ帳内フレーズ
+/// フレーズ画像
 /// </summary>
-public partial class DPhraseBookItem
+public partial class DPhraseImage
 {
     /// <summary>
-    /// フレーズ帳Id
+    /// フレーズ画像ID
     /// </summary>
-    public Guid PhraseBookId { get; set; }
+    public int PhraseImageId { get; set; }
 
     /// <summary>
-    /// フレーズId
+    /// URL
+    /// </summary>
+    public string Url { get; set; } = null!;
+
+    /// <summary>
+    /// アップロード日時
+    /// </summary>
+    public DateTime? UploadAt { get; set; }
+
+    /// <summary>
+    /// フレーズID
     /// </summary>
     public Guid PhraseId { get; set; }
 
@@ -29,6 +39,4 @@ public partial class DPhraseBookItem
     public DateTime? UpdatedAt { get; set; }
 
     public virtual DUserPhrase Phrase { get; set; } = null!;
-
-    public virtual MPhraseBook PhraseBook { get; set; } = null!;
 }

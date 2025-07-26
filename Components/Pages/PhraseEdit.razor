@@ -30,14 +30,12 @@
                 <MudCardContent Class="py-2">
                     <MudGrid Spacing="1">
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Lines="3" Immediate="true" ShrinkLabel MaxLength="200"
-                                          @bind-Value="@model.Phrase"
-                                          HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文", "200")" />
+                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true"
+                                    Text="@model.Phrase" Lines="3" HelperText="英文を200時以内で記載してください(必須)" ShrinkLabel />
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3" MaxLength="200" Immediate="true" ShrinkLabel
-                                          @bind-Value="@model.Meaning"
-                                          HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文の意味", "200")"/>
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3"  Immediate="true"
+                                HelperText="フレーズの意味を200字以内で入力してください。" ShrinkLabel />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
@@ -56,12 +54,9 @@
                                 </ItemTemplate>
                             </ItemDropSelector>
                         </MudItem>
-                        <MudFlexBreak />
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3" MaxLength="200" Immediate="true" ShrinkLabel
-                                          @bind-Value="@model.Meaning"
-                                          HelperText="@string.Format(ComMessage.MSG_I_HELPER_ARBITRARY_LESS_TAHN, "解説や備考", "200")" />
-                        </MudItem>
+                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" Text="@model.Note" Lines="3" HelperText="解説や備考を記載する場合は" ShrinkLabel />
+                        </MudItem><MudFlexBreak />
 
                     </MudGrid>
                 </MudCardContent>

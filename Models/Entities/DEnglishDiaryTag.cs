@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models;
+namespace PhrazorApp.Models.Entities;
 
 /// <summary>
-/// 日記タグ
+/// 英語日記タグ
 /// </summary>
-public partial class MDiaryTag
+public partial class DEnglishDiaryTag
 {
+    /// <summary>
+    /// 英語日記ID
+    /// </summary>
+    public Guid DiaryId { get; set; }
+
     /// <summary>
     /// 日記タグID
     /// </summary>
-    public int TagId { get; set; }
-
-    /// <summary>
-    /// タグ名
-    /// </summary>
-    public string? TagName { get; set; }
+    public int DiaryTagId { get; set; }
 
     /// <summary>
     /// 作成日時
@@ -28,5 +28,7 @@ public partial class MDiaryTag
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<DEnglishDiaryTag> DEnglishDiaryTags { get; set; } = new List<DEnglishDiaryTag>();
+    public virtual DEnglishDiary Diary { get; set; } = null!;
+
+    public virtual MDiaryTag DiaryTag { get; set; } = null!;
 }

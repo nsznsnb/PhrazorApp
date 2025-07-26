@@ -1,12 +1,9 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Common;
 using PhrazorApp.Data;
 using PhrazorApp.Extensions;
-using PhrazorApp.Models;
-using PhrazorApp.ViewModels;
-using System.Security.Cryptography.Xml;
+using PhrazorApp.Models.Entities;
+using PhrazorApp.Models.ViewModels;
 
 namespace PhrazorApp.Services
 {

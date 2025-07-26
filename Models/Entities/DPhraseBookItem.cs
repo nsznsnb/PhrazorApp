@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models;
+namespace PhrazorApp.Models.Entities;
 
 /// <summary>
-/// フレーズ帳マスタ
+/// フレーズ帳内フレーズ
 /// </summary>
-public partial class MPhraseBook
+public partial class DPhraseBookItem
 {
     /// <summary>
     /// フレーズ帳Id
@@ -14,14 +14,9 @@ public partial class MPhraseBook
     public Guid PhraseBookId { get; set; }
 
     /// <summary>
-    /// フレーズ帳名
+    /// フレーズId
     /// </summary>
-    public string PhraseBookName { get; set; } = null!;
-
-    /// <summary>
-    /// ユーザーId
-    /// </summary>
-    public string UserId { get; set; } = null!;
+    public Guid PhraseId { get; set; }
 
     /// <summary>
     /// 作成日時
@@ -33,5 +28,7 @@ public partial class MPhraseBook
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<DPhraseBookItem> DPhraseBookItems { get; set; } = new List<DPhraseBookItem>();
+    public virtual DUserPhrase Phrase { get; set; } = null!;
+
+    public virtual MPhraseBook PhraseBook { get; set; } = null!;
 }

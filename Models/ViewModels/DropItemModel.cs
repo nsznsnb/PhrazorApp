@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.ViewModels
+﻿namespace PhrazorApp.Models.ViewModels
 {
     public class DropItemModel
     {

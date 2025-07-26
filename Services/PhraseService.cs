@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Data;
-using PhrazorApp.ViewModels;
+using PhrazorApp.Models.ViewModels;
 
 namespace PhrazorApp.Services
 {

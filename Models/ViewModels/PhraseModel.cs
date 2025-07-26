@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PhrazorApp.ViewModels
+namespace PhrazorApp.Models.ViewModels
 {
     public class PhraseModel
     {

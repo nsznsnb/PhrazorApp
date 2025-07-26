@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using PhrazorApp.Models;
+using PhrazorApp.Models.Entities;
 
 namespace PhrazorApp.Data;
 

@@ -1,27 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models;
+namespace PhrazorApp.Models.Entities;
 
 /// <summary>
-/// 大分類マスタ
+/// フレーズ帳マスタ
 /// </summary>
-public partial class MLargeCategory
+public partial class MPhraseBook
 {
     /// <summary>
-    /// 大分類ID
+    /// フレーズ帳Id
     /// </summary>
-    public Guid LargeId { get; set; }
+    public Guid PhraseBookId { get; set; }
 
     /// <summary>
-    /// 大分類名
+    /// フレーズ帳名
     /// </summary>
-    public string LargeCategoryName { get; set; } = null!;
+    public string PhraseBookName { get; set; } = null!;
 
     /// <summary>
     /// ユーザーId
     /// </summary>
-    public string? UserId { get; set; }
+    public string UserId { get; set; } = null!;
 
     /// <summary>
     /// 作成日時
@@ -33,5 +33,5 @@ public partial class MLargeCategory
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<MSmallCategory> MSmallCategories { get; set; } = new List<MSmallCategory>();
+    public virtual ICollection<DPhraseBookItem> DPhraseBookItems { get; set; } = new List<DPhraseBookItem>();
 }

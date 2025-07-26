@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using PhrazorApp.Common;
 using PhrazorApp.Models;
-using PhrazorApp.ViewModels;
+using PhrazorApp.Models.ViewModels;
 using System.ComponentModel.DataAnnotations;
 
-namespace PhrazorApp.ViewModels
+namespace PhrazorApp.Models.ViewModels
 {
 
     public class LargeCategoryModel

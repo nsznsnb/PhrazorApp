@@ -12,7 +12,7 @@ using PhrazorApp.Data;
 namespace PhrazorApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250719064556_IdentityInitial")]
+    [Migration("20250726154204_IdentityInitial")]
     partial class IdentityInitial
     {
         /// <inheritdoc />
@@ -177,6 +177,14 @@ namespace PhrazorApp.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -211,6 +219,10 @@ namespace PhrazorApp.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
