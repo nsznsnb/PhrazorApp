@@ -11,7 +11,7 @@ using PhrazorApp.Data;
 
 namespace PhrazorApp.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof(EngDbContext))]
     [Migration("20250726154204_IdentityInitial")]
     partial class IdentityInitial
     {
