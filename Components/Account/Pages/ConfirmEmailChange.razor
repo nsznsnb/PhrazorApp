@@ -1,19 +1,53 @@
 ﻿@page "/Account/ConfirmEmailChange"
+@layout AccountEmptyLayout
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
+@using PhrazorApp.Components.Layout
 @using PhrazorApp.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email change</PageTitle>
 
-<h1>Confirm email change</h1>
+<PageTitle>メールアドレス変更完了</PageTitle>
 
-<StatusMessage Message="@message" />
+
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudPaper Elevation="5" Class="pa-16">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <AppLogo />
+            </MudItem>
+            <MudItem>
+
+                @if (string.IsNullOrEmpty(message) || message.StartsWith(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE))
+                {
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                        <MudIcon Icon="@Icons.Material.TwoTone.Email" Color="Color.Secondary" />
+                        <MudText Typo="Typo.h5">メールアドレス変更完了</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body1" Class="mt-4" GutterBottom="true">メールアドレス変更が完了しました。</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-0" GutterBottom="true">ログインを行い、サービスをご利用ください。</MudText>
+
+                } 
+                else
+                {
+                    <StatusMessage Message="@message" />
+                    
+                }
+
+                <MudDivider Class="mt-4" />
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Class="mt-4">
+                    <MudLink Href="/Account/Login" Typo="Typo.body2" Color="Color.Primary"><b>ログイン画面へ</b></MudLink>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string? message;
@@ -35,13 +69,13 @@
         if (UserId is null || Email is null || Code is null)
         {
             RedirectManager.RedirectToWithStatus(
-                "Account/Login", "Error: Invalid email change confirmation link.", HttpContext);
+                "Account/Login", "無効なメール変更リンクです。", HttpContext);
         }
 
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
-            message = "Unable to find user with Id '{userId}'";
+            message = string.Format(ComMessage.MSG_E_NOT_FOUND, $"ID:{UserId} に紐づくユーザー");
             return;
         }
 
@@ -49,20 +83,20 @@
         var result = await UserManager.ChangeEmailAsync(user, Email, code);
         if (!result.Succeeded)
         {
-            message = "Error changing email.";
+            message = string.Format(ComMessage.MSG_E_ERROR_DETEIL, "メールアドレス変更中");
             return;
         }
 
         // In our UI email and user name are one and the same, so when we update the email
         // we need to update the user name.
-        var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
-        if (!setUserNameResult.Succeeded)
-        {
-            message = "Error changing user name.";
-            return;
-        }
+        // var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
+        // if (!setUserNameResult.Succeeded)
+        // {
+        //     message = "Error changing user name.";
+        //     return;
+        // }
 
         await SignInManager.RefreshSignInAsync(user);
-        message = "Thank you for confirming your email change.";
+        message = ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE  +  "メールアドレス変更が完了しました。";
     }
 }

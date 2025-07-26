@@ -6,12 +6,12 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
-    <MudAppBar Elevation="1" >
+    <MudAppBar Elevation="1">
         <MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.TwoTone.Menu" Color="Color.Inherit" Edge="Edge.Start" />
         <MudLink Href="/" Class="ml-3" Style="text-decoration: none; color: inherit;">
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
                 <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Secondary" />
-                <MudText Typo="Typo.h5" Style="@($"color:{AppTheme.MyCustomTheme.PaletteLight.AppbarText};")">@ComDefine.APP_NAME</MudText>
+                <MudText Typo="Typo.h5"  Style="@($"color:{AppTheme.MyCustomTheme.PaletteLight.AppbarText};")">@ComDefine.APP_NAME</MudText>
 
             </MudStack>
         </MudLink>

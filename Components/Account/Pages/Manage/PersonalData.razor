@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/PersonalData"
+﻿@* @page "/Account/Manage/PersonalData" *@
 
 @inject IdentityUserAccessor UserAccessor
 
@@ -20,9 +20,9 @@
         </MudAlert>
     </MudItem>
     <MudItem md="12">
-        <form action="Account/Manage/DownloadPersonalData" method="post">
+        <form id="@ComDefine.ID_FORM" action="Account/Manage/DownloadPersonalData" method="post">
             <AntiforgeryToken />
-            <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Download</MudStaticButton>
+            <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Download</MudStaticButton>
         </form>
     </MudItem>
     <MudItem md="12">

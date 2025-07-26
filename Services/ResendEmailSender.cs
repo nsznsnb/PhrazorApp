@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using PhrazorApp.Common;
 using PhrazorApp.Data;
@@ -21,24 +22,35 @@ namespace PhrazorApp.Services
             _resend = resend;
         }
 
+
         /// <summary>
-        /// アカウント本登録リンク付きメールを送信します
+        /// 本登録リンク付きメールを送信します
         /// </summary>
         public async Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
         {
+
+            var type = GetLinkTypeFromUrl(confirmationLink);
+
+            string confirmContent = "アカウント";
+            if(type == ConfirmationLinkType.Email.ToString())
+            {
+                confirmContent = "メールアドレス";
+            }
+
+
             var message = new EmailMessage();
             message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
             message.To.Add(email);
-            message.Subject = $"【{ComDefine.APP_NAME}】アカウント本登録のご案内（メールアドレス確認）";
+            message.Subject = $"【{ComDefine.APP_NAME}】{confirmContent}本登録のご案内";
 
             var html = $"""
-<h2 style="color: #333333;">【{ComDefine.APP_NAME}】アカウント本登録のご案内</h2>
+<h2 style="color: #333333;">【{ComDefine.APP_NAME}】{confirmContent}本登録のご案内</h2>
 
 <p>{user.UserName} 様</p>
 
-<p>{ComDefine.APP_NAME}へのご登録ありがとうございます。</p>
+<p>{ComDefine.APP_NAME}へのご利用ありがとうございます。</p>
 
-<p>現在、アカウントは<strong>仮登録</strong>の状態です。</p>
+<p>現在、{confirmContent}は<strong>仮登録</strong>の状態です。</p>
 <p>以下のボタンをクリックして、<strong>本登録</strong>を完了してください。</p>
 
 <p style="margin: 24px 0;">
@@ -67,6 +79,8 @@ namespace PhrazorApp.Services
                 _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
             }
         }
+
+
 
         /// <summary>
         /// パスワードリセットコード付きメールを送信します
@@ -146,6 +160,27 @@ namespace PhrazorApp.Services
             catch (Exception ex)
             {
                 _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
+            }
+        }
+
+        /// <summary>
+        /// URLからLink種別を取得する
+        /// </summary>
+        /// <param name="url">URL</param>
+        /// <returns></returns>
+        /// <remarks>Link種別:どのタイプの確認メールを送るかを決める</remarks>
+        private static string GetLinkTypeFromUrl(string url)
+        {
+            try
+            {
+                url = WebUtility.HtmlDecode(url);
+                var uri = new Uri(url);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+                return query.TryGetValue("type", out var type) ? type.ToString() : ConfirmationLinkType.Account.ToString();
+            }
+            catch
+            {
+                return ConfirmationLinkType.Account.ToString();
             }
         }
 

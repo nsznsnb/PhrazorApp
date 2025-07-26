@@ -9,34 +9,58 @@
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Profile</PageTitle>
+<PageTitle>プロフィール</PageTitle>
 
-<MudText Typo="Typo.h6" GutterBottom="true">Profile</MudText>
+<MudText Typo="Typo.h6" GutterBottom="true">プロフィール</MudText>
 
 <StatusMessage />
 
-<EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+<EditForm id="@ComDefine.ID_FORM" Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
     <DataAnnotationsValidator />
 
-    <MudGrid>
-        <MudItem md="12">
-            <MudStaticTextField Value="@username" Label="Username" Disabled="true" Placeholder="Please choose your username." />
+    <MudGrid Spacing="2" Class="mt-2">
+        <MudItem xs="12">
+            <MudStaticTextField Value="@username" Label="ユーザーID" Disabled="true" 
+                Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Placeholder="Please choose your username." />
         </MudItem>
-        <MudItem md="12">
-            <MudStaticTextField For="@(() => Input.PhoneNumber)" @bind-Value="Input.PhoneNumber"
-                                Label="Phone Number" HelperText="Please enter your phone number."
-                                UserAttributes="@(new() { { "autocomplete", "tel-national" } } )" />
+        <MudItem xs="12">
+            <MudStaticTextField Value="@email" Disabled="true" 
+                                Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="メールアドレス" ShrinkLabel　Placeholder="name@example.com"
+                                UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
         </MudItem>
-        <MudItem md="12">
-            <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Save</MudStaticButton>
+        <MudItem xs="12">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <MudStaticTextField @bind-Value="@Input.LastName" For="() => Input.LastName"
+                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="姓" ShrinkLabel　
+                                        HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "姓")"
+                                        UserAttributes="@(new() { { "autocomplete", "name" } })" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudStaticTextField @bind-Value="@Input.FirstName" For="() => Input.FirstName"
+                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="名" ShrinkLabel　
+                                        HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "名")"
+                                        UserAttributes="@(new() { { "autocomplete", "name" } })" />
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        
+
+        <MudItem xs="12">
+            <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">保存</MudStaticButton>
         </MudItem>
     </MudGrid>
 </EditForm>
 
 @code {
+
+
     private ApplicationUser user = default!;
     private string? username;
-    private string? phoneNumber;
+
+    private string? firstName;
+    private string? lastName;
+    private string? email;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -48,30 +72,40 @@
     {
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         username = await UserManager.GetUserNameAsync(user);
-        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+        firstName = user.FirstName;
+        lastName = user.LastName;
+        email = user.Email;
+        Input.FirstName ??= user.FirstName;
+        Input.LastName ??= user.LastName;
 
-        Input.PhoneNumber ??= phoneNumber;
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        user.FirstName = Input.FirstName;
+        user.LastName = Input.LastName;
+
+        // ユーザー情報の更新
+        var updateResult = await UserManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
-            {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
-            }
+            // エラー処理（例: ログ記録やModelStateへの追加）
+            RedirectManager.RedirectToCurrentPageWithStatus(string.Format(ComMessage.MSG_E_FAILURE_DETAIL, "プロフィールの保存"), HttpContext);
+
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE + "プロフィールを保存しました。", HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Phone]
-        [Display(Name = "Phone number")]
-        public string? PhoneNumber { get; set; }
+        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [Display(Name = "名")]
+        public string? FirstName { get; set; }
+        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [Display(Name = "姓")]
+        public string? LastName { get; set; }
+
     }
 }

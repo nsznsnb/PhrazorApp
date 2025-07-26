@@ -4,15 +4,30 @@
 @inject SignInManager<ApplicationUser> SignInManager
 
 <MudNavMenu>
-    <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Person">Profile</MudNavLink>
-    <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.TwoTone.Email">Email</MudNavLink>
-    <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.TwoTone.Lock">Password</MudNavLink>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home" IconColor="Color.Secondary">Home</MudNavLink>
+    <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Person" IconColor="Color.Secondary">プロフィール</MudNavLink>
+    <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.TwoTone.Email" IconColor="Color.Secondary">メールアドレス変更</MudNavLink>
+    <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.TwoTone.Lock" IconColor="Color.Secondary">パスワード変更</MudNavLink>
     @if (hasExternalLogins)
     {
-        <MudNavLink Href="Account/Manage/ExternalLogins" Icon="@Icons.Material.TwoTone.PhoneLocked">External logins</MudNavLink>
+        <MudNavLink Href="Account/Manage/ExternalLogins" Icon="@Icons.Material.TwoTone.PhoneLocked" IconColor="Color.Secondary">External logins</MudNavLink>
     }
-    <MudNavLink Href="Account/Manage/TwoFactorAuthentication" Icon="@Icons.Material.TwoTone.LockClock">Two-factor authentication</MudNavLink>
-    <MudNavLink Href="Account/Manage/PersonalData" Icon="@Icons.Material.TwoTone.PersonRemove">Personal data</MudNavLink>
+    <MudNavLink Href="Account/Manage/DeletePersonalData" Icon="@Icons.Material.TwoTone.PersonRemove" IconColor="Color.Secondary">アカウント削除</MudNavLink>
+    <AuthorizeView>
+        <Authorized>
+            <form action="Account/Logout" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="" />
+                <button type="submit" class="mud-nav-link mud-ripple">
+                    <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Secondary" Class="mr-3"></MudIcon> ログアウト
+                </button>
+            </form>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Person" IconColor="Color.Secondary">アカウント作成</MudNavLink>
+            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Password" IconColor="Color.Secondary">ログイン</MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
 </MudNavMenu>
 
 @code {

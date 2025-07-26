@@ -16,21 +16,18 @@
     <MudPaper Elevation="5" Class="pa-16">
         <MudGrid Justify="Justify.Center">
             <MudItem xs="12">
-                <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
-                    <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">@ComDefine.APP_NAME</MudText>
-                </MudStack>
+                <AppLogo />
             </MudItem>
             <MudItem>
                 <StatusMessage Message="@errorMessage" />
                 @if (string.IsNullOrEmpty(errorMessage))
                 {
-                                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
-                    <MudIcon Icon="@Icons.Material.TwoTone.Email" Color="Color.Dark" />
-                    <MudText Typo="Typo.h5">アカウント登録完了</MudText>
-                </MudStack>
-                <MudText Typo="Typo.body1" Class="mt-4" GutterBottom="true">アカウント登録が完了しました。</MudText>
-                <MudText Typo="Typo.body1" Class="mt-0" GutterBottom="true">ログインを行い、サービスをご利用ください。</MudText>
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                        <MudIcon Icon="@Icons.Material.TwoTone.Email" Color="Color.Secondary" />
+                        <MudText Typo="Typo.h5">アカウント登録完了</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body1" Class="mt-4" GutterBottom="true">アカウント登録が完了しました。</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-0" GutterBottom="true">ログインを行い、サービスをご利用ください。</MudText>
 
                 }
 
@@ -68,7 +65,7 @@
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            errorMessage = string.Format(ComMessage.MSG_E_NOT_FOUND,  $"ID:{UserId} に紐づくユーザー");
+            errorMessage = string.Format(ComMessage.MSG_E_NOT_FOUND, $"ID:{UserId} に紐づくユーザー");
         }
         else
         {

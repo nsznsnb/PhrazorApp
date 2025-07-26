@@ -10,30 +10,32 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
 
-<PageTitle>Delete Personal Data</PageTitle>
+<PageTitle>アカウント削除</PageTitle>
 
-<MudText Typo="Typo.h6" GutterBottom="true">Delete personal data</MudText>
+<MudText Typo="Typo.h6" GutterBottom="true">アカウント削除</MudText>
 
 <StatusMessage Message="@message" />
 
-<MudAlert Severity="Severity.Error" Variant="Variant.Text">
-    Deleting this data will permanently remove your account, and this cannot be recovered.
+<MudAlert Severity="Severity.Error" Variant="Variant.Text" Class="mt-2">
+    アカウントを削除します。
 </MudAlert>
 
-<EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+<EditForm id="@ComDefine.ID_FORM" Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
     <DataAnnotationsValidator />
 
-    <MudGrid>
+    <MudGrid Spacing="2" Class="mt-2">
         @if (requirePassword)
         {
-            <MudItem md="12">
-                <MudStaticTextField For="@(() => Input.Password)" @bind-Value="Input.Password" InputType="InputType.Password"
-                                    Label="Password" Placeholder="password" HelperText="Please enter your new password."
-                                    UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } } )" />
+            <MudItem xs="12">
+                <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
+                                    Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
+                                    AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
+                                    HelperText="@string.Format(ComMessage.MSG_I_REQUIRED_HELPER_TEXT_DETAIL, "アカウントを削除するにはパスワード")"
+                                    UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })" />
             </MudItem>
         }
-        <MudItem md="12">
-            <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Delete data and close my account</MudStaticButton>
+        <MudItem xs="12">
+            <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">アカウント削除</MudStaticButton>
         </MudItem>
     </MudGrid>
 </EditForm>
@@ -60,7 +62,7 @@
     {
         if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
         {
-            message = "Error: Incorrect password.";
+            message = "パスワードが違います。";
             return;
         }
 
@@ -73,7 +75,7 @@
         await SignInManager.SignOutAsync();
 
         var userId = await UserManager.GetUserIdAsync(user);
-        Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
+        Logger.LogInformation("User ID '{UserId}' deleted themselves.", userId);
 
         RedirectManager.RedirectToCurrentPage();
     }

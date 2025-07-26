@@ -9,8 +9,8 @@
 
 <MudContainer>
     <MudStack Spacing="2">
-        <MudStack Row Spacing="0">
-            <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Dark" Title="Favorite" Style="transform: translateY(2px)" />
+        <MudStack Row Spacing="1">
+            <MudIcon Icon="@Icons.Custom.Uncategorized.ChessQueen" Color="Color.Secondary" Title="Favorite" Style="transform: translateY(2px)" />
             <h2>@string.Format(ComDefine.LABEL_LIST_PAGE_TITLE, "フレーズカテゴリ")</h2>
         </MudStack>
         <MudCard>
@@ -20,7 +20,7 @@
                 </MudStack>
             </MudCardContent>
         </MudCard>
-        <MudCard>
+        <MudCard Elevation="3">
             <MudCardHeader>
                 <CardHeaderContent>
                     <MudStack Row="true" Class="align-center">

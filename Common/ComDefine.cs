@@ -26,6 +26,7 @@ namespace PhrazorApp.Common
         public const string LABEL_BUTTON_CREATE = "新規作成";
         public const string LABEL_BUTTON_REGISTER = "登録";
         public const string LABEL_BUTTON_DELETE = "削除";
+        public const string LABEL_BUTTON_CHANGE = "変更";
         public const string LABEL_BUTTON_CLEAR = "クリア";
         public const string LABEL_BUTTON_CANCEL = "キャンセル";
         public const string LABEL_ROW_ADD = "行追加";
@@ -46,5 +47,7 @@ namespace PhrazorApp.Common
         public const string ID_BUTTON_SUBMIT = "btnSubmit";
         public const string ID_FORM = "myForm";
 
+        // アカウント関連画面：Info情報プレフィックス
+        public const string PREFIX_ACCOUNT_INFO_MESSAGE = "info:";
     }
 }

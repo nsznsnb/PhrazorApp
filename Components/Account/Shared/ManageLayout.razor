@@ -1,14 +1,83 @@
 ﻿@inherits LayoutComponentBase
-@layout PhrazorApp.Components.Layout.MainLayout
+<MudThemeProvider Theme="AppTheme.MyCustomTheme" />
+<MudLayout>
+    <MudAppBar Elevation="1" >
+        <MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.TwoTone.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+        <MudLink Href="/" Class="ml-3" Style="text-decoration: none; color: inherit;">
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Secondary" />
+                <MudText Typo="Typo.h5" Style="@($"color:{AppTheme.MyCustomTheme.PaletteLight.AppbarText};")">@ComDefine.APP_NAME</MudText>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Manage your account</MudText>
-
-<MudGrid>
-    <MudItem md="5">
-        <MudText Typo="Typo.h6" GutterBottom="true">Change your account settings</MudText>
+            </MudStack>
+        </MudLink>
+        <MudSpacer />
+    </MudAppBar>
+    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Class="full-height-drawer" >
         <ManageNavMenu />
-    </MudItem>
-    <MudItem md="7">
-        @Body
-    </MudItem>
-</MudGrid>
+    </MudDrawer>
+    <MudMainContent Class="px-4 pt-2" Style="margin-top: var(--mud-appbar-height);">
+        <MudContainer MaxWidth="MaxWidth.Small">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+
+</MudLayout>
+
+
+
+<div id="blazor-error-ui" data-nosnippet>
+    未処理例外が発生しました。アプリケーションをリロードしてください。
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+<script>
+    let timeoutId;
+
+
+    function showPassword(inputElement, button) {
+        if (inputElement.type === 'password') {
+            inputElement.type = 'text';
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(function () {
+                inputElement.type = 'password';
+            }, 5000);
+        } else {
+            inputElement.type = 'password';
+            clearTimeout(timeoutId);
+        }
+    }
+
+
+    let isSubmitting = false;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("myForm");
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return;
+            }
+
+            isSubmitting = true;
+
+            const btn = document.getElementById("btnSubmit");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "送信中...";
+            }
+        });
+    });
+
+
+</script>
+
+
+
+@code {
+    private bool _drawerOpen = true;
+
+
+}

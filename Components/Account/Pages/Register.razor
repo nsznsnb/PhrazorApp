@@ -12,7 +12,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
-@inject ResendEmailSender EmailSender
+@inject IEmailSender<ApplicationUser> EmailSender
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -23,22 +23,19 @@
     <MudPaper Elevation="5" Class="pa-16">
         <MudGrid Justify="Justify.Center">
             <MudItem xs="12">
-                <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
-                    <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700;">@ComDefine.APP_NAME</MudText>
-                </MudStack>
+                <AppLogo />
             </MudItem>
             <MudItem>
-                <StatusMessage Message="@Message" IdentityErrors="identityErrors" />
                 <EditForm id="myForm" Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
                     <DataAnnotationsValidator />
 
                     <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
                         <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
-                            <MudIcon Icon="@Icons.Material.TwoTone.Lock" Color="Color.Dark" />
+                            <MudIcon Icon="@Icons.Material.TwoTone.Lock" Color="Color.Secondary" />
                             <MudText Typo="Typo.h5">アカウント作成</MudText>
                         </MudStack>
                     </MudStack>
+                    <StatusMessage Message="@Message" IdentityErrors="identityErrors" />
 
 
 
@@ -65,12 +62,12 @@
 
 
                     <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
-                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
+                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
                                         AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
                                         UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } })" />
 
                     <MudStaticTextField @bind-Value="@Input.ConfirmPassword" For="() => Input.ConfirmPassword" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="確認用パスワード"
-                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.Visibility" AdornmentToggledIcon="@Icons.Material.Outlined.VisibilityOff"
+                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
                                         AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel
                                         UserAttributes="@(new() { { "autocomplete", "new-password" }, { "aria-required", "true" } })" />
 
@@ -197,7 +194,7 @@
         [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
         [DataType(DataType.Password)]
         [Display(Name = "確認用パスワード")]
-        [Compare("Password", ErrorMessage = "パスワードと確認用パスワードが一致しません。")]
+        [Compare(nameof(Password), ErrorMessage = ComMessage.MSG_E_MISMATCH_PASSWORD)]
         public string ConfirmPassword { get; set; } = "";
     }
 }

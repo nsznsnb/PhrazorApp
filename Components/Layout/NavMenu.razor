@@ -3,36 +3,35 @@
 @inject NavigationManager NavigationManager
 
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home">Home</MudNavLink>
-    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Add">Counter</MudNavLink>
-    
-    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List">Weather</MudNavLink>
-    <MudNavLink Href="phrases" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List">フレーズ一覧</MudNavLink>
-    <MudNavLink Href="categories" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List">フレーズカテゴリ一覧</MudNavLink>
-    <MudNavLink Href="imagegen" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List">画像生成設定</MudNavLink>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home" IconColor="Color.Secondary">Home</MudNavLink>
+    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Add" IconColor="Color.Secondary">Counter</MudNavLink>  
+    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List" IconColor="Color.Secondary">Weather</MudNavLink>
+    <MudNavLink Href="phrases" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List" IconColor="Color.Secondary">フレーズ一覧</MudNavLink>
+    <MudNavLink Href="categories" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List" IconColor="Color.Secondary">フレーズカテゴリ一覧</MudNavLink>
+    <MudNavLink Href="imagegen" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.List" IconColor="Color.Secondary">画像生成設定</MudNavLink>
 
 
-    <MudNavLink Href="auth" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Lock">Auth Required</MudNavLink>
     <AuthorizeView>
         <Authorized>
-            <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Person">@context.User.Identity?.Name</MudNavLink>
             <form action="Account/Logout" method="post">
                 <AntiforgeryToken />
                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                 <button type="submit" class="mud-nav-link mud-ripple">
-                    <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Info" Class="mr-3"></MudIcon> Logout
+                    <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Secondary" Class="mr-3" ></MudIcon> ログアウト
                 </button>
             </form>
         </Authorized>
         <NotAuthorized>
-            <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Person">Register</MudNavLink>
-            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Password">Login</MudNavLink>
+            <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Person" IconColor="Color.Secondary">アカウント作成</MudNavLink>
+            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Password" IconColor="Color.Secondary">ログイン</MudNavLink>
         </NotAuthorized>
     </AuthorizeView>
 </MudNavMenu>
 
 
 @code {
+
+    bool _expanded = true;
     private string? currentUrl;
 
     protected override void OnInitialized()

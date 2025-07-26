@@ -13,6 +13,7 @@ namespace PhrazorApp.Common
             {
                 Primary = Colors.Indigo.Default,
                 Secondary = Colors.Cyan.Accent4,
+                Info = Colors.Blue.Default,
                 AppbarBackground = Colors.Indigo.Default,
                 Background = Colors.Gray.Lighten5,
             },

@@ -90,7 +90,7 @@ namespace PhrazorApp
                 o.ApiToken = resendApiToken;
             });
             builder.Services.AddScoped<IResend, ResendClient>();
-            builder.Services.AddScoped<ResendEmailSender>();
+            builder.Services.AddScoped<IEmailSender<ApplicationUser>, ResendEmailSender>();
 
             // BlobStoraseŠÖ˜A
             builder.Services.AddSingleton(x =>
