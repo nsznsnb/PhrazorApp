@@ -30,7 +30,7 @@
                         <MudTh style="min-width: 200px;">操作</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd>
+@*                         <MudTd>
                             <MudStack Spacing="1">
                                 <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
                                 <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
@@ -52,7 +52,7 @@
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/categories/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
                             </MudStack>
-                        </MudTd>
+                        </MudTd> *@
                     </RowTemplate>
                     <PagerContent>
                         <MudTablePager />
@@ -77,35 +77,35 @@
     private List<LargeCategoryModel> Elements = new();
 
 
-    protected override async Task OnInitializedAsync()
-    {
-        // 一覧取得
-        Elements = await CategoryService.GetCategoryViewModelListAsync();
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     // 一覧取得
+    //     Elements = await CategoryService.GetCategoryViewModelListAsync();
 
-    }
+    // }
 
-    private async Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
-    {
-        // 確認ダイアログ表示
-        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
-        var dialogResult = await dialog.Result;
+    // private async Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
+    // {
+    //     // 確認ダイアログ表示
+    //     var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
+    //     var dialogResult = await dialog.Result;
 
-        if (dialogResult!.Canceled)
-        {
-            return;
-        }
+    //     if (dialogResult!.Canceled)
+    //     {
+    //         return;
+    //     }
 
-        // カテゴリ削除
-        var result = await CategoryService.DeleteCategoryAsync(item.Id);
-        Snackbar.AddServiceResult(result);
-        if (!result.IsSuccess)
-        {
-            return;
-        }
+    //     // カテゴリ削除
+    //     var result = await CategoryService.DeleteCategoryAsync(item.Id);
+    //     Snackbar.AddServiceResult(result);
+    //     if (!result.IsSuccess)
+    //     {
+    //         return;
+    //     }
 
-        // 一覧取得
-        Elements = await CategoryService.GetCategoryViewModelListAsync();
-    }
+    //     // 一覧取得
+    //     Elements = await CategoryService.GetCategoryViewModelListAsync();
+    // }
 
 
 

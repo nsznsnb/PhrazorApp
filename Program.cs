@@ -7,6 +7,7 @@ using MudBlazor.Services;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
+using PhrazorApp.Data.Repositories;
 using PhrazorApp.Options;
 using PhrazorApp.Services;
 using Resend;
@@ -68,8 +69,12 @@ namespace PhrazorApp
                     builder.Configuration.GetConnectionString("EngDbContext"));
             });
 
+            // Repositoriesの登録
+            builder.Services.AddScoped<IPhraseRepository, PhraseRepository>();
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+
             // ユーザーシークレットを使用（開発時のみ）
-            builder.Configuration.AddUserSecrets<Program>();
+            //builder.Configuration.AddUserSecrets<Program>();
 
 
             // Http関連
@@ -107,6 +112,7 @@ namespace PhrazorApp
             // OpenAiClientとBlogClientをDIしているためDIの順序関係に注意
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<IPhraseService, PhraseService>();
 
 
             // オプションパターン

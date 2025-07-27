@@ -1,0 +1,126 @@
+﻿<MudPaper Width="300px" Style="max-height: 300px; overflow-y: auto; width: 100%;">
+    <MudList T="Guid"
+             @bind-SelectedValues="SelectedCategoryIds"
+             SelectionMode="SelectionMode.MultiSelection"
+             CheckBoxColor="Color.Primary"
+             ReadOnly="false"
+             Dense="true">
+
+        <MudListSubheader>カテゴリを選択してください:</MudListSubheader>
+
+        @foreach (var large in Categories)
+        {
+            @if (large.SubCategories == null || large.SubCategories.Count == 0)
+            {
+                <MudListItem Text="@large.Name" Value="@large.Id"/>
+            }
+            else
+            {
+                <MudListItem Text="@large.Name">
+                    <NestedList>
+
+                        @foreach (var small in large.SubCategories ?? new())
+                        {
+                            <MudListItem Value="@small.Id" Text="@small.Name" />
+                        }
+                    </NestedList>
+                </MudListItem>
+            }
+
+        }
+    </MudList>
+</MudPaper>
+
+
+@code {
+    [Parameter]
+    public List<LargeCategoryModel> Categories { get; set; } = new();
+
+    [Parameter]
+    public IReadOnlyCollection<Guid> SelectedCategoryIds { get; set; }
+
+    public EventCallback<List<Guid>> SelectedCategoryIdsChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Categories = new List<LargeCategoryModel>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "単語帳",
+                SubCategories = new List<SmallCategoryModel>
+                {
+                    new() { Id = Guid.NewGuid(), Name = "DUO3.0", SortOrder = 1 },
+                    new() { Id = Guid.NewGuid(), Name = "ターゲット1900", SortOrder = 2 }
+                }
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "文法",
+                SubCategories = new List<SmallCategoryModel>
+                {
+                    new() { Id = Guid.NewGuid(), Name = "時制", SortOrder = 1 },
+                    new() { Id = Guid.NewGuid(), Name = "5文型", SortOrder = 2 },
+                    new() { Id = Guid.NewGuid(), Name = "完了形", SortOrder = 3 }
+                }
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "旅行",
+                SubCategories = new List<SmallCategoryModel>()
+            },
+                        new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "旅行",
+                SubCategories = new List<SmallCategoryModel>()
+            },
+                        new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "旅行",
+                SubCategories = new List<SmallCategoryModel>()
+            },
+                        new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "旅行",
+                SubCategories = new List<SmallCategoryModel>()
+            },
+                        new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "旅行",
+                SubCategories = new List<SmallCategoryModel>()
+            },
+                        new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "旅行",
+                SubCategories = new List<SmallCategoryModel>()
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "学問",
+                SubCategories = new List<SmallCategoryModel>()
+            }
+        };
+    }
+
+    private string GetCategoryNameById(Guid id)
+    {
+        foreach (var large in Categories)
+        {
+            foreach (var small in large.SubCategories)
+            {
+                if (small.Id == id)
+                    return $"{large.Name} / {small.Name}";
+            }
+        }
+        return id.ToString();
+    }
+}

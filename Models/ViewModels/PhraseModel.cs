@@ -19,8 +19,12 @@ namespace PhrazorApp.Models.ViewModels
         [Display(Name = "Note")]
         public string Note { get; set; } = string.Empty;
 
-        public List<LargeCategoryModel> LargeCategories { get; set; }
+        // Drop用
+        public List<DropItemModel> AllCategoryItems { get; set; } = new();
+        public List<DropItemModel> SelectedItems { get; set; } = new();
 
 
     }
+
+
 }

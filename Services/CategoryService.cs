@@ -1,38 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
-using PhrazorApp.Common;
-using PhrazorApp.Data;
-using PhrazorApp.Extensions;
-using PhrazorApp.Models.Entities;
+﻿using PhrazorApp.Common;
+using PhrazorApp.Data.Repositories;
 using PhrazorApp.Models.ViewModels;
 
 namespace PhrazorApp.Services
 {
     public interface ICategoryService
     {
-        public Task<List<LargeCategoryModel>> GetCategoryViewModelListAsync();
-
-        public Task<LargeCategoryModel> GetCategoryViewModelAsync(Guid largeCategoryId);
-
-        public Task<IServiceResult> CreateCategoryAsync(LargeCategoryModel model);
-
-        public Task<IServiceResult> UpdateCategoryAsync(LargeCategoryModel model);
-
-        public Task<IServiceResult> DeleteCategoryAsync(Guid largeCategoryId);
+        Task<List<LargeCategoryModel>> GetCategoryViewModelListAsync();
+        Task<LargeCategoryModel> GetCategoryViewModelAsync(Guid largeCategoryId);
+        Task<IServiceResult> CreateCategoryAsync(LargeCategoryModel model);
+        Task<IServiceResult> UpdateCategoryAsync(LargeCategoryModel model);
+        Task<IServiceResult> DeleteCategoryAsync(Guid largeCategoryId);
     }
 
-
-    /// <summary>
-    /// カテゴリ情報サービス
-    /// </summary>
     public class CategoryService : ICategoryService
     {
-        private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
+        private readonly ICategoryRepository _categoryRepository;
         private readonly IUserService _userService;
         private readonly ILogger<CategoryService> _logger;
 
-        public CategoryService(IDbContextFactory<EngDbContext> dbContextFactory, IUserService userService, ILogger<CategoryService> logger)
+        public CategoryService(ICategoryRepository categoryRepository, IUserService userService, ILogger<CategoryService> logger)
         {
-            _dbContextFactory = dbContextFactory;
+            _categoryRepository = categoryRepository;
             _userService = userService;
             _logger = logger;
         }
@@ -40,185 +29,102 @@ namespace PhrazorApp.Services
         /// <summary>
         /// カテゴリ情報を取得します
         /// </summary>
-        /// <returns></returns>
+        /// <returns>カテゴリのリスト</returns>
         public async Task<List<LargeCategoryModel>> GetCategoryViewModelListAsync()
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
             var userId = _userService.GetUserId();
+            var categories = await _categoryRepository.GetAllCategoriesAsync(userId);
 
-            // カテゴリ一覧取得
-            var categories = await context.MLargeCategories
-                .Where(x => x.UserId == userId)
-                .Include(x => x.MSmallCategories)
-                .OrderBy(x => x.CreatedAt)
-                .ToListAsync();
-
-            return categories.Select(x => CategoryMapper.ToModel(x)).ToList();
+            // マッピング処理
+            return categories.Select(x => x.ToModel()).ToList();
         }
 
         /// <summary>
-        /// カテゴリ情報を取得します
+        /// 単一のカテゴリ情報を取得します
         /// </summary>
-        /// <returns></returns>
+        /// <param name="largeCategoryId">カテゴリID</param>
+        /// <returns>カテゴリ情報</returns>
         public async Task<LargeCategoryModel> GetCategoryViewModelAsync(Guid largeCategoryId)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
             var userId = _userService.GetUserId();
+            var category = await _categoryRepository.GetCategoryByIdAsync(largeCategoryId, userId);
 
-            // 対象カテゴリ取得
-            var largeCategory = await context.MLargeCategories
-                .Include(x => x.MSmallCategories)
-                .FirstOrDefaultAsync(x => x.LargeId == largeCategoryId && (x.UserId == userId));
-
-            if (largeCategory == null) return new();
-
-            var largeModel = CategoryMapper.ToModel(largeCategory);
-
-
-            return largeModel;
+            // マッピング処理
+            return category != null ? category.ToModel() : new LargeCategoryModel();
         }
 
-
         /// <summary>
-        /// カテゴリを新規作成します
+        /// 新しいカテゴリを作成します
         /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
+        /// <param name="model">カテゴリモデル</param>
+        /// <returns>操作結果</returns>
         public async Task<IServiceResult> CreateCategoryAsync(LargeCategoryModel model)
         {
             var userId = _userService.GetUserId();
             var sysDateTime = DateTime.Now;
 
-            // モデル => エンティティ
-            var largeCategoryEntity = CategoryMapper.ToEntity(model, userId, sysDateTime);
-
-            var smallCategoryEntities = CategoryMapper.ToSmallEntities(model, userId, sysDateTime);
-
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await using var transaction = await context.Database.BeginTransactionAsync();
+            // モデル → エンティティ
+            var largeCategoryEntity = model.ToEntity(userId, sysDateTime);
+            var smallCategoryEntities = model.ToSmallEntities(userId, sysDateTime);
 
             try
             {
-                // エンティティ追加
-                context.MLargeCategories.Add(largeCategoryEntity);
-                if (smallCategoryEntities != null)
-                {
-                    context.MSmallCategories.AddRange(smallCategoryEntities);
-                }
+                // トランザクション開始
+                await _categoryRepository.AddCategoriesWithTransactionAsync(largeCategoryEntity, smallCategoryEntities);
 
-                await context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, model.Name));
             }
             catch (Exception ex)
             {
-                var message = string.Format(ComMessage.MSG_E_ERROR_CREATE_DETAIL, model.Name);
-                _logger.LogErrorWithContext(ComLogEvents.CreateItem, ex, message);
-                return ServiceResult.Failure(message);
+                _logger.LogError(ex, "カテゴリ作成エラー");
+                return ServiceResult.Failure("カテゴリ作成に失敗しました");
             }
-
-            var successMessage = string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, model.Name);
-            return ServiceResult.Success(successMessage);
         }
 
         /// <summary>
-        /// カテゴリを更新します
+        /// カテゴリ情報を更新します
         /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
+        /// <param name="model">更新するカテゴリモデル</param>
+        /// <returns>操作結果</returns>
         public async Task<IServiceResult> UpdateCategoryAsync(LargeCategoryModel model)
         {
             var userId = _userService.GetUserId();
             var sysDateTime = DateTime.Now;
 
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await using var transaction = await context.Database.BeginTransactionAsync();
+            // モデル → エンティティ
+            var largeCategoryEntity = model.ToEntity(userId, sysDateTime);
 
             try
             {
-                // 対象カテゴリの取得
-                var existingCategory = await context.MLargeCategories
-                    .Include(x => x.MSmallCategories)
-                    .FirstOrDefaultAsync(c => c.LargeId == model.Id && (c.UserId == userId));
-
-                if (existingCategory == null)
-                {
-                    var message = string.Format(ComMessage.MSG_E_NOT_FOUND, model.Name);
-                    _logger.LogWarningWithContext(ComLogEvents.UpdateItem, message);
-                    return ServiceResult.Warning(message);
-                }
-
-                // カテゴリ情報の更新
-                existingCategory.LargeCategoryName = model.Name;
-                existingCategory.UpdatedAt = sysDateTime;
-
-                // 既存のサブカテゴリを削除
-                context.MSmallCategories.RemoveRange(existingCategory.MSmallCategories);
-
-                // 新しいサブカテゴリを追加
-                var newSubCategories = CategoryMapper.ToSmallEntities(model, userId, sysDateTime);
-                if (newSubCategories != null)
-                {
-                    context.MSmallCategories.AddRange(newSubCategories);
-                }
-
-                await context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                // 更新
+                await _categoryRepository.UpdateCategoryAsync(largeCategoryEntity);
 
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, model.Name));
             }
             catch (Exception ex)
             {
-                var message = string.Format(ComMessage.MSG_E_ERROR_UPDATE_DETAIL, model.Name);
-                _logger.LogErrorWithContext(ComLogEvents.UpdateItem, ex, message);
-                return ServiceResult.Failure(message);
+                _logger.LogError(ex, "カテゴリ更新エラー");
+                return ServiceResult.Failure("カテゴリ更新に失敗しました");
             }
         }
 
         /// <summary>
         /// カテゴリを削除します
         /// </summary>
-        /// <param name="largeCategoryId"></param>
-        /// <returns></returns>
+        /// <param name="largeCategoryId">削除するカテゴリID</param>
+        /// <returns>操作結果</returns>
         public async Task<IServiceResult> DeleteCategoryAsync(Guid largeCategoryId)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await using var transaction = await context.Database.BeginTransactionAsync();
-
-            // 大分類名
-            var largeCategoryName = string.Empty;
             try
             {
-                // 大分類取得
-                var largeCategory = await context.MLargeCategories.FirstOrDefaultAsync(x => x.LargeId == largeCategoryId);
+                await _categoryRepository.DeleteCategoryAsync(largeCategoryId);
 
-                if (largeCategory == null)
-                {
-                    var message = string.Format(ComMessage.MSG_E_NOT_FOUND, largeCategoryId);
-                    _logger.LogWarningWithContext(ComLogEvents.DeleteItem, message);
-                    return ServiceResult.Failure(message);
-                }
-
-                largeCategoryName = largeCategory.LargeCategoryName;
-                // 小分類取得
-                var smallCategories = await context.MSmallCategories
-                    .Where(x => x.LargeId == largeCategoryId)
-                    .ToListAsync();
-
-                // 削除
-                context.MSmallCategories.RemoveRange(smallCategories);
-                context.MLargeCategories.Remove(largeCategory);
-
-                await context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, largeCategoryName));
-
+                return ServiceResult.Success("カテゴリ削除成功");
             }
             catch (Exception ex)
             {
-                var message = string.Format(ComMessage.MSG_E_ERROR_DELETE_DETAIL, largeCategoryName);
-                _logger.LogErrorWithContext(ComLogEvents.DeleteItem, ex, message);
-                return ServiceResult.Failure(message);
+                _logger.LogError(ex, "カテゴリ削除エラー");
+                return ServiceResult.Failure("カテゴリ削除に失敗しました");
             }
         }
     }

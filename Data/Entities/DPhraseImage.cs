@@ -1,32 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models.Entities;
+namespace PhrazorApp.Data.Entities;
 
 /// <summary>
-/// 格言マスタ
+/// フレーズ画像
 /// </summary>
-public partial class MProverb
+public partial class DPhraseImage
 {
     /// <summary>
-    /// 格言ID
+    /// フレーズ画像ID
     /// </summary>
-    public Guid ProverbId { get; set; }
+    public Guid PhraseImageId { get; set; }
 
     /// <summary>
-    /// 格言
+    /// URL
     /// </summary>
-    public string ProverbText { get; set; } = null!;
+    public string Url { get; set; } = null!;
 
     /// <summary>
-    /// 意味
+    /// アップロード日時
     /// </summary>
-    public string? Meaning { get; set; }
+    public DateTime? UploadAt { get; set; }
 
     /// <summary>
-    /// 著者
+    /// フレーズID
     /// </summary>
-    public string? Author { get; set; }
+    public Guid PhraseId { get; set; }
 
     /// <summary>
     /// 作成日時
@@ -37,4 +37,6 @@ public partial class MProverb
     /// 更新日時
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
+
+    public virtual DPhrase Phrase { get; set; } = null!;
 }

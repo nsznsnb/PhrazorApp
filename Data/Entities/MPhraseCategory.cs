@@ -1,32 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models.Entities;
+namespace PhrazorApp.Data.Entities;
 
 /// <summary>
-/// フレーズ画像
+/// フレーズ分類
 /// </summary>
-public partial class DPhraseImage
+public partial class MPhraseCategory
 {
-    /// <summary>
-    /// フレーズ画像ID
-    /// </summary>
-    public int PhraseImageId { get; set; }
-
-    /// <summary>
-    /// URL
-    /// </summary>
-    public string Url { get; set; } = null!;
-
-    /// <summary>
-    /// アップロード日時
-    /// </summary>
-    public DateTime? UploadAt { get; set; }
-
     /// <summary>
     /// フレーズID
     /// </summary>
     public Guid PhraseId { get; set; }
+
+    /// <summary>
+    /// 小分類ID
+    /// </summary>
+    public Guid SmallId { get; set; }
+
+    /// <summary>
+    /// 大分類ID
+    /// </summary>
+    public Guid LargeId { get; set; }
 
     /// <summary>
     /// 作成日時
@@ -37,6 +32,8 @@ public partial class DPhraseImage
     /// 更新日時
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
+
+    public virtual MSmallCategory MSmallCategory { get; set; } = null!;
 
     public virtual DPhrase Phrase { get; set; } = null!;
 }

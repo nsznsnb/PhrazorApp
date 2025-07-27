@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using PhrazorApp.Models.Entities;
+using PhrazorApp.Data.Entities;
 
 namespace PhrazorApp.Data;
 
@@ -232,8 +232,9 @@ public partial class EngDbContext : DbContext
                 .HasComment("URL")
                 .HasColumnName("url");
 
-            entity.HasOne(d => d.Phrase).WithMany(p => p.DPhraseImages)
-                .HasForeignKey(d => d.PhraseId)
+            entity.HasOne(d => d.Phrase)
+                .WithOne(p => p.DPhraseImage)
+                .HasForeignKey<DPhrase>(d => d.PhraseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("D_PHRASE_IMAGES_FK1");
         });

@@ -1,4 +1,4 @@
-using PhrazorApp.Models.Entities;
+using PhrazorApp.Data.Entities;
 using PhrazorApp.Models.ViewModels;
 
 public static class CategoryMapper

@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models.Entities;
+namespace PhrazorApp.Data.Entities;
 
 /// <summary>
-/// 復習種別マスタ
+/// 日記タグ
 /// </summary>
-public partial class MReviewType
+public partial class MDiaryTag
 {
     /// <summary>
-    /// 復習種別ID
+    /// 日記タグID
     /// </summary>
-    public int ReviewTypeId { get; set; }
+    public int TagId { get; set; }
 
     /// <summary>
-    /// 復習種別名
+    /// タグ名
     /// </summary>
-    public string ReviewTypeName { get; set; } = null!;
+    public string? TagName { get; set; }
 
     /// <summary>
     /// 作成日時
@@ -28,5 +28,5 @@ public partial class MReviewType
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<DReviewLog> DReviewLogs { get; set; } = new List<DReviewLog>();
+    public virtual ICollection<DEnglishDiaryTag> DEnglishDiaryTags { get; set; } = new List<DEnglishDiaryTag>();
 }

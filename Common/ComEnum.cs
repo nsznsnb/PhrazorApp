@@ -26,3 +26,26 @@ public enum ConfirmationLinkType
     /// </summary>
     Email
 }
+
+/// <summary>
+/// ドロップゾーン領域種別
+/// </summary>
+public enum DropItemType
+{
+    [Display(Name = "未割り当て")]
+    UnAssigned,
+    [Display(Name = "ターゲット")]
+    Target
+}
+
+public enum PhraseCategoryType
+{
+    /// <summary>
+    /// 大分類
+    /// </summary>
+    Large,
+    /// <summary>
+    /// 小分類
+    /// </summary>
+    Small
+}

@@ -1,25 +1,26 @@
-﻿<MudDropContainer T="DropItemModel"
-                   Items="Items"
-                   ItemsSelector="@( (item, zone) => item.DropTarget == zone )"
-                   ItemDropped="HandleItemDropped"
-                   Class="d-flex flex-grow-1">
+﻿
+<MudDropContainer T="DropItemModel"
+                  Items="Items"
+                  ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone) )"
+                  ItemDropped="HandleItemDropped"
+                  Class="d-flex flex-grow-1">
 
     <ChildContent>
         <MudGrid Spacing="1">
             <MudItem xs="12">
-                <MudListSubheader Class="mt-2 pb-2">@UnassignedLabel</MudListSubheader>
+                <MudListSubheader>@UnassignedLabel</MudListSubheader>
                 <MudDropZone T="DropItemModel"
-                             Identifier="@UnassignedZone"
-                             Class="rounded mud-background-gray pa-3 ma-0 d-flex flex-row flex-wrap"
-                             Style="overflow-y:auto;min-height:50px;max-height:130px;" />
+                             Identifier="@DropItemType.UnAssigned.ToString()"
+                             Class="rounded mud-background-gray pa-3"
+                             Style="@GetZoneStyle(DropItemType.UnAssigned)" />
             </MudItem>
 
             <MudItem xs="12">
-                <MudListSubheader Class="mt-0 pb-2">@TargetLabel</MudListSubheader>
+                <MudListSubheader>@TargetLabel</MudListSubheader>
                 <MudDropZone T="DropItemModel"
-                             Identifier="@TargetZone"
-                             Class="rounded mud-background-gray pa-3 ma-0 d-flex flex-row flex-wrap"
-                             Style="overflow-y:auto;min-height:50px;max-height:130px;" />
+                             Identifier="@DropItemType.Target.ToString()"
+                             Class="rounded mud-background-gray pa-3"
+                             Style="@GetZoneStyle(DropItemType.Target)" />
             </MudItem>
         </MudGrid>
     </ChildContent>
@@ -37,17 +38,22 @@
 </MudDropContainer>
 
 @code {
+
+    /// <summary>全アイテム（DropTargetを含む）</summary>
     [Parameter]
     public List<DropItemModel> Items { get; set; } = new();
 
+    /// <summary>選択中アイテム（TargetZoneにドロップされたもの）
+    [Parameter]
+    public List<DropItemModel> SelectedItems { get; set; } = new();
+
+    /// <summary>選択中アイテムが変更されたとき親に通知</summary>
+    [Parameter]
+    public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
+
+    /// <summary>最大選択数（TargetZone）</summary>
     [Parameter]
     public int MaxSelection { get; set; } = 3;
-
-    [Parameter]
-    public string UnassignedZone { get; set; } = "Unassigned";
-
-    [Parameter]
-    public string TargetZone { get; set; } = "Target";
 
     [Parameter]
     public string UnassignedLabel { get; set; } = "未分類";
@@ -56,56 +62,63 @@
     public string TargetLabel { get; set; } = "選択中";
 
     [Parameter]
-    public EventCallback<MudItemDropInfo<DropItemModel>> OnItemDropped { get; set; }
-
-    [Parameter]
     public RenderFragment<DropItemModel>? ItemTemplate { get; set; }
 
     [Parameter]
-    public string? Width { get; set; } = "100%"; // 例: "400px"、"80%"など
+    public string? Width { get; set; } = "100%";
 
     [Parameter]
-    public string? Height { get; set; } = null;  // 例: "150px"。nullなら既存のmax-heightなどを使う
-
-    private string ContainerStyle => $"width:{Width};";
-
-    private string GetZoneStyle(string zone)
-    {
-        var baseStyle = "min-width:300px; ";
-
-        if (zone == UnassignedZone)
-        {
-            // 高さはパラメータ指定があれば優先、なければmax-height:130pxを維持
-            var heightValue = Height ?? "130px";
-            return $"{baseStyle} max-height:{heightValue};";
-        }
-        else if (zone == TargetZone)
-        {
-            var heightValue = Height ?? "130px";
-            return $"min-width:300px; min-height:{heightValue}; max-height:{heightValue}; overflow-y:auto;";
-        }
-        return baseStyle;
-    }
+    public string? Height { get; set; }
 
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
+    private string ContainerStyle => $"width:{Width};";
+
+    private string GetZoneStyle(DropItemType zone)
+    {
+        var baseStyle = "min-width:300px;";
+        var heightValue = Height ?? "130px";
+
+        return zone == DropItemType.Target
+            ? $"{baseStyle} min-height:{heightValue}; max-height:{heightValue}; overflow-y:auto;"
+            : $"{baseStyle} max-height:{heightValue};";
+    }
+
+    /// <summary>ドロップ操作時の処理</summary>
     private async Task HandleItemDropped(MudItemDropInfo<DropItemModel> dropInfo)
     {
-        var count = Items.Count(x => x.DropTarget == TargetZone);
+        var targetZone = DropItemType.Target;
+        var unassignedZone = DropItemType.UnAssigned;
 
-        if (dropInfo.DropzoneIdentifier == TargetZone && count >= MaxSelection)
+        var currentZone = ParseDropItemType(dropInfo.DropzoneIdentifier);
+
+        var count = Items.Count(x => x.DropTarget == targetZone);
+
+        if (currentZone == targetZone && count >= MaxSelection)
         {
-            dropInfo.Item!.DropTarget = UnassignedZone;
+            dropInfo.Item!.DropTarget = unassignedZone;
             Snackbar.Add($"最大選択数 {MaxSelection} を超えています。", Severity.Warning);
             return;
         }
 
-        dropInfo.Item!.DropTarget = dropInfo.DropzoneIdentifier;
+        dropInfo.Item!.DropTarget = currentZone;
 
-        if (OnItemDropped.HasDelegate)
+        var selected = Items.Where(x => x.DropTarget == targetZone).ToList();
+        SelectedItems.Clear();
+        SelectedItems.AddRange(selected);
+
+        if (SelectedItemsChanged.HasDelegate)
         {
-            await OnItemDropped.InvokeAsync(dropInfo);
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
         }
+    }
+
+    private static DropItemType ParseDropItemType(string zone)
+    {
+        // 文字列から DropItemType に変換
+        return Enum.TryParse<DropItemType>(zone, out var result)
+            ? result
+            : DropItemType.UnAssigned;
     }
 }

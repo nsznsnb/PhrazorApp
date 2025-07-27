@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PhrazorApp.Models.Entities;
+namespace PhrazorApp.Data.Entities;
 
 /// <summary>
 /// 英語日記タグ

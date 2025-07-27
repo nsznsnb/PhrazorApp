@@ -6,192 +6,130 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ICategoryService CategoryService
+@inject IPhraseService PhraseService
 @inject LoadingService OverlayService
-
 
 <MudContainer>
     <MudForm Model="@model" @ref="@form" ValidationDelay="0">
 
         <MudStack Spacing="2">
-            <SectionTitle  Title="@(isEdit ? "フレーズ編集" : "フレーズ新規作成")" />
+            <SectionTitle Title="@(isEdit ? "フレーズ編集" : "フレーズ新規作成")" />
 
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     </MudStack>
                 </MudCardContent>
             </MudCard>
+
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
-
-
                 <MudCardContent Class="py-2">
                     <MudGrid Spacing="1">
                         <MudItem xs="12" md="12">
                             <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true"
-                                    Text="@model.Phrase" Lines="3" HelperText="英文を200時以内で記載してください(必須)" ShrinkLabel />
+                                          Lines="3" HelperText="英文を200時以内で記載してください(必須)" ShrinkLabel />
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Text="@model.Meaning" Lines="3"  Immediate="true"
-                                HelperText="フレーズの意味を200字以内で入力してください。" ShrinkLabel />
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" @bind-Value="@model.Meaning" Lines="3" Immediate="true"
+                                          HelperText="フレーズの意味を200字以内で入力してください。" ShrinkLabel />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <ItemDropSelector Items="@_categoryItems" MaxSelection="3" UnassignedLabel="カテゴリ">
-                                <ItemTemplate Context="item">
-                                    <MudPaper Elevation="1" Class="pa-0 ma-1">
-                                        <MudChip T="string"
-                                                 Color="@(item.Group == "Large" ? Color.Info : Color.Secondary)"
-                                                 Size="Size.Small"
-                                                 Text="@(item.Group == "Large" ? "大" : "小")">
-                                            @item.Name
-                                        </MudChip>
-                                    </MudPaper>
-                                </ItemTemplate>
-                            </ItemDropSelector>
+                            <ItemDropSelector Items="@model.AllCategoryItems" SelectedItems="@model.SelectedItems" />
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" Text="@model.Note" Lines="3" HelperText="解説や備考を記載する場合は" ShrinkLabel />
-                        </MudItem><MudFlexBreak />
-
+                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3" HelperText="解説や備考を記載する場合は" ShrinkLabel />
+                        </MudItem>
+                        <MudFlexBreak />
                     </MudGrid>
                 </MudCardContent>
-
             </MudCard>
+
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     </MudStack>
                 </MudCardContent>
             </MudCard>
         </MudStack>
     </MudForm>
-
 </MudContainer>
 
-
-
 @code {
-
     [Parameter]
     public Guid? Id { get; set; }
 
     MudForm form;
 
-
-    /// <summary>
-    /// 編集かどうか
-    /// </summary>
     private bool isEdit = false;
-    /// <summary>
-    /// 作成対象モデル
-    /// </summary>
     private PhraseModel model = new PhraseModel();
 
     protected override async Task OnInitializedAsync()
     {
-        isEdit = Id != null ? true : false;
+        isEdit = Id != null;
         await ClearAsync();
-
     }
-
 
     private async Task ClearAsync()
     {
         if (isEdit)
         {
-            // model = await CategoryService.GetCategoryViewModelAsync(Id.Value);
-            model = new() { Id = Guid.NewGuid() };
-
+            model = await PhraseService.GetPhraseViewModelAsync(Id.Value);
         }
         else
         {
-            model = new() { Id = Guid.NewGuid() };
+            model = new PhraseModel
+            {
+                Id = Guid.NewGuid(),
+                Phrase = string.Empty,
+                Meaning = string.Empty,
+                Note = string.Empty,
+                ImageUrl = string.Empty
+            };
+
+            // 新規作成時でも全カテゴリ情報をセット
+            var largeCategories = await CategoryService.GetCategoryViewModelListAsync(); 
+            // model.AllCategoryItems = largeCategories.Select(x => x.ToModel()).ToList();
         }
 
         if (form != null)
         {
-            // バリデーションエラークリア
             // form.ResetValidation();
         }
-
     }
 
-    private List<DropItemModel> _categoryItems = new()
-{
-    new() { Id = Guid.NewGuid(), Name = "Grammar", Group = "Large", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Vocabulary", Group = "Large", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Fruits", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-    new() { Id = Guid.NewGuid(), Name = "Animals", Group = "Small", DropTarget = "Unassigned" },
-
-
-};
-
-    private void OnCategoryDropped(MudItemDropInfo<DropItemModel> dropInfo)
+    private async Task SubmitAsync()
     {
-        dropInfo.Item.DropTarget = dropInfo.DropzoneIdentifier;
+        await form.Validate();
+        if (!form.IsValid) return;
+
+        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.RegisterConfirm,
+            string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Phrase));
+        var result = await dialog.Result;
+
+        if (result.Canceled) return;
+
+        var serviceResult = isEdit
+            ? await PhraseService.UpdatePhraseAsync(model)
+            : await PhraseService.CreatePhraseAsync(model);
+
+        Snackbar.AddServiceResult(serviceResult);
+
+        if (!serviceResult.IsSuccess) return;
+
+        NavigationManager.NavigateTo("/phrases");
     }
 
-
-
-
-    // /// <summary>
-    // /// 登録処理
-    // /// </summary>
-    // /// <returns></returns>
-    // private async Task Submit()
-    // {
-    //     await form.Validate();
-
-    //     if (!form.IsValid)
-    //     {
-    //         return;
-    //     }
-
-    //     // 確認ダイアログ表示
-    //     var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.RegisterConfirm, string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Name));
-    //     var dialogResult = await dialog.Result;
-
-    //     if (dialogResult!.Canceled)
-    //     {
-    //         return;
-    //     }
-
-    //     var result = isEdit ? await CategoryService.UpdateCategoryAsync(model) : await CategoryService.CreateCategoryAsync(model);
-    //     Snackbar.AddServiceResult(result);
-
-    //     if (!result.IsSuccess)
-    //     {
-    //         return;
-    //     }
-
-    //     NavigationManager.NavigateTo("/categories");
-    // }
-
+    private Task OnSelectedChanged(HashSet<Guid> updated)
+    {
+        return Task.CompletedTask;
+    }
 }
