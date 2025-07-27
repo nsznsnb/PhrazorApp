@@ -30,19 +30,19 @@ public partial class EngDbContext : DbContext
 
     public virtual DbSet<MDiaryTag> MDiaryTags { get; set; }
 
-    public virtual DbSet<MGrade> MGrades { get; set; }
+    public virtual DbSet<MGenre> MGenres { get; set; }
 
-    public virtual DbSet<MLargeCategory> MLargeCategories { get; set; }
+    public virtual DbSet<MGrade> MGrades { get; set; }
 
     public virtual DbSet<MOperationType> MOperationTypes { get; set; }
 
-    public virtual DbSet<MPhraseCategory> MPhraseCategories { get; set; }
+    public virtual DbSet<MPhraseGenre> MPhraseGenres { get; set; }
 
     public virtual DbSet<MProverb> MProverbs { get; set; }
 
     public virtual DbSet<MReviewType> MReviewTypes { get; set; }
 
-    public virtual DbSet<MSmallCategory> MSmallCategories { get; set; }
+    public virtual DbSet<MSubGenre> MSubGenres { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -233,10 +233,10 @@ public partial class EngDbContext : DbContext
                 .HasColumnName("url");
 
             entity.HasOne(d => d.Phrase)
-                .WithOne(p => p.DPhraseImage)
-                .HasForeignKey<DPhrase>(d => d.PhraseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("D_PHRASE_IMAGES_FK1");
+                  .WithOne(p => p.DPhraseImage)  // 1対(0または1)の関係に変更
+                  .HasForeignKey<DPhraseImage>(d => d.PhraseId)  // 外部キーを指定
+                  .OnDelete(DeleteBehavior.ClientSetNull)  // 削除時にDPhraseImageはnullに設定
+                  .HasConstraintName("D_PHRASE_IMAGES_FK1");
         });
 
         modelBuilder.Entity<DReviewLog>(entity =>
@@ -403,6 +403,40 @@ public partial class EngDbContext : DbContext
                 .HasColumnName("updated_at");
         });
 
+        modelBuilder.Entity<MGenre>(entity =>
+        {
+            entity.HasKey(e => e.GenreId).HasName("M_GENRES_PKC");
+
+            entity.ToTable("M_GENRES", tb => tb.HasComment("ジャンルマスタ"));
+
+            entity.HasIndex(e => e.GenreName, "M_GENRES_IX1").IsUnique();
+
+            entity.HasIndex(e => e.GenreId, "M_GENRES_PKI").IsUnique();
+
+            entity.Property(e => e.GenreId)
+                .ValueGeneratedNever()
+                .HasComment("ジャンルID")
+                .HasColumnName("genre_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("作成日時")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.GenreName)
+                .HasMaxLength(30)
+                .HasComment("ジャンル名")
+                .HasColumnName("genre_name");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("更新日時")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UserId)
+                .HasMaxLength(450)
+                .HasComment("ユーザーId")
+                .HasColumnName("user_id");
+        });
+
         modelBuilder.Entity<MGrade>(entity =>
         {
             entity.HasKey(e => e.GradeId).HasName("M_GRADES_PKC");
@@ -431,40 +465,6 @@ public partial class EngDbContext : DbContext
                 .HasComment("更新日時")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-        });
-
-        modelBuilder.Entity<MLargeCategory>(entity =>
-        {
-            entity.HasKey(e => e.LargeId).HasName("M_LARGE_CATEGORIES_PKC");
-
-            entity.ToTable("M_LARGE_CATEGORIES", tb => tb.HasComment("大分類マスタ"));
-
-            entity.HasIndex(e => e.LargeCategoryName, "M_LARGE_CATEGORIES_IX1").IsUnique();
-
-            entity.HasIndex(e => e.LargeId, "M_LARGE_CATEGORIES_PKI").IsUnique();
-
-            entity.Property(e => e.LargeId)
-                .ValueGeneratedNever()
-                .HasComment("大分類ID")
-                .HasColumnName("large_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("作成日時")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.LargeCategoryName)
-                .HasMaxLength(30)
-                .HasComment("大分類名")
-                .HasColumnName("large_category_name");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("更新日時")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UserId)
-                .HasMaxLength(450)
-                .HasComment("ユーザーId")
-                .HasColumnName("user_id");
         });
 
         modelBuilder.Entity<MOperationType>(entity =>
@@ -504,23 +504,23 @@ public partial class EngDbContext : DbContext
                 .HasColumnName("updated_at");
         });
 
-        modelBuilder.Entity<MPhraseCategory>(entity =>
+        modelBuilder.Entity<MPhraseGenre>(entity =>
         {
-            entity.HasKey(e => new { e.PhraseId, e.SmallId, e.LargeId }).HasName("M_PHRASE_CATEGORIES_PKC");
+            entity.HasKey(e => new { e.PhraseId, e.SubGenreId, e.GenreId }).HasName("M_PHRASE_GENRES_PKC");
 
-            entity.ToTable("M_PHRASE_CATEGORIES", tb => tb.HasComment("フレーズ分類"));
+            entity.ToTable("M_PHRASE_GENRES", tb => tb.HasComment("フレーズジャンル"));
 
-            entity.HasIndex(e => new { e.PhraseId, e.SmallId, e.LargeId }, "M_PHRASE_CATEGORIES_PKI").IsUnique();
+            entity.HasIndex(e => new { e.PhraseId, e.SubGenreId, e.GenreId }, "M_PHRASE_GENRES_PKI").IsUnique();
 
             entity.Property(e => e.PhraseId)
                 .HasComment("フレーズID")
                 .HasColumnName("phrase_id");
-            entity.Property(e => e.SmallId)
-                .HasComment("小分類ID")
-                .HasColumnName("small_id");
-            entity.Property(e => e.LargeId)
-                .HasComment("大分類ID")
-                .HasColumnName("large_id");
+            entity.Property(e => e.SubGenreId)
+                .HasComment("サブジャンルID")
+                .HasColumnName("sub_genre_id");
+            entity.Property(e => e.GenreId)
+                .HasComment("ジャンルID")
+                .HasColumnName("genre_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("作成日時")
@@ -532,15 +532,15 @@ public partial class EngDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
 
-            entity.HasOne(d => d.Phrase).WithMany(p => p.MPhraseCategories)
+            entity.HasOne(d => d.Phrase).WithMany(p => p.MPhraseGenres)
                 .HasForeignKey(d => d.PhraseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("M_PHRASE_CATEGORIES_FK1");
+                .HasConstraintName("M_PHRASE_GENRES_FK1");
 
-            entity.HasOne(d => d.MSmallCategory).WithMany(p => p.MPhraseCategories)
-                .HasForeignKey(d => new { d.LargeId, d.SmallId })
+            entity.HasOne(d => d.MSubGenre).WithMany(p => p.MPhraseGenres)
+                .HasForeignKey(d => new { d.GenreId, d.SubGenreId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("M_PHRASE_CATEGORIES_FK2");
+                .HasConstraintName("M_PHRASE_GENRES_FK2");
         });
 
         modelBuilder.Entity<MProverb>(entity =>
@@ -609,34 +609,34 @@ public partial class EngDbContext : DbContext
                 .HasColumnName("updated_at");
         });
 
-        modelBuilder.Entity<MSmallCategory>(entity =>
+        modelBuilder.Entity<MSubGenre>(entity =>
         {
-            entity.HasKey(e => new { e.LargeId, e.SmallId }).HasName("M_SMALL_CATEGORIES_PKC");
+            entity.HasKey(e => new { e.GenreId, e.SubGenreId }).HasName("M_SUB_GENRES_PKC");
 
-            entity.ToTable("M_SMALL_CATEGORIES", tb => tb.HasComment("小分類マスタ"));
+            entity.ToTable("M_SUB_GENRES", tb => tb.HasComment("サブジャンルマスタ"));
 
-            entity.HasIndex(e => e.SmallCategoryName, "M_SMALL_CATEGORIES_IX1").IsUnique();
+            entity.HasIndex(e => e.SubGenreName, "M_SUB_GENRES_IX1").IsUnique();
 
-            entity.HasIndex(e => new { e.LargeId, e.SmallId }, "M_SMALL_CATEGORIES_PKI").IsUnique();
+            entity.HasIndex(e => new { e.GenreId, e.SubGenreId }, "M_SUB_GENRES_PKI").IsUnique();
 
-            entity.Property(e => e.LargeId)
-                .HasComment("大分類ID")
-                .HasColumnName("large_id");
-            entity.Property(e => e.SmallId)
-                .HasComment("小分類ID")
-                .HasColumnName("small_id");
+            entity.Property(e => e.GenreId)
+                .HasComment("ジャンルID")
+                .HasColumnName("genre_id");
+            entity.Property(e => e.SubGenreId)
+                .HasComment("サブジャンルID")
+                .HasColumnName("sub_genre_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("作成日時")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-            entity.Property(e => e.SmallCategoryName)
-                .HasMaxLength(30)
-                .HasComment("小分類名")
-                .HasColumnName("small_category_name");
             entity.Property(e => e.SortOrder)
                 .HasComment("ソート順")
                 .HasColumnName("sort_order");
+            entity.Property(e => e.SubGenreName)
+                .HasMaxLength(30)
+                .HasComment("サブジャンル名")
+                .HasColumnName("sub_genre_name");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("更新日時")
@@ -647,10 +647,10 @@ public partial class EngDbContext : DbContext
                 .HasComment("ユーザーId")
                 .HasColumnName("user_id");
 
-            entity.HasOne(d => d.Large).WithMany(p => p.MSmallCategories)
-                .HasForeignKey(d => d.LargeId)
+            entity.HasOne(d => d.Genre).WithMany(p => p.MSubGenres)
+                .HasForeignKey(d => d.GenreId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("M_SMALL_CATEGORIES_FK1");
+                .HasConstraintName("M_SUB_GENRES_FK1");
         });
 
         OnModelCreatingPartial(modelBuilder);

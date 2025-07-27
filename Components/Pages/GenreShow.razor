@@ -1,31 +1,31 @@
-﻿@page "/categories"
+﻿@page "/genres"
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject ICategoryService CategoryService
+@inject IGenreService GenreService
 
 <MudContainer>
     <MudStack Spacing="2">
-        <SectionTitle HeadingLevel="2" Title="フレーズカテゴリ一覧" />
+        <SectionTitle HeadingLevel="2" Title="フレーズジャンル一覧" />
         <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/categories/create"))">新規追加</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
                 </MudStack>
             </MudCardContent>
         </MudCard>
         <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="フレーズカテゴリ一覧" />
+                    <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="フレーズジャンル一覧" />
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
                 <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" Dense="true">
                     <HeaderContent>
-                        <MudTh>カテゴリ</MudTh>
+                        <MudTh>ジャンル</MudTh>
                         <MudTh style="min-width: 200px;">操作</MudTh>
                     </HeaderContent>
                     <RowTemplate>
@@ -33,7 +33,7 @@
                             <MudStack Spacing="1">
                                 <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
                                 <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
-                                    @foreach (var sub in context.SubCategories)
+                                    @foreach (var sub in context.SubGenres)
                                     {
                                         <MudChip Color="Color.Default"
                                                  T="string"
@@ -48,7 +48,7 @@
                         </MudTd>
                         <MudTd Align="Right" style="min-width: 200px;">
                             <MudStack Row="true">
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/categories/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
                             </MudStack>
                         </MudTd>
@@ -68,19 +68,19 @@
 @code {
 
 
-    private LargeCategoryModel model = new LargeCategoryModel();
+    private GenreModel model = new GenreModel();
 
-    private List<LargeCategoryModel> Elements = new ();
+    private List<GenreModel> Elements = new();
 
 
     protected override async Task OnInitializedAsync()
     {
         // 一覧取得
-        Elements = await CategoryService.GetCategoryViewModelListAsync();
+        Elements = await GenreService.GetGenreViewModelListAsync();
 
     }
 
-    private async Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
+    private async Task OnDeleteButtonClickedAsync(GenreModel item)
     {
         // 確認ダイアログ表示
         var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
@@ -91,8 +91,8 @@
             return;
         }
 
-        // カテゴリ削除
-        var result = await CategoryService.DeleteCategoryAsync(item.Id);
+        // ジャンル削除
+        var result = await GenreService.DeleteGenreAsync(item.Id);
         Snackbar.AddServiceResult(result);
         if (!result.IsSuccess)
         {
@@ -100,7 +100,7 @@
         }
 
         // 一覧取得
-        Elements = await CategoryService.GetCategoryViewModelListAsync();
+        Elements = await GenreService.GetGenreViewModelListAsync();
     }
 
 

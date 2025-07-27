@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inject ICategoryService CategoryService
+@inject IGenreService GenreService
 @inject IPhraseService PhraseService
 @inject LoadingService OverlayService
 
@@ -40,7 +40,7 @@
                             <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <ItemDropSelector Items="@model.AllCategoryItems" SelectedItems="@model.SelectedItems" />
+                            <ItemDropSelector Items="@model.AllGenreItems" SelectedItems="@model.SelectedItems" />
                         </MudItem>
                         <MudItem xs="12" md="12">
                             <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3" HelperText="解説や備考を記載する場合は" ShrinkLabel />
@@ -95,9 +95,9 @@
                 ImageUrl = string.Empty
             };
 
-            // 新規作成時でも全カテゴリ情報をセット
-            var largeCategories = await CategoryService.GetCategoryViewModelListAsync(); 
-            // model.AllCategoryItems = largeCategories.Select(x => x.ToModel()).ToList();
+            // 新規作成時でも全ジャンル情報をセット
+            var genres = await GenreService.GetGenreViewModelListAsync(); 
+            // model.AllGenreItems = largeCategories.Select(x => x.ToModel()).ToList();
         }
 
         if (form != null)

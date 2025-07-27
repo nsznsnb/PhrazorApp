@@ -49,5 +49,5 @@ public partial class DPhrase
 
     public virtual ICollection<DTestResultDetail> DTestResultDetails { get; set; } = new List<DTestResultDetail>();
 
-    public virtual ICollection<MPhraseCategory> MPhraseCategories { get; set; } = new List<MPhraseCategory>();
+    public virtual ICollection<MPhraseGenre> MPhraseGenres { get; set; } = new List<MPhraseGenre>();
 }

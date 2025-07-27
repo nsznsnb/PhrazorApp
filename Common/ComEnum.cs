@@ -38,14 +38,14 @@ public enum DropItemType
     Target
 }
 
-public enum PhraseCategoryType
+public enum PhraseGenreType
 {
     /// <summary>
-    /// 大分類
+    /// ジャンル
     /// </summary>
-    Large,
+    Genre,
     /// <summary>
-    /// 小分類
+    /// サブジャンル
     /// </summary>
-    Small
+    SubGenre
 }

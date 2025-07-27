@@ -71,7 +71,7 @@ namespace PhrazorApp
 
             // Repositoriesの登録
             builder.Services.AddScoped<IPhraseRepository, PhraseRepository>();
-            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 
             // ユーザーシークレットを使用（開発時のみ）
             //builder.Configuration.AddUserSecrets<Program>();
@@ -111,7 +111,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<ScriptService>();
             // OpenAiClientとBlogClientをDIしているためDIの順序関係に注意
             builder.Services.AddScoped<IImageService, ImageService>();
-            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<IGenreService, GenreService>();
             builder.Services.AddScoped<IPhraseService, PhraseService>();
 
 

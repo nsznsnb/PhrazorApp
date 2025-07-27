@@ -1,32 +1,32 @@
-﻿@page "/categories/create"
-@page "/categories/edit/{Id:guid}"
+﻿@page "/genres/create"
+@page "/genres/edit/{Id:guid}"
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inject ICategoryService CategoryService
+@inject IGenreService GenreService
 @inject LoadingService OverlayService
 
 
 <MudContainer>
-    <MudForm Model="@model" @ref="@form" Validation="@(largeCategoryValidator.ValidateValue)" ValidationDelay="0">
+    <MudForm Model="@model" @ref="@form" Validation="@(genreValidator.ValidateValue)" ValidationDelay="0">
 
         <MudStack Spacing="2">
-            <SectionTitle Title="@(isEdit ? "フレーズカテゴリ編集" : "フレーズカテゴリ新規作成")" />
+            <SectionTitle Title="@(isEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardContent Class="py-2">
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await Submit())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/categories"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" 　OnClick="@(() => NavigationManager.NavigateTo("/genres"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     </MudStack>
                 </MudCardContent>
             </MudCard>
             <MudCard Elevation="ComDefine.DEFAULT_ELEVATION_CARD">
                 <MudCardHeader Class="py-2">
                     <CardHeaderContent>
-                        <SectionTitle HeadingLevel="3" Title="@(isEdit ? "フレーズカテゴリ編集" : "フレーズカテゴリ新規作成")" />
+                        <SectionTitle HeadingLevel="3" Title="@(isEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
                     </CardHeaderContent>
                 </MudCardHeader>
 
@@ -34,7 +34,7 @@
                     <MudGrid Spacing="1">
                         <MudItem xs="12" md="4">
                             <MudTextField @bind-Value="@model.Name"
-                                          Margin="Margin.Dense" Variant="Variant.Outlined" Label="カテゴリ名" For="() => model.Name" ShrinkLabel />
+                                          Margin="Margin.Dense" Variant="Variant.Outlined" Label="ジャンル名" For="() => model.Name" ShrinkLabel />
                         </MudItem>
                     </MudGrid>
                 </MudCardContent>
@@ -46,7 +46,7 @@
                     <CardHeaderContent>
                         <MudStack Row="true" Class="align-center">
                             <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
-                                          Title="サブカテゴリ一覧入力" />
+                                          Title="サブジャンル一覧入力" />
 
                             <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_ROW_ADD</MudButton>
                         </MudStack>
@@ -55,17 +55,17 @@
                 </MudCardHeader>
 
                 <MudCardContent Class="py-2">
-                    <MudTable Items="@model.SubCategories" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true">
+                    <MudTable Items="@model.SubGenres" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true">
                         <HeaderContent>
-                            <MudTh>サブカテゴリ名</MudTh>
+                            <MudTh>サブジャンル名</MudTh>
                             <MudTh>操作</MudTh>
                         </HeaderContent>
 
                         <RowTemplate>
                             <MudTd>
-                                <MudForm Model="@context" Validation=@(smallCategoryValidator.ValidateValue)>
+                                <MudForm Model="@context" Validation=@(subGenreValidator.ValidateValue)>
                                         <MudTextField @bind-Value="@context.Name"
-                                                      Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="サブカテゴリ名" For="() => model.Name" ShrinkLabel />
+                                                      Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="サブジャンル名" For="() => model.Name" ShrinkLabel />
                                 </MudForm>
                             </MudTd>
                             <MudTd>
@@ -97,8 +97,8 @@
     MudForm form;
 
 
-    LargeCategoryModelValidator largeCategoryValidator = new LargeCategoryModelValidator();
-    SmallCategoryModelValidator smallCategoryValidator = new SmallCategoryModelValidator();
+    GenreModelValidator genreValidator = new GenreModelValidator();
+    SubGenreModelValidator subGenreValidator = new SubGenreModelValidator();
 
 
     /// <summary>
@@ -108,7 +108,7 @@
     /// <summary>
     /// 作成対象モデル
     /// </summary>
-    private LargeCategoryModel model = new LargeCategoryModel();
+    private GenreModel model = new GenreModel();
 
     protected override async Task OnInitializedAsync()
     {
@@ -122,7 +122,7 @@
     {
         if (isEdit)
         {
-            model = await CategoryService.GetCategoryViewModelAsync(Id.Value);
+            model = await GenreService.GetGenreViewModelAsync(Id.Value);
         }
         else
         {
@@ -146,11 +146,11 @@
     {
 
 
-        int nextSortOrder = model.SubCategories.Count > 0
-            ? model.SubCategories.Max(x => x.SortOrder) + 1
+        int nextSortOrder = model.SubGenres.Count > 0
+            ? model.SubGenres.Max(x => x.SortOrder) + 1
             : 0;
 
-        model.SubCategories.Add(new SmallCategoryModel
+        model.SubGenres.Add(new SubGenreModel
         {
             Id = Guid.NewGuid(), // 新規作成
             Name = string.Empty,
@@ -163,9 +163,9 @@
     /// 行削除ボタン押下時の処理
     /// </summary>
     /// <param name="item">選択アイテム</param>
-    private void OnDeleteButtonClicked(SmallCategoryModel item)
+    private void OnDeleteButtonClicked(SubGenreModel item)
     {
-        model.SubCategories.Remove(item);
+        model.SubGenres.Remove(item);
         ReorderSortOrder();
     }
 
@@ -174,9 +174,9 @@
     /// </summary>
     private void ReorderSortOrder()
     {
-        for (int i = 0; i < model.SubCategories.Count; i++)
+        for (int i = 0; i < model.SubGenres.Count; i++)
         {
-            model.SubCategories[i].SortOrder = i;
+            model.SubGenres[i].SortOrder = i;
         }
     }
 
@@ -184,13 +184,13 @@
     /// 行の上移動
     /// </summary>
     /// <param name="item"></param>
-    private void MoveUp(SmallCategoryModel item)
+    private void MoveUp(SubGenreModel item)
     {
-        var index = model.SubCategories.IndexOf(item);
+        var index = model.SubGenres.IndexOf(item);
         if (index > 0)
         {
-            (model.SubCategories[index], model.SubCategories[index - 1]) = (model.SubCategories[index - 1], model.SubCategories[index]);
-            (model.SubCategories[index].SortOrder, model.SubCategories[index - 1].SortOrder) = (model.SubCategories[index - 1].SortOrder, model.SubCategories[index].SortOrder);
+            (model.SubGenres[index], model.SubGenres[index - 1]) = (model.SubGenres[index - 1], model.SubGenres[index]);
+            (model.SubGenres[index].SortOrder, model.SubGenres[index - 1].SortOrder) = (model.SubGenres[index - 1].SortOrder, model.SubGenres[index].SortOrder);
 
         }
     }
@@ -199,19 +199,19 @@
     /// 行の下移動
     /// </summary>
     /// <param name="item"></param>
-    private void MoveDown(SmallCategoryModel item)
+    private void MoveDown(SubGenreModel item)
     {
-        var index = model.SubCategories.IndexOf(item);
-        if (index < model.SubCategories.Count - 1)
+        var index = model.SubGenres.IndexOf(item);
+        if (index < model.SubGenres.Count - 1)
         {
-            (model.SubCategories[index], model.SubCategories[index + 1]) = (model.SubCategories[index + 1], model.SubCategories[index]);
-            (model.SubCategories[index].SortOrder, model.SubCategories[index + 1].SortOrder) = (model.SubCategories[index + 1].SortOrder, model.SubCategories[index].SortOrder);
+            (model.SubGenres[index], model.SubGenres[index + 1]) = (model.SubGenres[index + 1], model.SubGenres[index]);
+            (model.SubGenres[index].SortOrder, model.SubGenres[index + 1].SortOrder) = (model.SubGenres[index + 1].SortOrder, model.SubGenres[index].SortOrder);
 
         }
     }
 
-    private bool isFirst(SmallCategoryModel item) => model.SubCategories.First() == item;
-    private bool isLast(SmallCategoryModel item) => model.SubCategories.Last() == item;
+    private bool isFirst(SubGenreModel item) => model.SubGenres.First() == item;
+    private bool isLast(SubGenreModel item) => model.SubGenres.Last() == item;
 
 
     /// <summary>
@@ -236,7 +236,7 @@
             return;
         }
 
-        var result = isEdit ? await CategoryService.UpdateCategoryAsync(model) : await CategoryService.CreateCategoryAsync(model);
+        var result = isEdit ? await GenreService.UpdateGenreAsync(model) : await GenreService.CreateGenreAsync(model);
         Snackbar.AddServiceResult(result);
 
         if (!result.IsSuccess)
@@ -244,7 +244,7 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/categories");
+        NavigationManager.NavigateTo("/genres");
     }
 
 }

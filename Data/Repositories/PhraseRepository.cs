@@ -10,8 +10,8 @@ namespace PhrazorApp.Data.Repositories
         Task AddPhraseAsync(DPhrase phrase);
         Task UpdatePhraseAsync(DPhrase phrase);
         Task DeletePhraseAsync(DPhrase phrase);
-        Task AddPhraseCategoryAsync(IEnumerable<MPhraseCategory> phraseCategories);
-        Task DeletePhraseCategoriesAsync(IEnumerable<MPhraseCategory> phraseCategories);
+        Task AddPhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres);
+        Task DeletePhraseGenresAsync(IEnumerable<MPhraseGenre> phraseGenres);
         Task AddPhraseImageAsync(DPhraseImage image);
         Task UpdatePhraseImageAsync(DPhraseImage image);
     }
@@ -32,7 +32,7 @@ namespace PhrazorApp.Data.Repositories
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.DPhrases
                 .Include(p => p.DPhraseImage)
-                .Include(p => p.MPhraseCategories)
+                .Include(p => p.MPhraseGenres)
                 .ToListAsync();
         }
 
@@ -44,7 +44,7 @@ namespace PhrazorApp.Data.Repositories
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.DPhrases
                 .Include(p => p.DPhraseImage)
-                .Include(p => p.MPhraseCategories)
+                .Include(p => p.MPhraseGenres)
                 .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
         }
 
@@ -79,22 +79,22 @@ namespace PhrazorApp.Data.Repositories
         }
 
         /// <summary>
-        /// フレーズカテゴリを追加します。
+        /// フレーズジャンルを追加します。
         /// </summary>
-        public async Task AddPhraseCategoryAsync(IEnumerable<MPhraseCategory> phraseCategories)
+        public async Task AddPhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-            context.MPhraseCategories.AddRange(phraseCategories);
+            context.MPhraseGenres.AddRange(phraseGenres);
             await context.SaveChangesAsync();
         }
 
         /// <summary>
-        /// フレーズカテゴリを削除します。
+        /// フレーズジャンルを削除します。
         /// </summary>
-        public async Task DeletePhraseCategoriesAsync(IEnumerable<MPhraseCategory> phraseCategories)
+        public async Task DeletePhraseGenresAsync(IEnumerable<MPhraseGenre> phraseGenres)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-            context.MPhraseCategories.RemoveRange(phraseCategories);
+            context.MPhraseGenres.RemoveRange(phraseGenres);
             await context.SaveChangesAsync();
         }
 

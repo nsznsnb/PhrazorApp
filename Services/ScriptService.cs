@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
-using static MudBlazor.CategoryTypes;
 
 namespace PhrazorApp.Services
 {

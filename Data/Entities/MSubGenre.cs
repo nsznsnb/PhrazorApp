@@ -4,24 +4,24 @@ using System.Collections.Generic;
 namespace PhrazorApp.Data.Entities;
 
 /// <summary>
-/// 小分類マスタ
+/// サブジャンルマスタ
 /// </summary>
-public partial class MSmallCategory
+public partial class MSubGenre
 {
     /// <summary>
-    /// 大分類ID
+    /// ジャンルID
     /// </summary>
-    public Guid LargeId { get; set; }
+    public Guid GenreId { get; set; }
 
     /// <summary>
-    /// 小分類ID
+    /// サブジャンルID
     /// </summary>
-    public Guid SmallId { get; set; }
+    public Guid SubGenreId { get; set; }
 
     /// <summary>
-    /// 小分類名
+    /// サブジャンル名
     /// </summary>
-    public string SmallCategoryName { get; set; } = null!;
+    public string SubGenreName { get; set; } = null!;
 
     /// <summary>
     /// ソート順
@@ -43,7 +43,7 @@ public partial class MSmallCategory
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual MLargeCategory Large { get; set; } = null!;
+    public virtual MGenre Genre { get; set; } = null!;
 
-    public virtual ICollection<MPhraseCategory> MPhraseCategories { get; set; } = new List<MPhraseCategory>();
+    public virtual ICollection<MPhraseGenre> MPhraseGenres { get; set; } = new List<MPhraseGenre>();
 }

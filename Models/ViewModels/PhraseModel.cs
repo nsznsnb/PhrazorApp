@@ -20,7 +20,7 @@ namespace PhrazorApp.Models.ViewModels
         public string Note { get; set; } = string.Empty;
 
         // Drop用
-        public List<DropItemModel> AllCategoryItems { get; set; } = new();
+        public List<DropItemModel> AllGenreItems { get; set; } = new();
         public List<DropItemModel> SelectedItems { get; set; } = new();
 
 

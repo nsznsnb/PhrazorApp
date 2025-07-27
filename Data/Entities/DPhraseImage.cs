@@ -11,7 +11,7 @@ public partial class DPhraseImage
     /// <summary>
     /// フレーズ画像ID
     /// </summary>
-    public Guid PhraseImageId { get; set; }
+    public int PhraseImageId { get; set; }
 
     /// <summary>
     /// URL

@@ -3,10 +3,12 @@ using PhrazorApp.Common;
 using PhrazorApp.Models.ViewModels;
 using System.ComponentModel.DataAnnotations;
 
+
+
 namespace PhrazorApp.Models.ViewModels
 {
 
-    public class LargeCategoryModel
+    public class GenreModel
     {
         [Display(Name = "ジャンルId")]
         public Guid Id { get; set; }
@@ -14,12 +16,12 @@ namespace PhrazorApp.Models.ViewModels
         [Display(Name = "ジャンル名")]
         public string Name { get; set; } = string.Empty;
 
-        public List<SmallCategoryModel>? SubCategories { get; set; } = new();
+        public List<SubGenreModel>? SubGenres { get; set; } = new();
 
 
     }
 
-    public class SmallCategoryModel
+    public class SubGenreModel
     {
 
 
@@ -38,51 +40,52 @@ namespace PhrazorApp.Models.ViewModels
 
 }
 
-public class LargeCategoryModelValidator : AbstractValidator<LargeCategoryModel>
+public class GenreModelValidator : AbstractValidator<GenreModel>
 {
-    public LargeCategoryModelValidator()
+    public GenreModelValidator()
     {
         RuleFor(x => x.Id)
             .NotEmpty()
-            .WithName("カテゴリId")
-            .WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "カテゴリId"));
+            .WithName("ジャンルId")
+            .WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "ジャンルId"));
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "カテゴリ名"));
+            .NotEmpty().WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "ジャンル名"));
 
-        RuleFor(x => x.SubCategories)
+        RuleFor(x => x.SubGenres)
             .Must(x => x.Count <= 3)
-            .WithMessage("サブカテゴリの追加は3個までです。");
+            .WithMessage("サブジャンルの追加は3個までです。");
 
-        RuleForEach(x => x.SubCategories)
-            .SetValidator(new SmallCategoryModelValidator());
+        RuleForEach(x => x.SubGenres)
+            .SetValidator(new SubGenreModelValidator());
 
     }
     public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
     {
-        var result = await ValidateAsync(ValidationContext<LargeCategoryModel>.CreateWithOptions((LargeCategoryModel)model, x => x.IncludeProperties(propertyName)));
+        var result = await ValidateAsync(ValidationContext<GenreModel>.CreateWithOptions((GenreModel)model, x => x.IncludeProperties(propertyName)));
         if (result.IsValid)
             return Array.Empty<string>();
         return result.Errors.Select(e => e.ErrorMessage);
     };
 
 }
-public class SmallCategoryModelValidator : AbstractValidator<SmallCategoryModel>
+
+public class SubGenreModelValidator : AbstractValidator<SubGenreModel>
 {
-    public SmallCategoryModelValidator()
+    public SubGenreModelValidator()
     {
         RuleFor(x => x.Id)
                     .NotEmpty()
-                    .WithName("サブカテゴリId")
+                    .WithName("サブジャンルId")
                     .WithMessage("{PropertyName}を入力してください。");
         RuleFor(x => x.Name)
                     .NotEmpty()
-                    .WithName("サブカテゴリ名")
+                    .WithName("サブジャンル名")
                     .WithMessage("{PropertyName}を入力してください。");
     }
 
     public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
     {
-        var result = await ValidateAsync(ValidationContext<SmallCategoryModel>.CreateWithOptions((SmallCategoryModel)model, x => x.IncludeProperties(propertyName)));
+        var result = await ValidateAsync(ValidationContext<SubGenreModel>.CreateWithOptions((SubGenreModel)model, x => x.IncludeProperties(propertyName)));
         if (result.IsValid)
             return Array.Empty<string>();
         return result.Errors.Select(e => e.ErrorMessage);

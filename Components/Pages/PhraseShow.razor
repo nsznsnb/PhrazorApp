@@ -4,7 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject ICategoryService CategoryService
+@inject IPhraseService PhraseService
 
 <MudContainer>
     <MudStack Spacing="2">
@@ -26,7 +26,7 @@
             <MudCardContent>
                 <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true">
                     <HeaderContent>
-                        <MudTh>カテゴリ</MudTh>
+                        <MudTh>ジャンル</MudTh>
                         <MudTh style="min-width: 200px;">操作</MudTh>
                     </HeaderContent>
                     <RowTemplate>
@@ -72,19 +72,19 @@
 @code {
 
 
-    private LargeCategoryModel model = new LargeCategoryModel();
+    private GenreModel model = new GenreModel();
 
-    private List<LargeCategoryModel> Elements = new();
+    private List<GenreModel> Elements = new();
 
 
     // protected override async Task OnInitializedAsync()
     // {
     //     // 一覧取得
-    //     Elements = await CategoryService.GetCategoryViewModelListAsync();
+    //     Elements = await GenreService.GetGenreViewModelListAsync();
 
     // }
 
-    // private async Task OnDeleteButtonClickedAsync(LargeCategoryModel item)
+    // private async Task OnDeleteButtonClickedAsync(LargeGenreModel item)
     // {
     //     // 確認ダイアログ表示
     //     var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
@@ -95,8 +95,8 @@
     //         return;
     //     }
 
-    //     // カテゴリ削除
-    //     var result = await CategoryService.DeleteCategoryAsync(item.Id);
+    //     // ジャンル削除
+    //     var result = await GenreService.DeleteGenreAsync(item.Id);
     //     Snackbar.AddServiceResult(result);
     //     if (!result.IsSuccess)
     //     {
@@ -104,7 +104,7 @@
     //     }
 
     //     // 一覧取得
-    //     Elements = await CategoryService.GetCategoryViewModelListAsync();
+    //     Elements = await GenreService.GetGenreViewModelListAsync();
     // }
 
 
