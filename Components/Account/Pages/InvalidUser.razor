@@ -1,7 +1,28 @@
 ﻿@page "/Account/InvalidUser"
+@layout AccountEmptyLayout
 
-<PageTitle>Invalid user</PageTitle>
+<PageTitle>ユーザー認証</PageTitle>
 
-<h3>Invalid user</h3>
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudPaper Elevation="5" Class="pa-16">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <AppLogo />
+            </MudItem>
+            <MudItem>
 
-<StatusMessage />
+                <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
+                    <MudIcon Icon="@Icons.Material.TwoTone.Person" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h5">ユーザー認証</MudText>
+                </MudStack>
+                <StatusMessage />
+
+                <MudDivider Class="mt-4" />
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Class="mt-4">
+                    <MudLink Href="/Account/Login" Typo="Typo.body2" Color="Color.Primary"><b>ログイン画面へ</b></MudLink>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
