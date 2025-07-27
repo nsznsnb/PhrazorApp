@@ -35,5 +35,5 @@ public partial class MPhraseCategory
 
     public virtual MSmallCategory MSmallCategory { get; set; } = null!;
 
-    public virtual DUserPhrase Phrase { get; set; } = null!;
+    public virtual DPhrase Phrase { get; set; } = null!;
 }

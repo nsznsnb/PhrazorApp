@@ -38,5 +38,5 @@ public partial class DPhraseImage
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual DUserPhrase Phrase { get; set; } = null!;
+    public virtual DPhrase Phrase { get; set; } = null!;
 }

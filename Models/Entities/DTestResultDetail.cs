@@ -40,7 +40,7 @@ public partial class DTestResultDetail
 
     public virtual ICollection<DReviewLog> DReviewLogs { get; set; } = new List<DReviewLog>();
 
-    public virtual DUserPhrase Phrase { get; set; } = null!;
+    public virtual DPhrase Phrase { get; set; } = null!;
 
     public virtual DTestResult Test { get; set; } = null!;
 }

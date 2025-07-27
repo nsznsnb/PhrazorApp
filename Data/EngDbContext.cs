@@ -18,7 +18,7 @@ public partial class EngDbContext : DbContext
 
     public virtual DbSet<DEnglishDiaryTag> DEnglishDiaryTags { get; set; }
 
-    public virtual DbSet<DPhraseBookItem> DPhraseBookItems { get; set; }
+    public virtual DbSet<DPhrase> DPhrases { get; set; }
 
     public virtual DbSet<DPhraseImage> DPhraseImages { get; set; }
 
@@ -28,8 +28,6 @@ public partial class EngDbContext : DbContext
 
     public virtual DbSet<DTestResultDetail> DTestResultDetails { get; set; }
 
-    public virtual DbSet<DUserPhrase> DUserPhrases { get; set; }
-
     public virtual DbSet<MDiaryTag> MDiaryTags { get; set; }
 
     public virtual DbSet<MGrade> MGrades { get; set; }
@@ -37,8 +35,6 @@ public partial class EngDbContext : DbContext
     public virtual DbSet<MLargeCategory> MLargeCategories { get; set; }
 
     public virtual DbSet<MOperationType> MOperationTypes { get; set; }
-
-    public virtual DbSet<MPhraseBook> MPhraseBooks { get; set; }
 
     public virtual DbSet<MPhraseCategory> MPhraseCategories { get; set; }
 
@@ -161,40 +157,45 @@ public partial class EngDbContext : DbContext
                 .HasConstraintName("D_ENGLISH_DIARY_TAGS_FK1");
         });
 
-        modelBuilder.Entity<DPhraseBookItem>(entity =>
+        modelBuilder.Entity<DPhrase>(entity =>
         {
-            entity.HasKey(e => new { e.PhraseBookId, e.PhraseId }).HasName("D_PHRASE_BOOK_ITEMS_PKC");
+            entity.HasKey(e => e.PhraseId).HasName("D_PHRASES_PKC");
 
-            entity.ToTable("D_PHRASE_BOOK_ITEMS", tb => tb.HasComment("フレーズ帳内フレーズ"));
+            entity.ToTable("D_PHRASES", tb => tb.HasComment("ユーザーフレーズ"));
 
-            entity.HasIndex(e => new { e.PhraseBookId, e.PhraseId }, "D_PHRASE_BOOK_ITEMS_PKI").IsUnique();
+            entity.HasIndex(e => e.PhraseId, "D_PHRASES_PKI").IsUnique();
 
-            entity.Property(e => e.PhraseBookId)
-                .HasComment("フレーズ帳Id")
-                .HasColumnName("phrase_book_id");
             entity.Property(e => e.PhraseId)
-                .HasComment("フレーズId")
+                .ValueGeneratedNever()
+                .HasComment("フレーズID")
                 .HasColumnName("phrase_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("作成日時")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.Meaning)
+                .HasMaxLength(200)
+                .HasComment("意味")
+                .HasColumnName("meaning");
+            entity.Property(e => e.Note)
+                .HasMaxLength(200)
+                .HasComment("備考")
+                .HasColumnName("note");
+            entity.Property(e => e.Phrase)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasComment("フレーズ")
+                .HasColumnName("phrase");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("更新日時")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.PhraseBook).WithMany(p => p.DPhraseBookItems)
-                .HasForeignKey(d => d.PhraseBookId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("D_PHRASE_BOOK_ITEMS_FK1");
-
-            entity.HasOne(d => d.Phrase).WithMany(p => p.DPhraseBookItems)
-                .HasForeignKey(d => d.PhraseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("D_PHRASE_BOOK_ITEMS_FK2");
+            entity.Property(e => e.UserId)
+                .HasMaxLength(450)
+                .HasComment("ユーザーID")
+                .HasColumnName("user_id");
         });
 
         modelBuilder.Entity<DPhraseImage>(entity =>
@@ -373,47 +374,6 @@ public partial class EngDbContext : DbContext
                 .HasConstraintName("D_TEST_RESULT_DETAILS_FK2");
         });
 
-        modelBuilder.Entity<DUserPhrase>(entity =>
-        {
-            entity.HasKey(e => e.PhraseId).HasName("D_USER_PHRASES_PKC");
-
-            entity.ToTable("D_USER_PHRASES", tb => tb.HasComment("ユーザーフレーズ"));
-
-            entity.HasIndex(e => e.PhraseId, "D_USER_PHRASES_PKI").IsUnique();
-
-            entity.Property(e => e.PhraseId)
-                .ValueGeneratedNever()
-                .HasComment("フレーズID")
-                .HasColumnName("phrase_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("作成日時")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.Meaning)
-                .HasMaxLength(200)
-                .HasComment("意味")
-                .HasColumnName("meaning");
-            entity.Property(e => e.Note)
-                .HasMaxLength(200)
-                .HasComment("備考")
-                .HasColumnName("note");
-            entity.Property(e => e.Phrase)
-                .HasMaxLength(200)
-                .IsUnicode(false)
-                .HasComment("フレーズ")
-                .HasColumnName("phrase");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("更新日時")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UserId)
-                .HasMaxLength(450)
-                .HasComment("ユーザーID")
-                .HasColumnName("user_id");
-        });
-
         modelBuilder.Entity<MDiaryTag>(entity =>
         {
             entity.HasKey(e => e.TagId).HasName("M_DIARY_TAGS_PKC");
@@ -541,38 +501,6 @@ public partial class EngDbContext : DbContext
                 .HasComment("更新日時")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-        });
-
-        modelBuilder.Entity<MPhraseBook>(entity =>
-        {
-            entity.HasKey(e => e.PhraseBookId).HasName("M_PHRASE_BOOKS_PKC");
-
-            entity.ToTable("M_PHRASE_BOOKS", tb => tb.HasComment("フレーズ帳マスタ"));
-
-            entity.HasIndex(e => e.PhraseBookId, "M_PHRASE_BOOKS_PKI").IsUnique();
-
-            entity.Property(e => e.PhraseBookId)
-                .ValueGeneratedNever()
-                .HasComment("フレーズ帳Id")
-                .HasColumnName("phrase_book_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("作成日時")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.PhraseBookName)
-                .HasMaxLength(100)
-                .HasComment("フレーズ帳名")
-                .HasColumnName("phrase_book_name");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasComment("更新日時")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UserId)
-                .HasMaxLength(450)
-                .HasComment("ユーザーId")
-                .HasColumnName("user_id");
         });
 
         modelBuilder.Entity<MPhraseCategory>(entity =>

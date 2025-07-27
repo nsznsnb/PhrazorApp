@@ -50,7 +50,7 @@ public partial class DReviewLog
 
     public virtual DTestResultDetail DTestResultDetail { get; set; } = null!;
 
-    public virtual DUserPhrase Phrase { get; set; } = null!;
+    public virtual DPhrase Phrase { get; set; } = null!;
 
     public virtual MReviewType? ReviewType { get; set; }
 }

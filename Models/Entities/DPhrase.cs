@@ -6,7 +6,7 @@ namespace PhrazorApp.Models.Entities;
 /// <summary>
 /// ユーザーフレーズ
 /// </summary>
-public partial class DUserPhrase
+public partial class DPhrase
 {
     /// <summary>
     /// フレーズID
@@ -42,8 +42,6 @@ public partial class DUserPhrase
     /// 更新日時
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
-
-    public virtual ICollection<DPhraseBookItem> DPhraseBookItems { get; set; } = new List<DPhraseBookItem>();
 
     public virtual ICollection<DPhraseImage> DPhraseImages { get; set; } = new List<DPhraseImage>();
 

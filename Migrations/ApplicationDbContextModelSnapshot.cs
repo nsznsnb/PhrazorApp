@@ -10,7 +10,7 @@ using PhrazorApp.Data;
 
 namespace PhrazorApp.Migrations
 {
-    [DbContext(typeof(EngDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
