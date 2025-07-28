@@ -77,12 +77,12 @@
 
     private string GetZoneStyle(DropItemType zone)
     {
-        var baseStyle = "min-width:300px;";
+        var baseStyle = "min-width:250px;";
         var heightValue = Height ?? "130px";
 
-        return zone == DropItemType.Target
+        return zone == DropItemType.UnAssigned
             ? $"{baseStyle} min-height:{heightValue}; max-height:{heightValue}; overflow-y:auto;"
-            : $"{baseStyle} max-height:{heightValue};";
+            : $"{baseStyle} min-height:70px; max-height:{heightValue};";
     }
 
     /// <summary>ドロップ操作時の処理</summary>
