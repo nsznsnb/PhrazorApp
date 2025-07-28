@@ -1,50 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
-using PhrazorApp.Common;
+﻿using Humanizer.Localisation;
+using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Commons;
 using PhrazorApp.Data.Entities;
 
 namespace PhrazorApp.Data.Repositories
 {
-    public interface IGenreRepository
-    {
-        Task CreateGenreAsync(MGenre genre);
-        Task CreateSubGenreAsync(MSubGenre subGenre);
-        Task CreateGenresWithTransactionAsync(MGenre genre, List<MSubGenre> subGenres);
-        Task<List<MGenre>> GetAllGenresAsync(string? userId);
-        Task<MGenre?> GetGenreByIdAsync(Guid genreId, string? userId);
-        Task UpdateGenreAsync(MGenre genre);
-        Task DeleteGenreAsync(Guid genreId);
-    }
-
     public class GenreRepository : IGenreRepository
     {
         private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
+
 
         public GenreRepository(IDbContextFactory<EngDbContext> dbContextFactory)
         {
             _dbContextFactory = dbContextFactory;
         }
 
-        /// <summary>
-        /// 単一のジャンルを追加します。
-        /// </summary>
-        /// <param name="genre">追加するジャンル</param>
-        public async Task CreateGenreAsync(MGenre genre)
-        {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await context.MGenres.AddAsync(genre);
-            await context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 単一のサブジャンルを追加します。
-        /// </summary>
-        /// <param name="subGenre">追加するサブジャンル</param>
-        public async Task CreateSubGenreAsync(MSubGenre subGenre)
-        {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await context.MSubGenres.AddAsync(subGenre);
-            await context.SaveChangesAsync();
-        }
 
         /// <summary>
         /// ジャンルとそのサブジャンルを一度に追加します。
@@ -52,19 +22,28 @@ namespace PhrazorApp.Data.Repositories
         /// </summary>
         /// <param name="genre">追加するジャンル</param>
         /// <param name="subGenres">追加するサブジャンルのリスト</param>
-        public async Task CreateGenresWithTransactionAsync(MGenre genre, List<MSubGenre> subGenres)
+        public async Task CreateGenreAsync(MGenre genre)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             await using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
+                genre.CreatedAt = DateTime.UtcNow;
+                genre.UpdatedAt = DateTime.UtcNow;
+                genre.UserId = Common.GetUserId();
                 // ジャンルを追加
                 await context.MGenres.AddAsync(genre);
                 // サブジャンルを追加
-                if (subGenres != null && subGenres.Count > 0)
+                if (genre.MSubGenres != null && genre.MSubGenres.Count > 0)
                 {
-                    await context.MSubGenres.AddRangeAsync(subGenres);
+                    foreach (var subGenre in genre.MSubGenres)
+                    {
+                        subGenre.CreatedAt = DateTime.UtcNow;
+                        subGenre.UpdatedAt = DateTime.UtcNow;
+                        subGenre.UserId = Common.GetUserId();
+                    }
+                    await context.MSubGenres.AddRangeAsync(genre.MSubGenres);
                 }
 
                 // 保存してトランザクションをコミット
@@ -83,8 +62,9 @@ namespace PhrazorApp.Data.Repositories
         /// </summary>
         /// <param name="userId">ユーザーID</param>
         /// <returns>ジャンルのリスト</returns>
-        public async Task<List<MGenre>> GetAllGenresAsync(string? userId)
+        public async Task<List<MGenre>> GetAllGenresAsync()
         {
+            var userId = Common.GetUserId();
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.MGenres
                 .Where(x => x.UserId == userId)
@@ -99,23 +79,70 @@ namespace PhrazorApp.Data.Repositories
         /// <param name="genreId">ジャンルID</param>
         /// <param name="userId">ユーザーID</param>
         /// <returns>指定されたジャンル</returns>
-        public async Task<MGenre?> GetGenreByIdAsync(Guid genreId, string? userId)
+        public async Task<MGenre?> GetGenreByIdAsync(EngDbContext context, Guid genreId)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+            var userId = Common.GetUserId();
             return await context.MGenres
                 .Include(x => x.MSubGenres)
                 .FirstOrDefaultAsync(x => x.GenreId == genreId && x.UserId == userId);
         }
 
         /// <summary>
-        /// ジャンルを更新します。
+        /// 指定されたジャンルIDに基づいて、ジャンルを取得します。
         /// </summary>
-        /// <param name="genre">更新するジャンル</param>
+        /// <param name="genreId">ジャンルID</param>
+        /// <param name="userId">ユーザーID</param>
+        /// <returns>指定されたジャンル</returns>
+        public async Task<MGenre?> GetGenreByIdAsync(Guid genreId)
+        {
+
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            return await GetGenreByIdAsync(context, genreId);
+        }
+
+        /// <summary>
+        /// ジャンルとそのサブジャンルを一度に追加します。
+        /// トランザクションを使用して一貫性を確保します。
+        /// </summary>
+        /// <param name="genre">追加するジャンル</param>
         public async Task UpdateGenreAsync(MGenre genre)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-            context.MGenres.Update(genre);
-            await context.SaveChangesAsync();
+
+            try
+            {
+                var saved = await context.MGenres
+                    .Include(x => x.MSubGenres)
+                    .FirstOrDefaultAsync(x => x.GenreId == genre.GenreId);
+
+                if (saved == null)
+                {
+                    throw new Exception(string.Format(ComMessage.MSG_E_NOT_FOUND, "指定されたジャンル"));
+                }
+
+                saved.GenreId = genre.GenreId;
+                saved.GenreName = genre.GenreName;
+                saved.UpdatedAt = DateTime.UtcNow;
+                saved.UserId = Common.GetUserId();
+                // ジャンルを追加
+                context.MGenres.Update(saved);
+
+                context.MSubGenres.RemoveRange(saved.MSubGenres);
+
+                // サブジャンルを追加
+                if (genre.MSubGenres != null && genre.MSubGenres.Count > 0)
+                {
+                    await context.MSubGenres.AddRangeAsync(genre.MSubGenres);
+                }
+
+                // 保存してトランザクションをコミット
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format(ComMessage.MSG_E_ERROR_DETEIL, "ジャンルの作成中"), ex);
+            }
         }
 
         /// <summary>

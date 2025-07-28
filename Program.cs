@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
+using PhrazorApp.Commons;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
@@ -83,11 +84,6 @@ namespace PhrazorApp
             builder.Services.AddHttpContextAccessor();
 
 
-
-
-            // ユーザーサービス：DIの優先度(高)
-            builder.Services.AddScoped<IUserService, UserService>();
-
             // Resend関連
             var resendApiToken = builder.Configuration["Resend:ApiKey"]!;
             builder.Services.Configure<ResendClientOptions>(o =>
@@ -143,6 +139,10 @@ namespace PhrazorApp
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            // CommonにHttpContextAccessorをセット
+            var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
+            Common.SetHttpContextAccessor(httpContextAccessor);
 
             app.UseHttpsRedirection();
 

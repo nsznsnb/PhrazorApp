@@ -1,5 +1,6 @@
 ﻿@page "/phrases/create"
 @page "/phrases/edit/{Id:guid}"
+@using PhrazorApp.Models
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
@@ -29,21 +30,22 @@
                 <MudCardContent Class="py-2">
                     <MudGrid Spacing="1">
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true"
-                                          Lines="3" HelperText="英文を200時以内で記載してください(必須)" ShrinkLabel />
+                            <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true" MaxLength="200"
+                                          Lines="3" HelperText="@(string.Format(ComMessage.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文", "200"))" ShrinkLabel />
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" @bind-Value="@model.Meaning" Lines="3" Immediate="true"
-                                          HelperText="フレーズの意味を200字以内で入力してください。" ShrinkLabel />
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" @bind-Value="@model.Meaning" Lines="3" Immediate="true" MaxLength="200"
+                                          HelperText="@(string.Format(ComMessage.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文の意味", "200"))" ShrinkLabel />
                         </MudItem>
                         <MudItem xs="12" md="4">
                             <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <ItemDropSelector Items="@model.AllGenreItems" SelectedItems="@model.SelectedItems" />
+                            <ItemDropSelector SelectedItems="@model.SelectedDropItems" />
                         </MudItem>
                         <MudItem xs="12" md="12">
-                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3" HelperText="解説や備考を記載する場合は" ShrinkLabel />
+                            <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3" 
+                            HelperText="@(string.Format(ComMessage.MSG_I_HELPER_ARBITRARY_LESS_TAHN, "解説や備考", "200"))" ShrinkLabel />
                         </MudItem>
                         <MudFlexBreak />
                     </MudGrid>
@@ -75,30 +77,13 @@
     protected override async Task OnInitializedAsync()
     {
         isEdit = Id != null;
+
         await ClearAsync();
     }
 
     private async Task ClearAsync()
     {
-        if (isEdit)
-        {
-            model = await PhraseService.GetPhraseViewModelAsync(Id.Value);
-        }
-        else
-        {
-            model = new PhraseModel
-            {
-                Id = Guid.NewGuid(),
-                Phrase = string.Empty,
-                Meaning = string.Empty,
-                Note = string.Empty,
-                ImageUrl = string.Empty
-            };
-
-            // 新規作成時でも全ジャンル情報をセット
-            var genres = await GenreService.GetGenreViewModelListAsync(); 
-            // model.AllGenreItems = largeCategories.Select(x => x.ToModel()).ToList();
-        }
+        model = await PhraseService.GetPhraseViewModelAsync(Id ?? null);
 
         if (form != null)
         {

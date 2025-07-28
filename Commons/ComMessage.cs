@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Common
+﻿namespace PhrazorApp.Commons
 {
     /// <summary>
     /// メッセージ定数

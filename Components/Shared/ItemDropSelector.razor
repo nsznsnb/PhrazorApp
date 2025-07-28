@@ -1,7 +1,11 @@
-﻿
+﻿@using PhrazorApp.Models
+@inject IGenreService GenreService
+@inject ISnackbar Snackbar
+
 <MudDropContainer T="DropItemModel"
-                  Items="Items"
-                  ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone) )"
+                  @ref="_dropContainer"
+                  Items="_items"
+                  ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone))"
                   ItemDropped="HandleItemDropped"
                   Class="d-flex flex-grow-1">
 
@@ -38,20 +42,15 @@
 </MudDropContainer>
 
 @code {
+    private List<DropItemModel> _items = new();
+    private MudDropContainer<DropItemModel>? _dropContainer;
 
-    /// <summary>全アイテム（DropTargetを含む）</summary>
-    [Parameter]
-    public List<DropItemModel> Items { get; set; } = new();
-
-    /// <summary>選択中アイテム（TargetZoneにドロップされたもの）
     [Parameter]
     public List<DropItemModel> SelectedItems { get; set; } = new();
 
-    /// <summary>選択中アイテムが変更されたとき親に通知</summary>
     [Parameter]
     public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
 
-    /// <summary>最大選択数（TargetZone）</summary>
     [Parameter]
     public int MaxSelection { get; set; } = 3;
 
@@ -70,10 +69,51 @@
     [Parameter]
     public string? Height { get; set; }
 
-    [Inject]
-    private ISnackbar Snackbar { get; set; } = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        var allItems = await GenreService.GetGenreDropItemModelListAsync();
 
-    private string ContainerStyle => $"width:{Width};";
+        foreach (var item in allItems)
+        {
+            item.DropTarget = SelectedItems.Any(sel => sel.Key1 == item.Key1 && sel.Key2 == item.Key2)
+                ? DropItemType.Target
+                : DropItemType.UnAssigned;
+        }
+
+        _items = allItems;
+
+        await Task.Delay(10);
+        _dropContainer?.Refresh();
+    }
+
+    private async Task HandleItemDropped(MudItemDropInfo<DropItemModel> dropInfo)
+    {
+        var currentZone = ParseDropItemType(dropInfo.DropzoneIdentifier);
+
+        if (currentZone == DropItemType.Target &&
+            _items.Count(x => x.DropTarget == DropItemType.Target) >= MaxSelection)
+        {
+            dropInfo.Item!.DropTarget = DropItemType.UnAssigned;
+            Snackbar.Add($"最大選択数 {MaxSelection} を超えています。", Severity.Warning);
+            return;
+        }
+
+        dropInfo.Item!.DropTarget = currentZone;
+
+        SelectedItems = _items.Where(x => x.DropTarget == DropItemType.Target).ToList();
+
+        if (SelectedItemsChanged.HasDelegate)
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+
+        StateHasChanged();
+    }
+
+    private static DropItemType ParseDropItemType(string zone)
+    {
+        return Enum.TryParse<DropItemType>(zone, out var result)
+            ? result
+            : DropItemType.UnAssigned;
+    }
 
     private string GetZoneStyle(DropItemType zone)
     {
@@ -83,42 +123,5 @@
         return zone == DropItemType.UnAssigned
             ? $"{baseStyle} min-height:{heightValue}; max-height:{heightValue}; overflow-y:auto;"
             : $"{baseStyle} min-height:70px; max-height:{heightValue};";
-    }
-
-    /// <summary>ドロップ操作時の処理</summary>
-    private async Task HandleItemDropped(MudItemDropInfo<DropItemModel> dropInfo)
-    {
-        var targetZone = DropItemType.Target;
-        var unassignedZone = DropItemType.UnAssigned;
-
-        var currentZone = ParseDropItemType(dropInfo.DropzoneIdentifier);
-
-        var count = Items.Count(x => x.DropTarget == targetZone);
-
-        if (currentZone == targetZone && count >= MaxSelection)
-        {
-            dropInfo.Item!.DropTarget = unassignedZone;
-            Snackbar.Add($"最大選択数 {MaxSelection} を超えています。", Severity.Warning);
-            return;
-        }
-
-        dropInfo.Item!.DropTarget = currentZone;
-
-        var selected = Items.Where(x => x.DropTarget == targetZone).ToList();
-        SelectedItems.Clear();
-        SelectedItems.AddRange(selected);
-
-        if (SelectedItemsChanged.HasDelegate)
-        {
-            await SelectedItemsChanged.InvokeAsync(SelectedItems);
-        }
-    }
-
-    private static DropItemType ParseDropItemType(string zone)
-    {
-        // 文字列から DropItemType に変換
-        return Enum.TryParse<DropItemType>(zone, out var result)
-            ? result
-            : DropItemType.UnAssigned;
     }
 }

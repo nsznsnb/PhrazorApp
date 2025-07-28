@@ -1,20 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Humanizer.Localisation;
+using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Commons;
 using PhrazorApp.Data.Entities;
 
 namespace PhrazorApp.Data.Repositories
 {
-    public interface IPhraseRepository
-    {
-        Task<List<DPhrase>> GetAllPhrasesAsync();
-        Task<DPhrase?> GetPhraseByIdAsync(Guid phraseId);
-        Task CreatePhraseAsync(DPhrase phrase);
-        Task UpdatePhraseAsync(DPhrase phrase);
-        Task DeletePhraseAsync(DPhrase phrase);
-        Task CreatePhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres);
-        Task DeletePhraseGenresAsync(IEnumerable<MPhraseGenre> phraseGenres);
-        Task CreatePhraseImageAsync(DPhraseImage image);
-        Task UpdatePhraseImageAsync(DPhraseImage image);
-    }
+
     public class PhraseRepository : IPhraseRepository
     {
         private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
@@ -31,6 +22,7 @@ namespace PhrazorApp.Data.Repositories
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.DPhrases
+                .Where(x => x.UserId == Common.GetUserId())
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .ToListAsync();
@@ -39,10 +31,11 @@ namespace PhrazorApp.Data.Repositories
         /// <summary>
         /// 指定されたフレーズIDのフレーズを取得します。
         /// </summary>
-        public async Task<DPhrase?> GetPhraseByIdAsync(Guid phraseId)
+        public async Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.DPhrases
+                .Where(x => x.UserId == Common.GetUserId())
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
@@ -51,71 +44,85 @@ namespace PhrazorApp.Data.Repositories
         /// <summary>
         /// 新しいフレーズを追加します。
         /// </summary>
-        public async Task CreatePhraseAsync(DPhrase phrase)
+        public void CreatePhrase(EngDbContext context, DPhrase phrase)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var now = DateTime.UtcNow;
+            phrase.UserId = Common.GetUserId();
+            phrase.CreatedAt = now;
+            phrase.UpdatedAt = now;
+
             context.DPhrases.Add(phrase);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
         /// フレーズ情報を更新します。
         /// </summary>
-        public async Task UpdatePhraseAsync(DPhrase phrase)
+        public void UpdatePhrase(EngDbContext context, DPhrase phrase)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var now = DateTime.UtcNow;
+            phrase.UserId = Common.GetUserId();
+            phrase.UpdatedAt = now;
             context.DPhrases.Update(phrase);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
         /// フレーズを削除します。
         /// </summary>
-        public async Task DeletePhraseAsync(DPhrase phrase)
+        public void DeletePhrase(EngDbContext context, DPhrase phrase)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
             context.DPhrases.Remove(phrase);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
         /// フレーズジャンルを追加します。
         /// </summary>
-        public async Task CreatePhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres)
+        public void CreatePhraseGenreRange(EngDbContext context, IEnumerable<MPhraseGenre> phraseGenres)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var now = DateTime.UtcNow;
+            var userId = Common.GetUserId();
+            foreach (var phraseGenre in phraseGenres)
+            {
+                phraseGenre.CreatedAt = now;
+                phraseGenre.UpdatedAt = now;
+            }
+
             context.MPhraseGenres.AddRange(phraseGenres);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
         /// フレーズジャンルを削除します。
         /// </summary>
-        public async Task DeletePhraseGenresAsync(IEnumerable<MPhraseGenre> phraseGenres)
+        public void DeletePhraseGenreRange(EngDbContext context, IEnumerable<MPhraseGenre> phraseGenres)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
             context.MPhraseGenres.RemoveRange(phraseGenres);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
         /// フレーズ画像を追加します。
         /// </summary>
-        public async Task CreatePhraseImageAsync(DPhraseImage image)
+        public void CreatePhraseImage(EngDbContext context, DPhraseImage image)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var now = DateTime.UtcNow;
+            image.CreatedAt = now;
+            image.UpdatedAt = now;
             context.DPhraseImages.Add(image);
-            await context.SaveChangesAsync();
         }
 
         /// <summary>
         /// フレーズ画像を更新します。
         /// </summary>
-        public async Task UpdatePhraseImageAsync(DPhraseImage image)
+        public void UpdatePhraseImage(EngDbContext context, DPhraseImage image)
         {
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var now = DateTime.UtcNow;
+            image.CreatedAt = now;
+            image.UpdatedAt = now;
+
             context.DPhraseImages.Update(image);
-            await context.SaveChangesAsync();
+        }
+
+        public void DeletePhraseImage(EngDbContext context, DPhraseImage image)
+        {
+            context.DPhraseImages.Remove(image);
         }
     }
 }

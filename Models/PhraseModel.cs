@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PhrazorApp.Models.ViewModels
+namespace PhrazorApp.Models
 {
     public class PhraseModel
     {
@@ -19,9 +19,7 @@ namespace PhrazorApp.Models.ViewModels
         [Display(Name = "Note")]
         public string Note { get; set; } = string.Empty;
 
-        // Drop用
-        public List<DropItemModel> AllGenreItems { get; set; } = new();
-        public List<DropItemModel> SelectedItems { get; set; } = new();
+        public List<DropItemModel> SelectedDropItems { get; set; } = new();
 
 
     }

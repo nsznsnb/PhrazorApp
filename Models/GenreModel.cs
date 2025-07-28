@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
-using PhrazorApp.Common;
-using PhrazorApp.Models.ViewModels;
+using PhrazorApp.Commons;
+using PhrazorApp.Models;
 using System.ComponentModel.DataAnnotations;
 
 
 
-namespace PhrazorApp.Models.ViewModels
+namespace PhrazorApp.Models
 {
 
     public class GenreModel
