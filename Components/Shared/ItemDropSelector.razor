@@ -15,7 +15,7 @@
                 <MudListSubheader>@UnassignedLabel</MudListSubheader>
                 <MudDropZone T="DropItemModel"
                              Identifier="@DropItemType.UnAssigned.ToString()"
-                             Class="rounded mud-background-gray pa-3"
+                             Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
                              Style="@GetZoneStyle(DropItemType.UnAssigned)" />
             </MudItem>
 
@@ -23,7 +23,7 @@
                 <MudListSubheader>@TargetLabel</MudListSubheader>
                 <MudDropZone T="DropItemModel"
                              Identifier="@DropItemType.Target.ToString()"
-                             Class="rounded mud-background-gray pa-3"
+                             Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
                              Style="@GetZoneStyle(DropItemType.Target)" />
             </MudItem>
         </MudGrid>
