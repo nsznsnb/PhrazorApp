@@ -1,7 +1,7 @@
 ﻿using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
-using PhrazorApp.Commons;
 using PhrazorApp.Data.Entities;
+using PhrazorApp.Utils;
 
 namespace PhrazorApp.Data.Repositories
 {
@@ -22,7 +22,7 @@ namespace PhrazorApp.Data.Repositories
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.DPhrases
-                .Where(x => x.UserId == Common.GetUserId())
+                .Where(x => x.UserId == UserUtil.GetUserId())
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .Include(p => p.DReviewLogs)
@@ -35,7 +35,7 @@ namespace PhrazorApp.Data.Repositories
         public async Task<DPhrase?> GetPhraseByIdAsync(EngDbContext context, Guid? phraseId)
         {
             return await context.DPhrases
-                .Where(x => x.UserId == Common.GetUserId())
+                .Where(x => x.UserId == UserUtil.GetUserId())
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
@@ -57,7 +57,7 @@ namespace PhrazorApp.Data.Repositories
         public void CreatePhrase(EngDbContext context, DPhrase phrase)
         {
             var now = DateTime.UtcNow;
-            phrase.UserId = Common.GetUserId();
+            phrase.UserId = UserUtil.GetUserId();
             phrase.CreatedAt = now;
             phrase.UpdatedAt = now;
 
@@ -70,7 +70,7 @@ namespace PhrazorApp.Data.Repositories
         public void UpdatePhrase(EngDbContext context, DPhrase phrase)
         {
             var now = DateTime.UtcNow;
-            phrase.UserId = Common.GetUserId();
+            phrase.UserId = UserUtil.GetUserId();
             phrase.UpdatedAt = now;
             context.DPhrases.Update(phrase);
         }
@@ -89,7 +89,7 @@ namespace PhrazorApp.Data.Repositories
         public void CreatePhraseGenreRange(EngDbContext context, IEnumerable<MPhraseGenre> phraseGenres)
         {
             var now = DateTime.UtcNow;
-            var userId = Common.GetUserId();
+            var userId = UserUtil.GetUserId();
             foreach (var phraseGenre in phraseGenres)
             {
                 phraseGenre.CreatedAt = now;

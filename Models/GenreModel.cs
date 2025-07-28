@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using PhrazorApp.Commons;
+using PhrazorApp.Constants;
 using PhrazorApp.Models;
 using System.ComponentModel.DataAnnotations;
 

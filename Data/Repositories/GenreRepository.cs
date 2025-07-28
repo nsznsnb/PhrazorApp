@@ -1,7 +1,8 @@
 ﻿using Humanizer.Localisation;
 using Microsoft.EntityFrameworkCore;
-using PhrazorApp.Commons;
+using PhrazorApp.Constants;
 using PhrazorApp.Data.Entities;
+using PhrazorApp.Utils;
 
 namespace PhrazorApp.Data.Repositories
 {
@@ -31,7 +32,7 @@ namespace PhrazorApp.Data.Repositories
             {
                 genre.CreatedAt = DateTime.UtcNow;
                 genre.UpdatedAt = DateTime.UtcNow;
-                genre.UserId = Common.GetUserId();
+                genre.UserId = UserUtil.GetUserId();
                 // ジャンルを追加
                 await context.MGenres.AddAsync(genre);
                 // サブジャンルを追加
@@ -41,7 +42,7 @@ namespace PhrazorApp.Data.Repositories
                     {
                         subGenre.CreatedAt = DateTime.UtcNow;
                         subGenre.UpdatedAt = DateTime.UtcNow;
-                        subGenre.UserId = Common.GetUserId();
+                        subGenre.UserId = UserUtil.GetUserId();
                     }
                     await context.MSubGenres.AddRangeAsync(genre.MSubGenres);
                 }
@@ -64,7 +65,7 @@ namespace PhrazorApp.Data.Repositories
         /// <returns>ジャンルのリスト</returns>
         public async Task<List<MGenre>> GetAllGenresAsync()
         {
-            var userId = Common.GetUserId();
+            var userId = UserUtil.GetUserId();
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             return await context.MGenres
                 .Where(x => x.UserId == userId)
@@ -82,7 +83,7 @@ namespace PhrazorApp.Data.Repositories
         public async Task<MGenre?> GetGenreByIdAsync(EngDbContext context, Guid genreId)
         {
 
-            var userId = Common.GetUserId();
+            var userId = UserUtil.GetUserId();
             return await context.MGenres
                 .Include(x => x.MSubGenres)
                 .FirstOrDefaultAsync(x => x.GenreId == genreId && x.UserId == userId);
@@ -124,7 +125,7 @@ namespace PhrazorApp.Data.Repositories
                 saved.GenreId = genre.GenreId;
                 saved.GenreName = genre.GenreName;
                 saved.UpdatedAt = DateTime.UtcNow;
-                saved.UserId = Common.GetUserId();
+                saved.UserId = UserUtil.GetUserId();
                 // ジャンルを追加
                 context.MGenres.Update(saved);
 

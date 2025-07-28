@@ -1,6 +1,7 @@
 ﻿using MudBlazor;
+using PhrazorApp.Constants;
 
-namespace PhrazorApp.Commons
+namespace PhrazorApp.Themes
 {
     /// <summary>
     /// アプリのテーマ設定

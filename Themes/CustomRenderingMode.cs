@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 
-namespace PhrazorApp.Commons
+namespace PhrazorApp.Themes
 {
     /// <summary>
     /// Blazorのカスタムレンダリングモードを定義するクラス。

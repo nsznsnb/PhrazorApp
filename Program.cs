@@ -4,13 +4,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
-using PhrazorApp.Commons;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Options;
 using PhrazorApp.Services;
+using PhrazorApp.Utils;
 using Resend;
 
 namespace PhrazorApp
@@ -142,7 +142,7 @@ namespace PhrazorApp
 
             // Common‚ÉHttpContextAccessor‚ðƒZƒbƒg
             var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
-            Common.SetHttpContextAccessor(httpContextAccessor);
+            UserUtil.SetHttpContextAccessor(httpContextAccessor);
 
             app.UseHttpsRedirection();
 
