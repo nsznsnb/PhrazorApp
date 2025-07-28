@@ -6,9 +6,9 @@ namespace PhrazorApp.Data.Repositories
 {
     public interface IGenreRepository
     {
-        Task AddGenreAsync(MGenre genre);
-        Task AddSubGenreAsync(MSubGenre subGenre);
-        Task AddGenresWithTransactionAsync(MGenre genre, List<MSubGenre> subGenres);
+        Task CreateGenreAsync(MGenre genre);
+        Task CreateSubGenreAsync(MSubGenre subGenre);
+        Task CreateGenresWithTransactionAsync(MGenre genre, List<MSubGenre> subGenres);
         Task<List<MGenre>> GetAllGenresAsync(string? userId);
         Task<MGenre?> GetGenreByIdAsync(Guid genreId, string? userId);
         Task UpdateGenreAsync(MGenre genre);
@@ -28,7 +28,7 @@ namespace PhrazorApp.Data.Repositories
         /// 単一のジャンルを追加します。
         /// </summary>
         /// <param name="genre">追加するジャンル</param>
-        public async Task AddGenreAsync(MGenre genre)
+        public async Task CreateGenreAsync(MGenre genre)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             await context.MGenres.AddAsync(genre);
@@ -39,7 +39,7 @@ namespace PhrazorApp.Data.Repositories
         /// 単一のサブジャンルを追加します。
         /// </summary>
         /// <param name="subGenre">追加するサブジャンル</param>
-        public async Task AddSubGenreAsync(MSubGenre subGenre)
+        public async Task CreateSubGenreAsync(MSubGenre subGenre)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             await context.MSubGenres.AddAsync(subGenre);
@@ -52,7 +52,7 @@ namespace PhrazorApp.Data.Repositories
         /// </summary>
         /// <param name="genre">追加するジャンル</param>
         /// <param name="subGenres">追加するサブジャンルのリスト</param>
-        public async Task AddGenresWithTransactionAsync(MGenre genre, List<MSubGenre> subGenres)
+        public async Task CreateGenresWithTransactionAsync(MGenre genre, List<MSubGenre> subGenres)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             await using var transaction = await context.Database.BeginTransactionAsync();

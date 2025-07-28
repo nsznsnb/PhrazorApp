@@ -30,9 +30,9 @@
         public const string MSG_E_MISMATCH_DETAIL = "{0}が一致しません。";
         public const string MSG_E_NOT_FOUND = "{0}が見つかりませんでした。";
         public const string MSG_E_ERROR_DETEIL = "{0}にエラーが発生しました。";
-        public const string MSG_E_ERROR_CREATE_DETAIL = "{0}の作成中にエラーが発生しました。";
-        public const string MSG_E_ERROR_UPDATE_DETAIL = "{0}の更新中にエラーが発生しました。";
-        public const string MSG_E_ERROR_DELETE_DETAIL = "{0}の削除中にエラーが発生しました。";
+        public const string MSG_E_FAILURE_CREATE_DETAIL = "{0}の作成に失敗しました。";
+        public const string MSG_E_FAILURE_UPDATE_DETAIL = "{0}の更新に失敗しました。";
+        public const string MSG_E_FAILURE_DELETE_DETAIL = "{0}の削除に失敗しました。";
         public const string MSG_E_FAILURE_DETAIL = "{0}に失敗しました。";
         public const string MSG_E_FAILURE_DETAIL2 = "{0}に失敗しました。({1})";
         public const string MSG_E_MISMATCH_ID_OR_PASSWORD = "ログインIDまたはパスワードが一致しません。";

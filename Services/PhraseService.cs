@@ -26,8 +26,10 @@ namespace PhrazorApp.Services
 		private readonly IGenreRepository _genreRepository;
 		private readonly IUserService _userService;
 		private readonly ILogger<PhraseService> _logger;
+        private readonly string MSG_PREFIX = "フレーズ";
 
-		public PhraseService(IPhraseRepository phraseRepository, IGenreRepository genreRepository, IUserService userService, ILogger<PhraseService> logger)
+
+        public PhraseService(IPhraseRepository phraseRepository, IGenreRepository genreRepository, IUserService userService, ILogger<PhraseService> logger)
 		{
 			_phraseRepository = phraseRepository;
 			_genreRepository = genreRepository;
@@ -79,25 +81,25 @@ namespace PhrazorApp.Services
 			{
 				// モデルをエンティティに変換
 				var entity = model.ToPhraseEntity(_userService.GetUserId(), DateTime.UtcNow);
-				await _phraseRepository.AddPhraseAsync(entity);
+				await _phraseRepository.CreatePhraseAsync(entity);
 
 				// 画像があれば画像も保存
 				if (!string.IsNullOrEmpty(model.ImageUrl))
 				{
 					var imageEntity = model.ToImageEntity(DateTime.UtcNow);
-					await _phraseRepository.AddPhraseImageAsync(imageEntity);
+					await _phraseRepository.CreatePhraseImageAsync(imageEntity);
 				}
 
 				// ジャンルを保存
 				var phraseGenres = model.AllGenreItems.ToPhraseGenreEntities(model.Id, DateTime.UtcNow);
-				await _phraseRepository.AddPhraseGenreAsync(phraseGenres);
+				await _phraseRepository.CreatePhraseGenreAsync(phraseGenres);
 
-				return ServiceResult.Success();
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
 			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "フレーズ登録で例外が発生しました。");
-				return ServiceResult.Failure("フレーズの登録に失敗しました。");
+				return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
 			}
 		}
 
@@ -111,7 +113,7 @@ namespace PhrazorApp.Services
 				// フレーズを取得
 				var phraseEntity = await _phraseRepository.GetPhraseByIdAsync(model.Id);
 				if (phraseEntity == null)
-					return ServiceResult.Failure("指定されたフレーズは存在しません。");
+					return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
 
 				// フレーズ情報を更新
 				phraseEntity.Phrase = model.Phrase;
@@ -129,14 +131,14 @@ namespace PhrazorApp.Services
 				// ジャンルを削除して新しいジャンルを追加
 				await _phraseRepository.DeletePhraseGenresAsync(phraseEntity.MPhraseGenres);
 				var newGenres = model.AllGenreItems.ToPhraseGenreEntities(model.Id, DateTime.UtcNow);
-				await _phraseRepository.AddPhraseGenreAsync(newGenres);
+				await _phraseRepository.CreatePhraseGenreAsync(newGenres);
 
-				return ServiceResult.Success();
-			}
-			catch (Exception ex)
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+            }
+            catch (Exception ex)
 			{
 				_logger.LogError(ex, "フレーズ更新で例外が発生しました。");
-				return ServiceResult.Failure("フレーズの更新に失敗しました。");
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
 			}
 		}
 
@@ -149,7 +151,7 @@ namespace PhrazorApp.Services
 			{
 				var phrase = await _phraseRepository.GetPhraseByIdAsync(phraseId);
 				if (phrase == null)
-					return ServiceResult.Failure("指定されたフレーズは存在しません。");
+                    return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
 
 				// フレーズと関連するジャンルを削除
 				await _phraseRepository.DeletePhraseGenresAsync(phrase.MPhraseGenres);
@@ -160,7 +162,7 @@ namespace PhrazorApp.Services
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "フレーズ削除で例外が発生しました。");
-				return ServiceResult.Failure("フレーズの削除に失敗しました。");
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
 			}
 		}
 	}

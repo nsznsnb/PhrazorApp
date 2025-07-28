@@ -24,6 +24,7 @@ namespace PhrazorApp.Services
         private readonly IGenreRepository _genreRepository;
         private readonly IUserService _userService;
         private readonly ILogger<GenreService> _logger;
+        private readonly string MSG_PREFIX = "ジャンル";
 
         public GenreService(IGenreRepository genreRepository, IUserService userService, ILogger<GenreService> logger)
         {
@@ -76,14 +77,14 @@ namespace PhrazorApp.Services
             try
             {
                 // トランザクション開始
-                await _genreRepository.AddGenresWithTransactionAsync(genreEntity, subGenreEntities);
+                await _genreRepository.CreateGenresWithTransactionAsync(genreEntity, subGenreEntities);
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, model.Name));
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル作成エラー");
-                return ServiceResult.Failure("ジャンル作成に失敗しました");
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -105,12 +106,12 @@ namespace PhrazorApp.Services
                 // 更新
                 await _genreRepository.UpdateGenreAsync(genreEntity);
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, model.Name));
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル更新エラー");
-                return ServiceResult.Failure("ジャンル更新に失敗しました");
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -125,12 +126,12 @@ namespace PhrazorApp.Services
             {
                 await _genreRepository.DeleteGenreAsync(genreId);
 
-                return ServiceResult.Success("ジャンル削除成功");
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル削除エラー");
-                return ServiceResult.Failure("ジャンル削除に失敗しました");
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
     }

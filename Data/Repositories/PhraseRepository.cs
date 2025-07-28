@@ -7,12 +7,12 @@ namespace PhrazorApp.Data.Repositories
     {
         Task<List<DPhrase>> GetAllPhrasesAsync();
         Task<DPhrase?> GetPhraseByIdAsync(Guid phraseId);
-        Task AddPhraseAsync(DPhrase phrase);
+        Task CreatePhraseAsync(DPhrase phrase);
         Task UpdatePhraseAsync(DPhrase phrase);
         Task DeletePhraseAsync(DPhrase phrase);
-        Task AddPhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres);
+        Task CreatePhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres);
         Task DeletePhraseGenresAsync(IEnumerable<MPhraseGenre> phraseGenres);
-        Task AddPhraseImageAsync(DPhraseImage image);
+        Task CreatePhraseImageAsync(DPhraseImage image);
         Task UpdatePhraseImageAsync(DPhraseImage image);
     }
     public class PhraseRepository : IPhraseRepository
@@ -51,7 +51,7 @@ namespace PhrazorApp.Data.Repositories
         /// <summary>
         /// 新しいフレーズを追加します。
         /// </summary>
-        public async Task AddPhraseAsync(DPhrase phrase)
+        public async Task CreatePhraseAsync(DPhrase phrase)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             context.DPhrases.Add(phrase);
@@ -81,7 +81,7 @@ namespace PhrazorApp.Data.Repositories
         /// <summary>
         /// フレーズジャンルを追加します。
         /// </summary>
-        public async Task AddPhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres)
+        public async Task CreatePhraseGenreAsync(IEnumerable<MPhraseGenre> phraseGenres)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             context.MPhraseGenres.AddRange(phraseGenres);
@@ -101,7 +101,7 @@ namespace PhrazorApp.Data.Repositories
         /// <summary>
         /// フレーズ画像を追加します。
         /// </summary>
-        public async Task AddPhraseImageAsync(DPhraseImage image)
+        public async Task CreatePhraseImageAsync(DPhraseImage image)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
             context.DPhraseImages.Add(image);
