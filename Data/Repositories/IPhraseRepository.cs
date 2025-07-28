@@ -11,6 +11,7 @@ namespace PhrazorApp.Data.Repositories
         void DeletePhraseGenreRange(EngDbContext context, IEnumerable<MPhraseGenre> phraseGenres);
         void DeletePhraseImage(EngDbContext context, DPhraseImage image);
         Task<List<DPhrase>> GetAllPhrasesAsync();
+        Task<DPhrase?> GetPhraseByIdAsync(EngDbContext context, Guid? phraseId);
         Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId);
         void UpdatePhrase(EngDbContext context, DPhrase phrase);
         void UpdatePhraseImage(EngDbContext context, DPhraseImage image);

@@ -1,5 +1,4 @@
 ﻿@page "/phrases"
-@using PhrazorApp.Models
 @attribute [Authorize]
 
 @inject NavigationManager NavigationManager
@@ -10,59 +9,45 @@
 <MudContainer>
     <MudStack Spacing="2">
         <SectionTitle Title="フレーズ一覧"/>
-        <MudCard Elevation="@ComDefine.DEFAULT_ELEVATION_CARD">
+        <MudCard Elevation="@ComDefine.DEFAULT_ELEVATION">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
                     <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/phrases/create"))">新規追加</MudButton>
                 </MudStack>
             </MudCardContent>
         </MudCard>
-        <MudCard Elevation="@ComDefine.DEFAULT_ELEVATION_CARD">
-            <MudCardHeader>
-                <CardHeaderContent>
-                    <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
-                                  Title="フレーズ一覧" />
-                </CardHeaderContent>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true">
-                    <HeaderContent>
-                        <MudTh>ジャンル</MudTh>
-                        <MudTh style="min-width: 200px;">操作</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-@*                         <MudTd>
-                            <MudStack Spacing="1">
-                                <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
-                                <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
-                                    @foreach (var sub in context.SubCategories)
-                                    {
-                                        <MudChip Color="Color.Default"
-                                                 T="string"
-                                                 Variant="Variant.Text"
-                                                 Size="Size.Small">
-                                            @sub.Name
-                                        </MudChip>
-                                    }
-                                </MudStack>
-                            </MudStack>
+        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true" 
+                   Elevation="@ComDefine.DEFAULT_ELEVATION" Class="px-4"
+                  Filter="new Func<PhraseModel, bool>(FilterFunc)">
+            <ToolBarContent>
+                <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
+                              Title="@ComDefine.LABEL_TABLE_TITLE" />
+                <MudSpacer />
+                <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>フレーズ</MudTh>
+                <MudTh style="min-width: 200px;">操作</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Phrase</MudText>
+                        <MudText Typo="Typo.subtitle1">@context.Meaning</MudText>
+                    </MudStack>
 
-                        </MudTd>
-                        <MudTd Align="Right" style="min-width: 200px;">
-                            <MudStack Row="true">
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/categories/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
-                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
-                            </MudStack>
-                        </MudTd> *@
-                    </RowTemplate>
-                    <PagerContent>
-                        <MudTablePager />
-                    </PagerContent>
-                </MudTable>
-            </MudCardContent>
-
-        </MudCard>
-
+                </MudTd>
+                <MudTd Align="Right" style="min-width: 200px;">
+                    <MudStack Row="true">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/phrases/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
 
 
     </MudStack>
@@ -71,42 +56,56 @@
 
 
 @code {
+    private string searchString = "";
+
+    private PhraseModel model = new PhraseModel();
+
+    private List<PhraseModel> Elements = new();
 
 
-    private GenreModel model = new GenreModel();
+    protected override async Task OnInitializedAsync()
+    {
+        // 一覧取得
+        Elements = await PhraseService.GetPhraseViewModelListAsync();
 
-    private List<GenreModel> Elements = new();
+    }
 
+    private bool FilterFunc(PhraseModel element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Phrase.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Meaning.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     // 一覧取得
-    //     Elements = await GenreService.GetGenreViewModelListAsync();
+    private async Task OnDeleteButtonClickedAsync(PhraseModel item)
+    {
+        var suffix = item.Phrase.Length > 50 ? "..." : "";
+        var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
+        // 確認ダイアログ表示
+        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE,targetPhrase));
+        var dialogResult = await dialog.Result;
 
-    // }
+        if (dialogResult!.Canceled)
+        {
+            return;
+        }
 
-    // private async Task OnDeleteButtonClickedAsync(LargeGenreModel item)
-    // {
-    //     // 確認ダイアログ表示
-    //     var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
-    //     var dialogResult = await dialog.Result;
+        // ジャンル削除
+        var result = await PhraseService.DeletePhraseAsync(item.Id);
+        Snackbar.AddServiceResult(result);
+        if (!result.IsSuccess)
+        {
+            return;
+        }
 
-    //     if (dialogResult!.Canceled)
-    //     {
-    //         return;
-    //     }
+        // 一覧取得
+        Elements = await PhraseService.GetPhraseViewModelListAsync();
 
-    //     // ジャンル削除
-    //     var result = await GenreService.DeleteGenreAsync(item.Id);
-    //     Snackbar.AddServiceResult(result);
-    //     if (!result.IsSuccess)
-    //     {
-    //         return;
-    //     }
-
-    //     // 一覧取得
-    //     Elements = await GenreService.GetGenreViewModelListAsync();
-    // }
+    }
 
 
 

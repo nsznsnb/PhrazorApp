@@ -131,8 +131,9 @@ namespace PhrazorApp.Services
 		{
 			try
 			{
-				// フレーズを取得
-				var phraseEntity = await _phraseRepository.GetPhraseByIdAsync(model.Id);
+                await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+                var phraseEntity = await _phraseRepository.GetPhraseByIdAsync(context, model.Id);
 				if (phraseEntity == null)
 					return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -142,7 +143,6 @@ namespace PhrazorApp.Services
 				phraseEntity.Note = model.Note;
 				phraseEntity.UpdatedAt = DateTime.UtcNow;
 
-                await using var context = await _dbContextFactory.CreateDbContextAsync();
 
                 // 画像があれば画像も更新
                 if (!string.IsNullOrEmpty(model.ImageUrl))
@@ -161,6 +161,8 @@ namespace PhrazorApp.Services
 
                 }
 
+				await context.SaveChangesAsync();
+
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
@@ -177,11 +179,12 @@ namespace PhrazorApp.Services
 		{
 			try
 			{
-				var phrase = await _phraseRepository.GetPhraseByIdAsync(phraseId);
+                await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+                var phrase = await _phraseRepository.GetPhraseByIdAsync(context, phraseId);
 				if (phrase == null)
                     return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
 
-                await using var context = await _dbContextFactory.CreateDbContextAsync();
 
 				// フレーズと関連するジャンルを削除
 				if (phrase.DPhraseImage != null)
@@ -192,7 +195,7 @@ namespace PhrazorApp.Services
 				{
                     _phraseRepository.DeletePhraseGenreRange(context, phrase.MPhraseGenres);
                 }
-                _phraseRepository.CreatePhrase(context, phrase);
+                _phraseRepository.DeletePhrase(context, phrase);
 
 				await context.SaveChangesAsync();
 				return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));

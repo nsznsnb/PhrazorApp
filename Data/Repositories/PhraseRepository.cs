@@ -25,8 +25,22 @@ namespace PhrazorApp.Data.Repositories
                 .Where(x => x.UserId == Common.GetUserId())
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
+                .Include(p => p.DReviewLogs)
                 .ToListAsync();
         }
+
+        /// <summary>
+        /// 指定されたフレーズIDのフレーズを取得します。
+        /// </summary>
+        public async Task<DPhrase?> GetPhraseByIdAsync(EngDbContext context, Guid? phraseId)
+        {
+            return await context.DPhrases
+                .Where(x => x.UserId == Common.GetUserId())
+                .Include(p => p.DPhraseImage)
+                .Include(p => p.MPhraseGenres)
+                .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
+        }
+
 
         /// <summary>
         /// 指定されたフレーズIDのフレーズを取得します。
@@ -34,11 +48,7 @@ namespace PhrazorApp.Data.Repositories
         public async Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-            return await context.DPhrases
-                .Where(x => x.UserId == Common.GetUserId())
-                .Include(p => p.DPhraseImage)
-                .Include(p => p.MPhraseGenres)
-                .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
+            return await GetPhraseByIdAsync(context, phraseId);
         }
 
         /// <summary>

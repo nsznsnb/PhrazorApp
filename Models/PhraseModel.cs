@@ -19,6 +19,9 @@ namespace PhrazorApp.Models
         [Display(Name = "Note")]
         public string Note { get; set; } = string.Empty;
 
+        [Display(Name = "復習回数")]
+        public int ReviewCount {get; set; } 
+
         public List<DropItemModel> SelectedDropItems { get; set; } = new();
 
 

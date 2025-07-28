@@ -32,6 +32,9 @@ namespace PhrazorApp.Commons
         public const string LABEL_DIALOG_TITLE_REGISTER_CONFIRM = "登録確認";
         public const string LABEL_DIALOG_TITLE_DELETE_CONFIRM = "削除確認";
 
+        // テーブルタイトル
+        public const string LABEL_TABLE_TITLE = "一覧表示";
+
         // 正規表現
         public const string REGEX_HANKAKU_LESS_THAN10 = @"^[\u0020-\u007e]{1,10}$";
         public const string REGEX_HANKAKU_LESS_THAN20 = @"^[\u0020-\u007e]{1,20}$";
@@ -46,6 +49,6 @@ namespace PhrazorApp.Commons
         public const string PREFIX_ACCOUNT_INFO_MESSAGE = "info:";
 
         // カードのデフォルトのElevation値
-        public const int DEFAULT_ELEVATION_CARD = 2;
+        public const int DEFAULT_ELEVATION = 2;
     }
 }
