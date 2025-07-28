@@ -204,6 +204,8 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("D_PHRASE_IMAGES", tb => tb.HasComment("フレーズ画像"));
 
+            entity.HasIndex(e => e.PhraseId, "D_PHRASE_IMAGES_IX1").IsUnique();
+
             entity.HasIndex(e => e.PhraseImageId, "D_PHRASE_IMAGES_PKI").IsUnique();
 
             entity.Property(e => e.PhraseImageId)
@@ -232,11 +234,10 @@ public partial class EngDbContext : DbContext
                 .HasComment("URL")
                 .HasColumnName("url");
 
-            entity.HasOne(d => d.Phrase)
-                  .WithOne(p => p.DPhraseImage)  // 1対(0または1)の関係に変更
-                  .HasForeignKey<DPhraseImage>(d => d.PhraseId)  // 外部キーを指定
-                  .OnDelete(DeleteBehavior.ClientSetNull)  // 削除時にDPhraseImageはnullに設定
-                  .HasConstraintName("D_PHRASE_IMAGES_FK1");
+            entity.HasOne(d => d.Phrase).WithOne(p => p.DPhraseImage)
+                .HasForeignKey<DPhraseImage>(d => d.PhraseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("D_PHRASE_IMAGES_FK1");
         });
 
         modelBuilder.Entity<DReviewLog>(entity =>

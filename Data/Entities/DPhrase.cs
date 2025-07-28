@@ -43,7 +43,7 @@ public partial class DPhrase
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual DPhraseImage DPhraseImage { get; set; } = new DPhraseImage();
+    public virtual DPhraseImage? DPhraseImage { get; set; }
 
     public virtual ICollection<DReviewLog> DReviewLogs { get; set; } = new List<DReviewLog>();
 
