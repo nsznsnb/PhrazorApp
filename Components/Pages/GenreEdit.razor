@@ -48,7 +48,7 @@
                     <MudStack Row Spacing="4">
                         <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
                                       Title="サブジャンル一覧入力" />
-                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_ROW_ADD</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_BUTTON_ROW_ADD</MudButton>
 
                     </MudStack>
 
@@ -67,7 +67,7 @@
                         </MudForm>
                     </MudTd>
                     <MudTd>
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_ROW_DELETE</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_BUTTON_ROW_DELETE</MudButton>
                         <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp"
                                    Disabled="@isFirst(context)"
                                    OnClick="@(() => MoveUp(context))">上へ</MudButton>

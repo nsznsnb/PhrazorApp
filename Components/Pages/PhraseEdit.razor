@@ -41,7 +41,7 @@
                             <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <ItemDropSelector SelectedItems="@model.SelectedDropItems" />
+                            <ItemDropSelector SelectedItems="@model.SelectedDropItems" MaxSelection="3" UnassignedLabel="カテゴリ" />
                         </MudItem>
                         <MudItem xs="12" md="12">
                             <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3" 

@@ -8,20 +8,28 @@
 
 <MudContainer>
     <MudStack Spacing="2">
-        <SectionTitle Title="フレーズ一覧"/>
+        <SectionTitle Title="フレーズ一覧" />
         <MudCard Elevation="@ComDefine.DEFAULT_ELEVATION">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
                     <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/phrases/create"))">新規追加</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/phrases/create"))">新規追加</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.UploadFile"
+                               OnClick="OpenCsvUploadDialog" >CSV読込</MudButton>
+                    
                 </MudStack>
             </MudCardContent>
         </MudCard>
-        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true" 
-                   Elevation="@ComDefine.DEFAULT_ELEVATION" Class="px-4"
+        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true"
+                  Elevation="@ComDefine.DEFAULT_ELEVATION" Class="px-4"
+                  MultiSelection="true" SelectionChangeable="true" @bind-SelectedItems="selectedItems"
                   Filter="new Func<PhraseModel, bool>(FilterFunc)">
             <ToolBarContent>
-                <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
-                              Title="@ComDefine.LABEL_TABLE_TITLE" />
+                <MudStack Row Spacing="4">
+                    <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
+                                  Title="@ComDefine.LABEL_TABLE_TITLE" />
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="OnBulkDeleteButtonClickedAsync">@ComDefine.LABEL_BUTTON_BULK_DELETE</MudButton>
+                </MudStack>
                 <MudSpacer />
                 <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
@@ -61,6 +69,7 @@
     private PhraseModel model = new PhraseModel();
 
     private List<PhraseModel> Elements = new();
+    private HashSet<PhraseModel> selectedItems = new HashSet<PhraseModel>();
 
 
     protected override async Task OnInitializedAsync()
@@ -81,12 +90,25 @@
         return false;
     }
 
+    private async Task OnBulkDeleteButtonClickedAsync()
+    {
+        // 確認ダイアログ表示
+        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, "選択されたフレーズ"));
+        var dialogResult = await dialog.Result;
+
+        if (dialogResult!.Canceled)
+        {
+            return;
+        }
+
+    }
+
     private async Task OnDeleteButtonClickedAsync(PhraseModel item)
     {
         var suffix = item.Phrase.Length > 50 ? "..." : "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
         // 確認ダイアログ表示
-        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE,targetPhrase));
+        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, targetPhrase));
         var dialogResult = await dialog.Result;
 
         if (dialogResult!.Canceled)
@@ -105,6 +127,33 @@
         // 一覧取得
         Elements = await PhraseService.GetPhraseViewModelListAsync();
 
+    }
+
+    private async Task OpenCsvUploadDialog()
+    {
+        var parameters = new DialogParameters
+    {
+        { "OnUploadCompleted", EventCallback.Factory.Create<List<PhraseModel>>(this, OnCsvUploadCompleted) }
+    };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        await DialogService.ShowAsync<CsvUploadDialog>("CSV読込", parameters, options);
+    }
+
+    private async Task OnCsvUploadCompleted(List<PhraseModel> importedPhrases)
+    {
+        if (importedPhrases is null || !importedPhrases.Any())
+            return;
+
+        // 必要に応じてデータベースへ保存処理
+        foreach (var phrase in importedPhrases)
+        {
+            await PhraseService.CreatePhraseAsync(phrase);
+        }
+
+        // リロード
+        Elements = await PhraseService.GetPhraseViewModelListAsync();
+        Snackbar.Add("CSVからフレーズを読み込みました。", Severity.Success);
     }
 
 

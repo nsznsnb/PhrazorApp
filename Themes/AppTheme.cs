@@ -14,13 +14,15 @@ namespace PhrazorApp.Themes
             {
                 Primary = Colors.Indigo.Default,
                 Secondary = Colors.Cyan.Accent4,
-                Info = Colors.Blue.Default,
-                AppbarBackground = Colors.Indigo.Default,
+                Info = Colors.Blue.Darken2,
+                Success = Colors.Green.Accent4,
+                Warning = Colors.Orange.Default,
+                Error = Colors.Red.Accent2,
+                AppbarBackground = Colors.Shades.White,
                 Background = Colors.Gray.Lighten5,
             },
             LayoutProperties = new LayoutProperties()
             {
-                AppbarHeight = "54px"
             },
             Typography = new Typography()
             {

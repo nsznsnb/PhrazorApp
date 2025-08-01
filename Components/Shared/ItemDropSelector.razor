@@ -2,44 +2,46 @@
 @inject IGenreService GenreService
 @inject ISnackbar Snackbar
 
-<MudDropContainer T="DropItemModel"
-                  @ref="_dropContainer"
-                  Items="_items"
-                  ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone))"
-                  ItemDropped="HandleItemDropped"
-                  Class="d-flex flex-grow-1">
+<MudPaper Class="pa-2" Outlined="true" Style="width: 100%;">
+    <MudDropContainer T="DropItemModel"
+                      @ref="_dropContainer"
+                      Items="_items"
+                      ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone))"
+                      ItemDropped="HandleItemDropped"
+                      Class="d-flex flex-grow-1">
 
-    <ChildContent>
-        <MudGrid Spacing="1">
-            <MudItem xs="12">
-                <MudListSubheader>@UnassignedLabel</MudListSubheader>
-                <MudDropZone T="DropItemModel"
-                             Identifier="@DropItemType.UnAssigned.ToString()"
-                             Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
-                             Style="@GetZoneStyle(DropItemType.UnAssigned)" />
-            </MudItem>
+        <ChildContent>
+            <MudGrid Spacing="1">
+                <MudItem xs="12">
+                    <MudListSubheader>@UnassignedLabel</MudListSubheader>
+                    <MudDropZone T="DropItemModel"
+                                 Identifier="@DropItemType.UnAssigned.ToString()"
+                                 Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
+                                 Style="@GetZoneStyle(DropItemType.UnAssigned)" />
+                </MudItem>
 
-            <MudItem xs="12">
-                <MudListSubheader>@TargetLabel</MudListSubheader>
-                <MudDropZone T="DropItemModel"
-                             Identifier="@DropItemType.Target.ToString()"
-                             Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
-                             Style="@GetZoneStyle(DropItemType.Target)" />
-            </MudItem>
-        </MudGrid>
-    </ChildContent>
+                <MudItem xs="12">
+                    <MudListSubheader>@TargetLabel</MudListSubheader>
+                    <MudDropZone T="DropItemModel"
+                                 Identifier="@DropItemType.Target.ToString()"
+                                 Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
+                                 Style="@GetZoneStyle(DropItemType.Target)" />
+                </MudItem>
+            </MudGrid>
+        </ChildContent>
 
-    <ItemRenderer Context="context">
-        @if (ItemTemplate != null)
-        {
-            @ItemTemplate(context)
-        }
-        else
-        {
-            <MudChip T="string" Color="Color.Default">@context.Name</MudChip>
-        }
-    </ItemRenderer>
-</MudDropContainer>
+        <ItemRenderer Context="context">
+            @if (ItemTemplate != null)
+            {
+                @ItemTemplate(context)
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Default">@context.Name</MudChip>
+            }
+        </ItemRenderer>
+    </MudDropContainer>
+</MudPaper>
 
 @code {
     private List<DropItemModel> _items = new();
