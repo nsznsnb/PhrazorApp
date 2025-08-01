@@ -1,7 +1,4 @@
-﻿using CsvHelper;
-using System.Globalization;
-using System.Security.Claims;
-using System.Text;
+﻿using System.Security.Claims;
 
 namespace PhrazorApp.Utils
 {
@@ -14,7 +11,6 @@ namespace PhrazorApp.Utils
             _httpContextAccessor = accessor;
         }
 
-        #region ユーザー情報関連
         public static string? GetUserId()
         {
             return _httpContextAccessor?.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -29,15 +25,7 @@ namespace PhrazorApp.Utils
         {
             return _httpContextAccessor?.HttpContext?.User;
         }
-        #endregion
 
-        #region Csv関連
-        //public static async Task<List<T>> ReadCsvAsync<T>(Stream stream)
-        //{
-        //    using var reader = new StreamReader(stream, Encoding.UTF8);
-        //    using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-        //    return await csv.GetRecordsAsync<T>().ToListAsync();
-        //}
-        #endregion
+
     }
 }
