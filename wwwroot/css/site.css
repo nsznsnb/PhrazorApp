@@ -15,3 +15,32 @@
 }
 
 
+/*
+    ============ ダイアログのlook & feel ===================
+*/
+.blur {
+    backdrop-filter: blur(10px);
+}
+
+.dialog-background {
+    background-color: transparent;
+}
+
+.dialog-background-title {
+    background: rgb(from var(--mud-palette-info-lighten) r g b / 30%);
+    color: var(--mud-palette-white);
+}
+
+.dialog-background-surface {
+    background: rgb(from var(--mud-palette-surface) r g b / 75%);
+}
+
+
+/* 大きな画面では最小幅を決める */
+@media (min-width: 768px) {
+    .responsive-dialog {
+        min-width: 400px;
+    }
+}
+
+
