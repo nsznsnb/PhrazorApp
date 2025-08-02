@@ -20,6 +20,7 @@ namespace PhrazorApp.Themes
                 Error = Colors.Red.Accent2,
                 AppbarBackground = Colors.Shades.White,
                 Background = Colors.Gray.Lighten5,
+                DrawerIcon = Colors.Cyan.Accent4
             },
             LayoutProperties = new LayoutProperties()
             {
