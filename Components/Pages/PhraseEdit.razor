@@ -96,7 +96,7 @@
         await form.Validate();
         if (!form.IsValid) return;
 
-        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.RegisterConfirm,
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.RegisterConfirm,
             string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Phrase));
         var result = await dialog.Result;
 
@@ -127,7 +127,7 @@
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-        var dialog = DialogService.Show<GenreFormDialog>("ジャンル登録", parameters, options);
+        var dialog = DialogService.Show<DialogGenreForm>("ジャンル登録", parameters, options);
         var result = await dialog.Result;
 
         if (!result.Canceled)

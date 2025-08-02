@@ -4,10 +4,11 @@
 @using PhrazorApp.Models
 @inject ISnackbar Snackbar
 
-<BaseDialogWrapper DialogColor="Color.Info"
+<DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
                    DialogTitle="CSV読込"
                    ExecuteButtonText="読込"
                    CancelButtonText="@ComDefine.LABEL_BUTTON_CANCEL"
+                   ContentClass="py-5 my-1"
                    OnExecuteCallback="Submit"
                    ExecuteResult="true">
 
@@ -17,7 +18,8 @@
         <MudFileUpload T="IBrowserFile"
                        FilesChanged="UploadFiles"
                        Accept=".csv"
-                       MaximumFileCount="1">
+                       MaximumFileCount="1"
+                       Class="my-2">
             <ActivatorContent>
                 <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.TwoTone.AttachFile">
                     @ComDefine.LABEL_BUTTON_CHOICE_FILE
@@ -32,7 +34,7 @@
             }
         </MudList>
     </MudStack>
-</BaseDialogWrapper>
+</DialogBaseWrapper>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;

@@ -137,7 +137,7 @@
         await form.Validate();
         if (!form.IsValid) return;
 
-        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.RegisterConfirm, string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Name));
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.RegisterConfirm, string.Format(ComMessage.MSG_I_CONFIRM_REGIST, model.Name));
         if ((await dialog.Result)?.Canceled == true) return;
 
         var result = IsEdit

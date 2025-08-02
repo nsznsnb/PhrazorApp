@@ -94,7 +94,7 @@
     private async Task OnBulkDeleteButtonClickedAsync()
     {
         // 確認ダイアログ表示
-        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, "選択されたフレーズ"));
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, "選択されたフレーズ"));
         var dialogResult = await dialog.Result;
 
         if (dialogResult!.Canceled)
@@ -109,7 +109,7 @@
         var suffix = item.Phrase.Length > 50 ? "..." : "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
         // 確認ダイアログ表示
-        var dialog = await DialogService.ShowCommonDialogAsync(CommonDialogPattern.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, targetPhrase));
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, targetPhrase));
         var dialogResult = await dialog.Result;
 
         if (dialogResult!.Canceled)
@@ -138,7 +138,7 @@
     };
 
         var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        await DialogService.ShowAsync<CsvUploadDialog>("CSV読込", parameters, options);
+        await DialogService.ShowAsync<DialogCsvUpload>("CSV読込", parameters, options);
     }
 
     private async Task OnCsvUploadCompleted(List<PhraseModel> importedPhrases)

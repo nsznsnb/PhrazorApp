@@ -15,17 +15,17 @@ namespace PhrazorApp.Extensions
         /// <param name="dialogPattern">ダイアログ種別</param>
         /// <param name="content">ダイアログ本文</param>
         /// <returns></returns>
-        public static Task<IDialogReference> ShowCommonDialogAsync(this IDialogService dialogService, CommonDialogPattern dialogPattern, string content)
+        public static Task<IDialogReference> ShowDialogCommonAsync(this IDialogService dialogService, DialogConfirmType dialogPattern, string content)
         {
-            var parameters = new DialogParameters<CommonDialog>
+            var parameters = new DialogParameters<DialogCommon>
             {
                 { x => x.DialogPattern , dialogPattern },
                 { x => x.ContentText, content },
             };
 
-            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, Position = DialogPosition.TopCenter };
+            var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, Position = DialogPosition.TopCenter, FullWidth = true };
 
-            return dialogService.ShowAsync<CommonDialog>(string.Empty, parameters, options);
+            return dialogService.ShowAsync<DialogCommon>(string.Empty, parameters, options);
         }
     }
 }

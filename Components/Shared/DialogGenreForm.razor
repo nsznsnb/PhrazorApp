@@ -1,16 +1,17 @@
 ﻿@using PhrazorApp.Models
 
-<BaseDialogWrapper DialogColor="Color.Info"
+<DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
                    DialogTitle="ジャンル登録"
                    ExecuteButtonText="@ComDefine.LABEL_BUTTON_REGISTER"
                    CancelButtonText="@ComDefine.LABEL_BUTTON_CANCEL"
+                   ContentClass="py-5"
                    ShowExecuteButton="false"
                    OnExecuteCallback="Submit"
                    ExecuteResult="@genreModel">
 
     <GenreForm @ref="formRef" IsDialog="true" Id="GenreId" />
 
-</BaseDialogWrapper>
+</DialogBaseWrapper>
 
 @code {
     private GenreForm? formRef;

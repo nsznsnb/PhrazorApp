@@ -1,6 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-public enum CommonDialogPattern
+/// <summary>
+/// 確認ダイアログタイプ
+/// </summary>
+public enum DialogConfirmType
 {
     /// <summary>
     /// 削除確認
@@ -10,6 +13,16 @@ public enum CommonDialogPattern
     /// 登録確認
     /// </summary>
     RegisterConfirm,
+}
+
+/// <summary>
+/// ダイアログアラートタイプ
+/// </summary>
+public enum DialogAlertType
+{
+    Info,
+    Warning,
+    Error
 }
 
 /// <summary>

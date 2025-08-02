@@ -1,5 +1,5 @@
 ﻿
-<BaseDialogWrapper DialogColor="color"
+<DialogBaseWrapper DialogAlertType="@alertType"
                      DialogTitle="@titleText"
                      ExecuteButtonText="@executeButtonText"
                      CancelButtonText="@ComDefine.LABEL_BUTTON_CANCEL"
@@ -7,15 +7,15 @@
                      ExecuteResult="true"
                      ShowExecuteButton="true">
     <MudText>@ContentText</MudText>
-</BaseDialogWrapper>
+</DialogBaseWrapper>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public CommonDialogPattern DialogPattern { get; set; }
+    [Parameter] public DialogConfirmType DialogPattern { get; set; }
     [Parameter] public string ContentText { get; set; } = string.Empty;
 
-    private Color color = Color.Info;
+    private DialogAlertType alertType = DialogAlertType.Info;
     private string titleText = string.Empty;
     private string executeButtonText = string.Empty;
 
@@ -23,18 +23,18 @@
     {
         switch (DialogPattern)
         {
-            case CommonDialogPattern.DeleteConfirm:
-                color = Color.Error;
+            case DialogConfirmType.DeleteConfirm:
+                alertType = DialogAlertType.Error;
                 titleText = ComDefine.LABEL_DIALOG_TITLE_DELETE_CONFIRM;
                 executeButtonText = ComDefine.LABEL_BUTTON_DELETE;
                 break;
-            case CommonDialogPattern.RegisterConfirm:
-                color = Color.Info;
+            case DialogConfirmType.RegisterConfirm:
+                alertType = DialogAlertType.Info;
                 titleText = ComDefine.LABEL_DIALOG_TITLE_REGISTER_CONFIRM;
                 executeButtonText = ComDefine.LABEL_BUTTON_REGISTER;
                 break;
             default:
-                color = Color.Info;
+                alertType = DialogAlertType.Info;
                 titleText = "確認";
                 executeButtonText = "OK";
                 break;
