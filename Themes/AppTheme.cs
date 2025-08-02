@@ -14,7 +14,7 @@ namespace PhrazorApp.Themes
             {
                 Primary = Colors.Indigo.Default,
                 Secondary = Colors.Cyan.Accent4,
-                Info = Colors.Blue.Darken2,
+                Info = Colors.Blue.Darken1,
                 Success = Colors.Green.Accent4,
                 Warning = Colors.Orange.Default,
                 Error = Colors.Red.Accent2,
