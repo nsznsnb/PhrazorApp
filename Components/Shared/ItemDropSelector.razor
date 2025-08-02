@@ -13,7 +13,14 @@
         <ChildContent>
             <MudGrid Spacing="1">
                 <MudItem xs="12">
-                    <MudListSubheader>@UnassignedLabel</MudListSubheader>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudListSubheader>@UnassignedLabel</MudListSubheader>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="OnAddButtonClicked">
+                            新規追加
+                        </MudButton>
+                    </MudStack>
                     <MudDropZone T="DropItemModel"
                                  Identifier="@DropItemType.UnAssigned.ToString()"
                                  Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
@@ -52,6 +59,9 @@
 
     [Parameter]
     public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnAddGenreClicked { get; set; }
 
     [Parameter]
     public int MaxSelection { get; set; } = 3;
@@ -125,5 +135,13 @@
         return zone == DropItemType.UnAssigned
             ? $"{baseStyle} min-height:{heightValue}; max-height:{heightValue}; overflow-y:auto;"
             : $"{baseStyle} min-height:70px; max-height:{heightValue};";
+    }
+
+    private async Task OnAddButtonClicked()
+    {
+        if (OnAddGenreClicked.HasDelegate)
+            await OnAddGenreClicked.InvokeAsync();
+        StateHasChanged();
+
     }
 }

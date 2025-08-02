@@ -1,76 +1,71 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
 @using CsvHelper
+@using PhrazorApp.Models
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 
+<BaseDialogWrapper DialogColor="Color.Info"
+                   DialogTitle="CSV読込"
+                   ExecuteButtonText="読込"
+                   CancelButtonText="@ComDefine.LABEL_BUTTON_CANCEL"
+                   OnExecuteCallback="Submit"
+                   ExecuteResult="true">
 
-<MudDialog Class="blur dialog-background responsive-dialog" TitleClass="blur dialog-background-title" ContentClass="dialog-background-surface py-5 mt-1 mb-1" ActionsClass="dialog-background-surface">
-    <DialogContent>
-        <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
+    <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
 
-        <MudStack Row AlignItems="AlignItems.Center">
-            <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Accept=".csv" MaximumFileCount="1">
-                <ActivatorContent>
-                    <MudButton Variant="Variant.Filled"
-                               StartIcon="@Icons.Material.TwoTone.AttachFile">
-                        @ComDefine.LABEL_BUTTON_CHOICE_FILE
-                    </MudButton>
-                </ActivatorContent>
-            </MudFileUpload>
-            <MudList T="string">
-                @foreach (var file in _files)
-                {
-                    <MudListItem @key="@file">
-                        @file.Name
-                    </MudListItem>
-                }
-            </MudList>
-        </MudStack>
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+        <MudFileUpload T="IBrowserFile"
+                       FilesChanged="UploadFiles"
+                       Accept=".csv"
+                       MaximumFileCount="1">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.TwoTone.AttachFile">
+                    @ComDefine.LABEL_BUTTON_CHOICE_FILE
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
 
-        @* <InputFile OnChange="OnFileChanged" accept=".csv" /> *@
-    </DialogContent>
-    <DialogActions>
-        <MudTooltip Text="読込を実行します">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">読込</MudButton>
-        </MudTooltip>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@ComDefine.LABEL_BUTTON_CANCEL</MudButton>
-    </DialogActions>
-</MudDialog>
+        <MudList T="string">
+            @foreach (var file in _files)
+            {
+                <MudListItem @key="file">@file.Name</MudListItem>
+            }
+        </MudList>
+    </MudStack>
+</BaseDialogWrapper>
 
 @code {
-    // TODO: ダイアログのlook & feelを整える
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
-
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public EventCallback<List<PhraseModel>> OnUploadCompleted { get; set; }
-    IList<IBrowserFile> _files = new List<IBrowserFile>();
+
+    private IList<IBrowserFile> _files = new List<IBrowserFile>();
+
     private void UploadFiles(IBrowserFile file)
     {
+        _files.Clear(); // 単一ファイルに制限する場合
         _files.Add(file);
-        //TODO upload the files to the server
     }
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
-
-    private void Cancel() => MudDialog.Cancel();
-
-    private async Task OnFileChanged(InputFileChangeEventArgs e)
+    private async Task Submit()
     {
+        if (_files.Count == 0)
+        {
+            Snackbar.Add("CSVファイルを選択してください。", Severity.Warning);
+            return;
+        }
+
         try
         {
-            var file = e.File;
-            if (file == null)
-                return;
-
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MBまで
+            var file = _files.First();
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 最大10MB
             using var reader = new StreamReader(stream);
             using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
 
             var records = csv.GetRecords<PhraseModel>().ToList();
-
             await OnUploadCompleted.InvokeAsync(records);
+
             Snackbar.Add("CSV読込が完了しました。", Severity.Success);
-            MudDialog.Close();
+            MudDialog.Close(DialogResult.Ok(records));
         }
         catch (Exception ex)
         {

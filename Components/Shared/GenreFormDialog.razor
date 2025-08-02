@@ -1,0 +1,29 @@
+﻿@using PhrazorApp.Models
+
+<BaseDialogWrapper DialogColor="Color.Info"
+                   DialogTitle="ジャンル登録"
+                   ExecuteButtonText="@ComDefine.LABEL_BUTTON_REGISTER"
+                   CancelButtonText="@ComDefine.LABEL_BUTTON_CANCEL"
+                   ShowExecuteButton="false"
+                   OnExecuteCallback="Submit"
+                   ExecuteResult="@genreModel">
+
+    <GenreForm @ref="formRef" IsDialog="true" Id="GenreId" />
+
+</BaseDialogWrapper>
+
+@code {
+    private GenreForm? formRef;
+    private GenreModel genreModel = new();
+
+    [Parameter] public Guid? GenreId { get; set; }
+
+    private async Task Submit()
+    {
+        if (formRef is not null)
+        {
+            await formRef.SubmitAsync(); // internal処理をpublicに公開
+            genreModel = formRef.GetModel(); // モデルも外部へ返却
+        }
+    }
+}

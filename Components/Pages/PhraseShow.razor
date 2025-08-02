@@ -21,6 +21,7 @@
             </MudCardContent>
         </MudCard>
         <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true"
+                  Bordered="true"
                   Elevation="@ComDefine.DEFAULT_ELEVATION" Class="px-4"
                   MultiSelection="true" SelectionChangeable="true" @bind-SelectedItems="selectedItems"
                   Filter="new Func<PhraseModel, bool>(FilterFunc)">
