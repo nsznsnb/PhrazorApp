@@ -27,7 +27,7 @@
 <form @formname="reset-authenticator" @onsubmit="OnSubmitAsync" method="post">
     <AntiforgeryToken />
 
-    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">Reset authenticator key</MudStaticButton>
+    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" Size="@ComDefine.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">Reset authenticator key</MudStaticButton>
 </form>
 
 @code {
