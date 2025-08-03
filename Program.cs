@@ -10,7 +10,6 @@ using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Options;
 using PhrazorApp.Services;
-using PhrazorApp.Utils;
 using Resend;
 
 namespace PhrazorApp
@@ -70,9 +69,7 @@ namespace PhrazorApp
                     builder.Configuration.GetConnectionString("EngDbContext"));
             });
 
-            // Repositoriesの登録
-            builder.Services.AddScoped<IPhraseRepository, PhraseRepository>();
-            builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+
 
             // ユーザーシークレットを使用（開発時のみ）
             //builder.Configuration.AddUserSecrets<Program>();
@@ -102,6 +99,26 @@ namespace PhrazorApp
             });
             builder.Services.AddSingleton<BlobStorageClient>();
 
+
+            // Repositoriesの登録
+            builder.Services.AddScoped<DailyUsageRepository>();
+            builder.Services.AddScoped<EnglishDiaryRepository>();
+            builder.Services.AddScoped<PhraseImageRepository>();
+            builder.Services.AddScoped<PhraseRepository>();
+            builder.Services.AddScoped<ReviewLogRepository>();
+            builder.Services.AddScoped<TestResultDetailRepository>();
+            builder.Services.AddScoped<TestResultRepository>();
+            builder.Services.AddScoped<DiaryTagRepository>();
+            builder.Services.AddScoped<GenreRepository>();
+            builder.Services.AddScoped<GradeRepository>();
+            builder.Services.AddScoped<OperationTypeRepository>();
+            builder.Services.AddScoped<PhraseGenreRepository>();
+            builder.Services.AddScoped<ProverbRepository>();
+            builder.Services.AddScoped<ReviewTypeRepository>();
+            builder.Services.AddScoped<SubGenreRepository>();
+
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<UserService>();
 
             builder.Services.AddScoped<LoadingService>();
             builder.Services.AddScoped<ScriptService>();
@@ -141,8 +158,8 @@ namespace PhrazorApp
             }
 
             // CommonにHttpContextAccessorをセット
-            var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
-            UserUtil.SetHttpContextAccessor(httpContextAccessor);
+            //var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
+            //UserUtil.SetHttpContextAccessor(httpContextAccessor);
 
             app.UseHttpsRedirection();
 

@@ -22,12 +22,13 @@ public static class ZModelMapper
         };
     }
 
-    public static MGenre ToEntity(this GenreModel model)
+    public static MGenre ToEntity(this GenreModel model, string userId)
     {
         var genre = new MGenre
         {
             GenreId = model.Id,
             GenreName = model.Name,
+            UserId = userId
         };
 
         if (model.SubGenres != null)
@@ -39,6 +40,7 @@ public static class ZModelMapper
                 GenreId = model.Id,
                 SubGenreName = x.Name,
                 SortOrder = x.SortOrder,
+                UserId = userId
             }).ToList();
         }
         return genre;

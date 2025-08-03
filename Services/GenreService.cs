@@ -1,4 +1,6 @@
-﻿using PhrazorApp.Constants;
+﻿using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Commons;
+using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Models;
 
@@ -23,14 +25,24 @@ namespace PhrazorApp.Services
     /// </summary>
     public class GenreService : IGenreService
     {
-        private readonly IGenreRepository _genreRepository;
+        private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
+        private readonly UserService _userService;
+        private readonly GenreRepository _genreRepository;
+        private readonly SubGenreRepository _subGenreRepository;
         private readonly ILogger<GenreService> _logger;
         private readonly string MSG_PREFIX = "ジャンル";
 
-        public GenreService(IGenreRepository genreRepository, ILogger<GenreService> logger)
+        public GenreService(IDbContextFactory<EngDbContext> dbContextFactory,
+                            GenreRepository genreRepository,
+                            SubGenreRepository subGenreRepository,
+                            ILogger<GenreService> logger,
+                            UserService userService)
         {
+            _dbContextFactory = dbContextFactory;
             _genreRepository = genreRepository;
+            _subGenreRepository = subGenreRepository;
             _logger = logger;
+            _userService = userService;
         }
 
         /// <summary>
@@ -39,7 +51,10 @@ namespace PhrazorApp.Services
         /// <returns>ジャンルのリスト</returns>
         public async Task<List<GenreModel>> GetGenreViewModelListAsync()
         {
-            var genres = await _genreRepository.GetAllGenresAsync();
+            var userId = _userService.GetUserId();
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+            var genres = await _genreRepository.GetAllGenresAsync(context, userId);
 
             // マッピング処理
             return genres.Select(x => x.ToModel()).ToList();
@@ -51,7 +66,10 @@ namespace PhrazorApp.Services
         /// <returns></returns>
         public async Task<List<DropItemModel>> GetGenreDropItemModelListAsync()
         {
-            var genres = await _genreRepository.GetAllGenresAsync();
+            var userId = _userService.GetUserId();
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+            var genres = await _genreRepository.GetAllGenresAsync(context, userId);
             return genres.ToDropItemModelList();
         }
 
@@ -62,7 +80,9 @@ namespace PhrazorApp.Services
         /// <returns>ジャンル情報</returns>
         public async Task<GenreModel> GetGenreViewModelAsync(Guid genreId)
         {
-            var genre = await _genreRepository.GetGenreByIdAsync(genreId);
+            var userId = _userService.GetUserId();
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            var genre = await _genreRepository.GetGenreByIdAsync(context, genreId, userId);
 
             // マッピング処理
             return genre != null ? genre.ToModel() : new GenreModel();
@@ -76,15 +96,16 @@ namespace PhrazorApp.Services
         /// <returns>操作結果</returns>
         public async Task<IServiceResult> CreateGenreAsync(GenreModel model)
         {
-            var sysDateTime = DateTime.Now;
+            var userId = _userService.GetUserId();
 
             // モデル → エンティティ
-            var genreEntity = model.ToEntity();
+            var genreEntity = model.ToEntity(userId);
 
             try
             {
-                // トランザクション開始
-                await _genreRepository.CreateGenreAsync(genreEntity);
+                await using var context = await _dbContextFactory.CreateDbContextAsync();
+
+                await _genreRepository.AddAsync(context, genreEntity);
 
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
@@ -102,20 +123,39 @@ namespace PhrazorApp.Services
         /// <returns>操作結果</returns>
         public async Task<IServiceResult> UpdateGenreAsync(GenreModel model)
         {
-            var sysDateTime = DateTime.Now;
 
-            // モデル → エンティティ
-            var genreEntity = model.ToEntity();
+
+            var userId = _userService.GetUserId();
+
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
-                // 更新
-                await _genreRepository.UpdateGenreAsync(genreEntity);
+                // エンティティ変換
+                var genre = model.ToEntity(userId);
 
+                // サブジャンルの完全差し替え
+                var oldSubGenres = await context.MSubGenres
+                    .Where(x => x.GenreId == genre.GenreId)
+                    .ToListAsync();
+
+                context.MSubGenres.RemoveRange(oldSubGenres);
+
+                if (genre.MSubGenres?.Any() == true)
+                {
+                    await _subGenreRepository.AddRangeAsync(context, genre.MSubGenres);
+                }
+
+                await _genreRepository.UpdateAsync(context, genre);
+
+                await transaction.CommitAsync();
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "ジャンル更新エラー");
                 return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
@@ -128,17 +168,38 @@ namespace PhrazorApp.Services
         /// <returns>操作結果</returns>
         public async Task<IServiceResult> DeleteGenreAsync(Guid genreId)
         {
+            var userId = _userService.GetUserId();
+            await using var context = await _dbContextFactory.CreateDbContextAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
+
             try
             {
-                await _genreRepository.DeleteGenreAsync(genreId);
+                // 1. ジャンル取得（サブジャンル含む）
+                var genre = await _genreRepository.GetGenreByIdAsync(context, genreId, userId);
+                if (genre == null)
+                {
+                    throw new Exception(string.Format(ComMessage.MSG_E_NOT_FOUND, "指定されたジャンル"));
+                }
 
+                // 2. サブジャンル削除
+                if (genre.MSubGenres?.Any() == true)
+                {
+                    await _subGenreRepository.DeleteRangeAsync(context, genre.MSubGenres);
+                }
+
+                // 3. ジャンル削除
+                await _genreRepository.DeleteAsync(context, genre);
+
+                await transaction.CommitAsync();
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "ジャンル削除エラー");
                 return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
+
         }
     }
 }
