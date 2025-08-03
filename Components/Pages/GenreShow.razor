@@ -13,7 +13,7 @@
         <MudCard Elevation="ComDefine.DEFAULT_ELEVATION">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
                 </MudStack>
             </MudCardContent>
         </MudCard>
@@ -47,8 +47,8 @@
                 </MudTd>
                 <MudTd Align="Right" style="min-width: 200px;">
                     <MudStack Row="true">
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Secondary" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
                     </MudStack>
                 </MudTd>
             </RowTemplate>

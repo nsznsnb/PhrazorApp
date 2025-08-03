@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MudBlazor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -50,6 +51,8 @@ namespace PhrazorApp.Constants
         // アカウント関連画面：Info情報プレフィックス
         public const string PREFIX_ACCOUNT_INFO_MESSAGE = "info:";
 
+        // ボタンのデフォルトのサイズ値
+        public const Size SIZE_BUTTON = Size.Small;
         // カードのデフォルトのElevation値
         public const int DEFAULT_ELEVATION = 2;
     }
