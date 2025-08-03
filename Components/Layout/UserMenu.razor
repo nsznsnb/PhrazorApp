@@ -11,13 +11,13 @@
                 <MudMenuItem Href="Account/Manage"
                              ForceLoad
                              Icon="@Icons.Material.TwoTone.Settings"
-                             IconColor="Color.Info"
+                             IconColor="Color.Secondary"
                              Label="プロフィール" />
                 <form action="Account/Logout" method="post">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                     <button type="submit" class="mud-nav-link mud-ripple">
-                        <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Info" Class="mr-3"></MudIcon> Logout
+                        <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Secondary" Class="mr-3"></MudIcon> Logout
                     </button>
                 </form>
             </ChildContent>
@@ -32,12 +32,12 @@
                 <MudMenuItem Href="Account/Register"
                              ForceLoad
                              Icon="@Icons.Material.TwoTone.Person"
-                             IconColor="Color.Info"
+                             IconColor="Color.Secondary"
                              Label="ユーザー登録" />
                 <MudMenuItem Href="Account/Register"
                              ForceLoad
                              Icon="@Icons.Material.TwoTone.Password"
-                             IconColor="Color.Info"
+                             IconColor="Color.Secondary"
                              Label="ログイン" />
             </ChildContent>
         </MudMenu>
