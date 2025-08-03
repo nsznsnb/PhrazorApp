@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Constants
+﻿namespace PhrazorApp.Commons
 {
     /// <summary>
     /// イベントID管理クラス

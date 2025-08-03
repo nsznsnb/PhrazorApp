@@ -1,5 +1,4 @@
-﻿@using PhrazorApp.Models
-@inject ISnackbar Snackbar
+﻿@inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IGenreService GenreService
 @inject LoadingService OverlayService
@@ -11,10 +10,10 @@
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
                     <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await SubmitAsync())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
-                    <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" " Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
                     @if (!IsDialog)
                     {
-                        <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/genres"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/genres"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
                     }
                 </MudStack>
             </MudCardContent>
@@ -41,7 +40,7 @@
             <ToolBarContent>
                 <MudStack Row Spacing="4">
                     <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="サブジャンル一覧入力" />
-                    <MudButton Variant="Variant.Outlined" Size="Size.Medium" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_BUTTON_ROW_ADD</MudButton>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_BUTTON_ROW_ADD</MudButton>
                 </MudStack>
                 <MudSpacer />
             </ToolBarContent>
@@ -56,9 +55,9 @@
                     </MudForm>
                 </MudTd>
                 <MudTd>
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_BUTTON_ROW_DELETE</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" Disabled="@isFirst(context)" OnClick="@(() => MoveUp(context))">上へ</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown" Disabled="@isLast(context)" OnClick="@(() => MoveDown(context))">下へ</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@ComDefine.LABEL_BUTTON_ROW_DELETE</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" Disabled="@isFirst(context)" OnClick="@(() => MoveUp(context))">上へ</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown" Disabled="@isLast(context)" OnClick="@(() => MoveDown(context))">下へ</MudButton>
                 </MudTd>
             </RowTemplate>
         </MudTable>

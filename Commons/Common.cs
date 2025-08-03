@@ -2,10 +2,11 @@
 using System.Globalization;
 using System.Text;
 
-namespace PhrazorApp.Utils
+namespace PhrazorApp.Commons
 {
-    public class CsvUtil
+    public static class Common
     {
+
         public static async Task<IEnumerable<T>> ReadCsvAsync<T>(Stream stream)
         {
             using var reader = new StreamReader(stream, Encoding.UTF8);

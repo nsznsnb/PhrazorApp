@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PhrazorApp.Constants
+namespace PhrazorApp.Commons
 {
     public class ComDefine
     {
