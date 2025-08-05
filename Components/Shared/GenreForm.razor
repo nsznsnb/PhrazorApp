@@ -9,12 +9,8 @@
         <MudCard Elevation="ComDefine.DEFAULT_ELEVATION">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await SubmitAsync())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
-                    <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
-                    @if (!IsDialog)
-                    {
-                        <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/genres"))">@ComDefine.LABEL_BUTTON_RETURN_INDEX</MudButton>
-                    }
+                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await SubmitAsync())">@ComDefine.LABEL_BUTTON_REGISTER</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@ComDefine.LABEL_BUTTON_CLEAR</MudButton>
                 </MudStack>
             </MudCardContent>
         </MudCard>
@@ -40,7 +36,7 @@
             <ToolBarContent>
                 <MudStack Row Spacing="4">
                     <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="サブジャンル一覧入力" />
-                    <MudButton Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_BUTTON_ROW_ADD</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@ComDefine.LABEL_BUTTON_ROW_ADD</MudButton>
                 </MudStack>
                 <MudSpacer />
             </ToolBarContent>

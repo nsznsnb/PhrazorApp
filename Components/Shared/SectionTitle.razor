@@ -1,35 +1,25 @@
 ﻿@using MudBlazor
 
 <MudStack Row Spacing="1" Class="align-center">
-    <MudIcon Icon="@Icon" Color="@IconColor" Title="@(Icon?.Split('.').Last() ?? "")" />
 
     @if (HeadingLevel is >= 1 and <= 6)
     {
         @switch (HeadingLevel)
         {
             case 1:
-                <h1 class="@TextClass">@Title</h1>
+                <MudText Typo="Typo.h4" GutterBottom="true">@Title</MudText>
                 break;
             case 2:
-                <h2 class="@TextClass">@Title</h2>
+                <MudText Typo="Typo.h5" GutterBottom="true">@Title</MudText>
                 break;
             case 3:
-                <h3 class="@TextClass">@Title</h3>
-                break;
-            case 4:
-                <h4 class="@TextClass">@Title</h4>
-                break;
-            case 5:
-                <h5 class="@TextClass">@Title</h5>
-                break;
-            case 6:
-                <h6 class="@TextClass">@Title</h6>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Title</MudText>
                 break;
         }
     }
     else
     {
-        <h2 class="@TextClass">@Title</h2> @* fallback *@
+        <MudText Typo="Typo.h5" GutterBottom="true">@Title</MudText>
     }
 </MudStack>
 

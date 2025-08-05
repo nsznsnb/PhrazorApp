@@ -3,9 +3,10 @@
 @attribute [Authorize]
 
 <MudContainer>
-<SectionTitle Title="@(IsEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
+    <ReturnLink Href="/genres"/>
+    <SectionTitle Title="@(IsEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
 
-<GenreForm Id="Id" IsDialog="false" />
+    <GenreForm Id="Id" IsDialog="false" />
 </MudContainer>
 @code {
     [Parameter] public Guid? Id { get; set; }

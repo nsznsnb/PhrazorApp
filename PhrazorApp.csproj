@@ -21,4 +21,9 @@
     <PackageReference Include="Resend" Version="0.1.4" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <Folder Include="Models\Mappings\" />
+  </ItemGroup>
+
 </Project>

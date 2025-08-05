@@ -11,15 +11,30 @@ namespace PhrazorApp.Commons
         {
             PaletteLight = new PaletteLight()
             {
-                Primary = Colors.Indigo.Default,
+                Primary = Colors.Teal.Default,
                 Secondary = Colors.Cyan.Accent4,
-                Info = Colors.Blue.Darken1,
+                Info = Colors.Blue.Lighten1,
                 Success = Colors.Green.Accent4,
                 Warning = Colors.Orange.Default,
                 Error = Colors.Red.Accent2,
+                // 背景系
                 AppbarBackground = Colors.Shades.White,
                 Background = Colors.Gray.Lighten5,
-                DrawerIcon = Colors.Cyan.Accent4
+                Surface = Colors.Shades.White,            // カードやDialogの背景
+
+                // テキスト系
+                TextPrimary = Colors.Gray.Darken4,
+                TextSecondary = Colors.Gray.Darken2,
+
+                // アクション（IconやDisabled状態など）
+                ActionDefault = Colors.Gray.Darken1,
+                ActionDisabled = Colors.Gray.Lighten1,
+                ActionDisabledBackground = Colors.Gray.Lighten3,
+
+                // Drawerやナビゲーション
+                DrawerBackground = Colors.Gray.Lighten4,
+                DrawerText = Colors.Gray.Darken3,
+                DrawerIcon = Colors.Cyan.Accent4,
             },
             LayoutProperties = new LayoutProperties()
             {
