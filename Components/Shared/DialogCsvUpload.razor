@@ -1,5 +1,6 @@
 ﻿@using System.Globalization
 @using CsvHelper
+@using CsvHelper.Configuration
 @using Microsoft.AspNetCore.Components.Forms
 @inject ISnackbar Snackbar
 
@@ -60,9 +61,25 @@
             var file = _files.First();
             using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 最大10MB
             using var reader = new StreamReader(stream);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
 
-            var records = csv.GetRecords<PhraseModel>().ToList();
+            // CSV設定：ヘッダーなし
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                HasHeaderRecord = false,
+                MissingFieldFound = null,      // CSVにないプロパティがあっても無視
+                IgnoreBlankLines = true,
+                TrimOptions = TrimOptions.Trim
+            };
+            using var csv = new CsvReader(reader, config);
+
+
+            // 非同期で読み込む
+            var records = new List<PhraseModel>();
+            await foreach (var record in csv.GetRecordsAsync<PhraseModel>())
+            {
+                records.Add(record);
+            }
+
             await OnUploadCompleted.InvokeAsync(records);
 
             Snackbar.Add("CSV読込が完了しました。", Severity.Success);

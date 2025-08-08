@@ -7,22 +7,11 @@ using PhrazorApp.Models;
 
 namespace PhrazorApp.Services
 {
-	/// <summary>
-	/// フレーズサービスインターフェース
-	/// </summary>
-	public interface IPhraseService
-	{
-		Task<List<PhraseModel>> GetPhraseViewModelListAsync();
-		Task<PhraseModel> GetPhraseViewModelAsync(Guid? phraseId);
-		Task<IServiceResult> CreatePhraseAsync(PhraseModel model);
-		Task<IServiceResult> UpdatePhraseAsync(PhraseModel model);
-		Task<IServiceResult> DeletePhraseAsync(Guid phraseId);
-	}
 
 	/// <summary>
 	/// フレーズサービス
 	/// </summary>
-	public class PhraseService : IPhraseService
+	public class PhraseService
 	{
 		private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
 		private readonly PhraseRepository _phraseRepository;

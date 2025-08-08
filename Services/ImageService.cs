@@ -4,19 +4,11 @@ using System.Net.Http;
 
 namespace PhrazorApp.Services
 {
-    public interface IImageService
-    {
-        public Task<string?> GenerateImageAsync(string prompt);
-        public Task<string?> SaveImageFromUrlAsync(string prompt, string imageUrl);
-        public Task<byte[]?> DownloadImageAsync(string imageUrl);
-
-
-    }
 
     /// <summary>
     /// 画像サービス
     /// </summary>
-    public class ImageService : IImageService
+    public class ImageService 
     {
         private readonly OpenAiClient _openAi;
         private readonly BlobStorageClient _blob;

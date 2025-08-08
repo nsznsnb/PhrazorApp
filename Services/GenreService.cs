@@ -6,24 +6,11 @@ using PhrazorApp.Models;
 
 namespace PhrazorApp.Services
 {
-    /// <summary>
-    /// ジャンルサービスインターフェース
-    /// </summary>
-    public interface IGenreService
-    {
-        Task<List<GenreModel>> GetGenreViewModelListAsync();
-
-        public Task<List<DropItemModel>> GetGenreDropItemModelListAsync();
-        Task<GenreModel> GetGenreViewModelAsync(Guid genreId);
-        Task<IServiceResult> CreateGenreAsync(GenreModel model);
-        Task<IServiceResult> UpdateGenreAsync(GenreModel model);
-        Task<IServiceResult> DeleteGenreAsync(Guid genreId);
-    }
 
     /// <summary>
     /// ジャンルサービス
     /// </summary>
-    public class GenreService : IGenreService
+    public class GenreService
     {
         private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
         private readonly UserService _userService;

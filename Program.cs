@@ -123,9 +123,9 @@ namespace PhrazorApp
             builder.Services.AddScoped<LoadingService>();
             builder.Services.AddScoped<ScriptService>();
             // OpenAiClientとBlogClientをDIしているためDIの順序関係に注意
-            builder.Services.AddScoped<IImageService, ImageService>();
-            builder.Services.AddScoped<IGenreService, GenreService>();
-            builder.Services.AddScoped<IPhraseService, PhraseService>();
+            builder.Services.AddScoped<ImageService>();
+            builder.Services.AddScoped<GenreService>();
+            builder.Services.AddScoped<PhraseService>();
 
 
             // オプションパターン
