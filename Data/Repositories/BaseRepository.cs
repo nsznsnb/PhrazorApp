@@ -1,61 +1,59 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
 namespace PhrazorApp.Data.Repositories
 {
+    /// <summary>
+    /// UoW前提のベースリポジトリ（SaveChangesは呼ばない）
+    /// </summary>
     public abstract class BaseRepository<TEntity> where TEntity : class
     {
+        protected readonly DbContext _context;
+        protected DbSet<TEntity> Set => _context.Set<TEntity>();
 
+        protected BaseRepository(DbContext context) => _context = context;
 
-        public virtual async Task AddAsync(DbContext context, TEntity entity)
+        public virtual Task AddAsync(TEntity entity)
         {
-            SetTimestamps(entity, isNew: true);
-            context.Set<TEntity>().Add(entity);
-            await context.SaveChangesAsync();
+            Stamp(entity, isNew: true);
+            Set.Add(entity);
+            return Task.CompletedTask;
         }
 
-        public virtual async Task AddRangeAsync(DbContext context, IEnumerable<TEntity> entities)
+        public virtual Task AddRangeAsync(IEnumerable<TEntity> entities)
         {
-            foreach (var entity in entities)
-                SetTimestamps(entity, isNew: true);
-
-            context.Set<TEntity>().AddRange(entities);
-            await context.SaveChangesAsync();
+            foreach (var e in entities) Stamp(e, isNew: true);
+            Set.AddRange(entities);
+            return Task.CompletedTask;
         }
 
-        public virtual async Task UpdateAsync(DbContext context, TEntity entity)
+        public virtual Task UpdateAsync(TEntity entity)
         {
-            SetTimestamps(entity, isNew: false);
-            context.Set<TEntity>().Update(entity);
-            await context.SaveChangesAsync();
+            Stamp(entity, isNew: false);
+            Set.Update(entity);
+            return Task.CompletedTask;
         }
 
-        public virtual async Task UpdateRangeAsync(DbContext context, IEnumerable<TEntity> entities)
+        public virtual Task UpdateRangeAsync(IEnumerable<TEntity> entities)
         {
-            foreach (var entity in entities)
-                SetTimestamps(entity, isNew: false);
-
-            context.Set<TEntity>().UpdateRange(entities);
-            await context.SaveChangesAsync();
+            foreach (var e in entities) Stamp(e, isNew: false);
+            Set.UpdateRange(entities);
+            return Task.CompletedTask;
         }
 
-        public virtual async Task DeleteAsync(DbContext context, TEntity entity)
+        public virtual Task DeleteAsync(TEntity entity)
         {
-            context.Set<TEntity>().Remove(entity);
-            await context.SaveChangesAsync();
+            Set.Remove(entity);
+            return Task.CompletedTask;
         }
 
-        public virtual async Task DeleteRangeAsync(DbContext context, IEnumerable<TEntity> entities)
+        public virtual Task DeleteRangeAsync(IEnumerable<TEntity> entities)
         {
-            context.Set<TEntity>().RemoveRange(entities);
-            await context.SaveChangesAsync();
+            Set.RemoveRange(entities);
+            return Task.CompletedTask;
         }
 
-        private void SetTimestamps(object entity, bool isNew)
+        protected static void Stamp(object entity, bool isNew)
         {
             var now = DateTime.UtcNow;
             var type = entity.GetType();
@@ -63,12 +61,8 @@ namespace PhrazorApp.Data.Repositories
             var createdAt = type.GetProperty("CreatedAt", BindingFlags.Public | BindingFlags.Instance);
             var updatedAt = type.GetProperty("UpdatedAt", BindingFlags.Public | BindingFlags.Instance);
 
-            if (isNew && createdAt != null && createdAt.CanWrite)
-                createdAt.SetValue(entity, now);
-
-            if (updatedAt != null && updatedAt.CanWrite)
-                updatedAt.SetValue(entity, now);
+            if (isNew && createdAt?.CanWrite == true) createdAt.SetValue(entity, now);
+            if (updatedAt?.CanWrite == true) updatedAt.SetValue(entity, now);
         }
-
     }
 }

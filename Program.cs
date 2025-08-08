@@ -8,6 +8,7 @@ using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
+using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Options;
 using PhrazorApp.Services;
 using Resend;
@@ -69,7 +70,7 @@ namespace PhrazorApp
                     builder.Configuration.GetConnectionString("EngDbContext"));
             });
 
-
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // ユーザーシークレットを使用（開発時のみ）
             //builder.Configuration.AddUserSecrets<Program>();
@@ -118,6 +119,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<SubGenreRepository>();
 
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<ICancellationTokenProvider, HttpCancellationTokenProvider>();
             builder.Services.AddScoped<UserService>();
 
             builder.Services.AddScoped<LoadingService>();

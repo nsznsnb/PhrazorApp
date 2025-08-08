@@ -1,229 +1,159 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using PhrazorApp.Commons;
-using PhrazorApp.Data;
-using PhrazorApp.Data.Repositories;
+using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Mappings;
 
 namespace PhrazorApp.Services
 {
-
-	/// <summary>
-	/// フレーズサービス
-	/// </summary>
-	public class PhraseService
-	{
-		private readonly IDbContextFactory<EngDbContext> _dbContextFactory;
-		private readonly PhraseRepository _phraseRepository;
-		private readonly PhraseImageRepository _phraseImageRepository;
-		private readonly PhraseGenreRepository _phraseGenreRepository;
-		private readonly UserService _userService;
-
+    public class PhraseService
+    {
+        private readonly IUnitOfWork _uow;
+        private readonly UserService _userService;
         private readonly ILogger<PhraseService> _logger;
-        private readonly string MSG_PREFIX = "フレーズ";
+        private const string MSG_PREFIX = "フレーズ";
 
-		public PhraseService(
-            IDbContextFactory<EngDbContext> dbContextFactory,
-            PhraseRepository phraseRepository,
-            GenreRepository genreRepository,
-            PhraseImageRepository phraseImageRepository, 
-			PhraseGenreRepository phraseGenreRepository,
-			UserService userService,
-            ILogger<PhraseService> logger)
+        public PhraseService(IUnitOfWork uow, UserService userService, ILogger<PhraseService> logger)
         {
-            _dbContextFactory = dbContextFactory;
-            _phraseRepository = phraseRepository;
-			_phraseImageRepository = phraseImageRepository;
-			_phraseGenreRepository = phraseGenreRepository;
-			_userService = userService;
+            _uow = uow;
+            _userService = userService;
             _logger = logger;
         }
 
+        public async Task<List<PhraseModel>> GetPhraseViewModelListAsync(CancellationToken ct = default)
+        {
+            var userId = _userService.GetUserId();
+            await _uow.BeginAsync(ct);
+            var phrases = await _uow.Phrases.GetAllPhrasesAsync(userId, ct);
+            return phrases.Select(p => p.ToModel()).ToList();
+        }
 
-        /// <summary>
-        /// すべてのフレーズ情報を取得します。
-        /// </summary>
-        public async Task<List<PhraseModel>> GetPhraseViewModelListAsync()
-		{
-			var userId = _userService.GetUserId();
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-
-            // フレーズ情報をリポジトリから取得
-            var phrases = await _phraseRepository.GetAllPhrasesAsync(context, userId);
-			// モデルに変換して返却
-			return phrases.Select(p => p.ToModel()).ToList();
-		}
-
-		/// <summary>
-		/// 指定されたフレーズIDに基づいてフレーズ情報を取得します。
-		/// </summary>
-		public async Task<PhraseModel> GetPhraseViewModelAsync(Guid? phraseId)
-		{
-			var userId = _userService.GetUserId();
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-
-            var phrase = await _phraseRepository.GetPhraseByIdAsync(context, phraseId, userId);
-
-
+        public async Task<PhraseModel> GetPhraseViewModelAsync(Guid? phraseId, CancellationToken ct = default)
+        {
+            var userId = _userService.GetUserId();
+            await _uow.BeginAsync(ct);
+            var phrase = await _uow.Phrases.GetPhraseByIdAsync(phraseId, userId, ct);
             if (phraseId == null || phrase == null)
-			{
-
-				return new PhraseModel
-				{
-					Id = Guid.NewGuid(),
-					Phrase = string.Empty,
-					Meaning = string.Empty,
-					Note = string.Empty,
-					ImageUrl = string.Empty,
-				};
+            {
+                return new PhraseModel
+                {
+                    Id = Guid.NewGuid(),
+                    Phrase = string.Empty,
+                    Meaning = string.Empty,
+                    Note = string.Empty,
+                    ImageUrl = string.Empty,
+                };
             }
+            return new PhraseModel
+            {
+                Id = phrase.PhraseId,
+                Phrase = phrase.Phrase ?? string.Empty,
+                Meaning = phrase.Meaning ?? string.Empty,
+                Note = phrase.Note ?? string.Empty,
+                ImageUrl = phrase.DPhraseImage?.Url ?? string.Empty,
+                SelectedDropItems = phrase.MPhraseGenres.ToDropItemModels()
+            };
+        }
 
-
-			// フレーズ情報とジャンルを結びつけてモデルに変換して返却
-			return new PhraseModel
-			{
-				Id = phrase.PhraseId,
-				Phrase = phrase.Phrase ?? string.Empty,
-				Meaning = phrase.Meaning ?? string.Empty,
-				Note = phrase.Note ?? string.Empty,
-				ImageUrl = phrase.DPhraseImage?.Url ?? string.Empty,
-				SelectedDropItems = phrase.MPhraseGenres.ToDropItemModels()
-			};
-		}
-
-		/// <summary>
-		/// 新しいフレーズを作成します。
-		/// </summary>
-		public async Task<IServiceResult> CreatePhraseAsync(PhraseModel model)
-		{
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await using var transaction = await context.Database.BeginTransactionAsync();
+        public async Task<IServiceResult> CreatePhraseAsync(PhraseModel model, CancellationToken ct = default)
+        {
+            await _uow.BeginAsync(ct);
             try
             {
-
-
-
-                // モデルをエンティティに変換
-                var entity = model.ToEntity();
-				await _phraseRepository.AddAsync(context, entity);
-
-				// 画像があれば画像も保存
-				if (!string.IsNullOrEmpty(model.ImageUrl))
-				{
-					var imageEntity = model.ToImageEntity(DateTime.UtcNow);
-					await _phraseImageRepository.AddAsync(context, imageEntity);
-				}
-
-				// ジャンルを保存
-				if (model.SelectedDropItems != null && model.SelectedDropItems.Count > 0)
-				{
-					var phraseGenres = model.ToPhraseGenreEntities();
-					await _phraseGenreRepository.AddRangeAsync(context, phraseGenres);
-
-                }
-
-                await transaction.CommitAsync();
-
-
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
-			}
-			catch (Exception ex)
-			{
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "フレーズ登録で例外が発生しました。");
-				return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
-			}
-		}
-
-		/// <summary>
-		/// フレーズ情報を更新します。
-		/// </summary>
-		public async Task<IServiceResult> UpdatePhraseAsync(PhraseModel model)
-		{
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await using var transaction = await context.Database.BeginTransactionAsync();
-            try
-			{
-				var userId = _userService.GetUserId();
-
-                var phraseEntity = await _phraseRepository.GetPhraseByIdAsync(context, model.Id, userId);
-				if (phraseEntity == null)
-					return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
-
-				// フレーズ情報を更新
-				phraseEntity.Phrase = model.Phrase;
-				phraseEntity.Meaning = model.Meaning;
-				phraseEntity.Note = model.Note;
-				phraseEntity.UpdatedAt = DateTime.UtcNow;
-
-
-                // 画像があれば画像も更新
+                await _uow.Phrases.AddAsync(model.ToEntity());
                 if (!string.IsNullOrEmpty(model.ImageUrl))
-				{
-					var imageEntity = model.ToImageEntity(DateTime.UtcNow);
-					await _phraseImageRepository.UpdateAsync(context, imageEntity);
-				}
+                    await _uow.PhraseImages.AddAsync(model.ToImageEntity(DateTime.UtcNow));
+                if (model.SelectedDropItems?.Count > 0)
+                    await _uow.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
 
+                await _uow.CommitAsync(ct);
+                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+            }
+            catch (Exception ex)
+            {
+                await _uow.RollbackAsync(ct);
+                _logger.LogError(ex, "フレーズ登録で例外が発生しました。");
+                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+            }
+        }
 
-				// ジャンルを削除して新しいジャンルを追加
-				await _phraseGenreRepository.DeleteRangeAsync(context, phraseEntity.MPhraseGenres);
-				if (model.SelectedDropItems != null && model.SelectedDropItems.Count > 0)
-				{
-					var newGenres = model.ToPhraseGenreEntities();
-					await _phraseGenreRepository.AddRangeAsync(context, newGenres);
+        /// <summary>
+        /// フレーズ情報を更新します。
+        /// </summary>
+        public async Task<IServiceResult> UpdatePhraseAsync(PhraseModel model, CancellationToken ct = default)
+        {
+            await _uow.BeginAsync(ct);
+            try
+            {
+                var userId = _userService.GetUserId();
+
+                var phraseEntity = await _uow.Phrases.GetPhraseByIdAsync(model.Id, userId, ct);
+                if (phraseEntity == null)
+                    return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
+
+                // 本体更新
+                phraseEntity.Phrase = model.Phrase;
+                phraseEntity.Meaning = model.Meaning;
+                phraseEntity.Note = model.Note;
+                phraseEntity.UpdatedAt = DateTime.UtcNow;
+                await _uow.Phrases.UpdateAsync(phraseEntity);
+
+                // 画像（必要なら）
+                if (!string.IsNullOrEmpty(model.ImageUrl))
+                {
+                    var imageEntity = model.ToImageEntity(DateTime.UtcNow);
+                    await _uow.PhraseImages.UpdateAsync(imageEntity);
                 }
 
-                await transaction.CommitAsync();
+                // ジャンル差し替え（全削除→再追加）
+                if (phraseEntity.MPhraseGenres is { Count: > 0 })
+                    await _uow.PhraseGenres.DeleteRangeAsync(phraseEntity.MPhraseGenres);
 
+                if (model.SelectedDropItems is { Count: > 0 })
+                    await _uow.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
+
+                await _uow.CommitAsync(ct);
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
-			{
-                await transaction.RollbackAsync();
+            {
+                await _uow.RollbackAsync(ct);
                 _logger.LogError(ex, "フレーズ更新で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// フレーズを削除します。
-		/// </summary>
-		public async Task<IServiceResult> DeletePhraseAsync(Guid phraseId)
-		{
-            await using var context = await _dbContextFactory.CreateDbContextAsync();
-            await using var transaction = await context.Database.BeginTransactionAsync();
+        /// <summary>
+        /// フレーズを削除します。
+        /// </summary>
+        public async Task<IServiceResult> DeletePhraseAsync(Guid phraseId, CancellationToken ct = default)
+        {
+            await _uow.BeginAsync(ct);
             try
-			{
+            {
                 var userId = _userService.GetUserId();
 
-                var phrase = await _phraseRepository.GetPhraseByIdAsync(context, phraseId, userId);
-				if (phrase == null)
+                var phrase = await _uow.Phrases.GetPhraseByIdAsync(phraseId, userId, ct);
+                if (phrase == null)
                     return ServiceResult.Failure(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
 
+                // 画像・ジャンル連鎖削除
+                if (phrase.DPhraseImage is not null)
+                    await _uow.PhraseImages.DeleteAsync(phrase.DPhraseImage);
 
-				// フレーズと関連するジャンルを削除
-				if (phrase.DPhraseImage != null)
-				{
-                    await _phraseImageRepository.DeleteAsync(context, phrase.DPhraseImage);
-                }
-				if (phrase.MPhraseGenres != null && phrase.MPhraseGenres.Count > 0)
-				{
-                    await _phraseGenreRepository.DeleteRangeAsync(context, phrase.MPhraseGenres);
-                }
-                
-				await _phraseRepository.DeleteAsync(context, phrase);
+                if (phrase.MPhraseGenres is { Count: > 0 })
+                    await _uow.PhraseGenres.DeleteRangeAsync(phrase.MPhraseGenres);
 
-                await transaction.CommitAsync();
+                await _uow.Phrases.DeleteAsync(phrase);
 
+                await _uow.CommitAsync(ct);
                 return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
-			}
-			catch (Exception ex)
-			{
-                await transaction.RollbackAsync();
+            }
+            catch (Exception ex)
+            {
+                await _uow.RollbackAsync(ct);
                 _logger.LogError(ex, "フレーズ削除で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
-			}
-		}
-	}
+            }
+        }
+    }
 }

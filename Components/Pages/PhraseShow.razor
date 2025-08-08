@@ -115,7 +115,7 @@
         }
 
         // ジャンル削除
-        var result = await PhraseService.DeletePhraseAsync(item.Id);
+        var result = await PhraseService.DeletePhraseAsync(item.Id, default);
         Snackbar.AddServiceResult(result);
         if (!result.IsSuccess)
         {

@@ -1,8 +1,12 @@
-﻿using PhrazorApp.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Data;
+using PhrazorApp.Data.Entities;
 
 namespace PhrazorApp.Data.Repositories
 {
     public class ReviewTypeRepository : BaseRepository<MReviewType>
     {
+        public ReviewTypeRepository(EngDbContext context) : base(context) { }
+
     }
 }
