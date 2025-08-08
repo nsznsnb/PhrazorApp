@@ -4,6 +4,7 @@ using PhrazorApp.Commons;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Models;
+using PhrazorApp.Models.Mappings;
 
 namespace PhrazorApp.Services
 {
@@ -51,7 +52,7 @@ namespace PhrazorApp.Services
             // フレーズ情報をリポジトリから取得
             var phrases = await _phraseRepository.GetAllPhrasesAsync(context, userId);
 			// モデルに変換して返却
-			return phrases.Select(p => p.ToPhraseModel()).ToList();
+			return phrases.Select(p => p.ToModel()).ToList();
 		}
 
 		/// <summary>
@@ -104,7 +105,7 @@ namespace PhrazorApp.Services
 
 
                 // モデルをエンティティに変換
-                var entity = model.ToPhraseEntity();
+                var entity = model.ToEntity();
 				await _phraseRepository.AddAsync(context, entity);
 
 				// 画像があれば画像も保存

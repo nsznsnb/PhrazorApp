@@ -3,6 +3,7 @@ using PhrazorApp.Commons;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Models;
+using PhrazorApp.Models.Mappings;
 
 namespace PhrazorApp.Services
 {
