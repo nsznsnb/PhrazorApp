@@ -1,87 +1,88 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 
 namespace PhrazorApp.Data.UnitOfWork
 {
     /// <summary>
-    /// スコープDIのUnitOfWork。
-    /// - IDbContextFactoryからDbContextを遅延生成
-    /// - Repositoriesも遅延生成し同一Contextを共有
-    /// - Begin/Commit/RollbackでTx管理
+    /// 超シンプル UoW：
+    /// - ReadAsync: 参照（Txなし、NoTracking、Saveなし）
+    /// - ExecuteInTransactionAsync: 更新（Txあり、最後に1回だけ Save+Commit）
+    /// - Repos はラムダ内専用。Contextを外に出さないので誤用しづらい。
     /// </summary>
-    public sealed class UnitOfWork : IUnitOfWork
+    public sealed class UnitOfWork : IAsyncDisposable
     {
         private readonly IDbContextFactory<EngDbContext> _factory;
-        private EngDbContext? _context;
-        private IDbContextTransaction? _tx;
+        public UnitOfWork(IDbContextFactory<EngDbContext> factory) => _factory = factory;
 
-        // Repos cache
-        private PhraseRepository? _phrases;
-        private PhraseImageRepository? _phraseImages;
-        private PhraseGenreRepository? _phraseGenres;
-        private GenreRepository? _genres;
-        private DailyUsageRepository? _dailyUsages;
-        private DiaryTagRepository? _diaryTags;
-        private EnglishDiaryRepository? _englishDiaries;
-        private GradeRepository? _grades;
-        private OperationTypeRepository? _operationTypes;
-        private ProverbRepository? _proverbs;
-        private ReviewLogRepository? _reviewLogs;
-        private ReviewTypeRepository? _reviewTypes;
-        private SubGenreRepository? _subGenres;
-        private TestResultDetailRepository? _testResultDetails;
-        private TestResultRepository? _testResults;
-
-        public UnitOfWork(IDbContextFactory<EngDbContext> factory)
+        // リポジトリ束（必要に応じて追加）
+        public sealed class Repos
         {
-            _factory = factory;
+            public PhraseRepository Phrases { get; }
+            public PhraseImageRepository PhraseImages { get; }
+            public PhraseGenreRepository PhraseGenres { get; }
+            public GenreRepository Genres { get; }
+            public DailyUsageRepository DailyUsages { get; }
+            public DiaryTagRepository DiaryTags { get; }
+            public EnglishDiaryRepository EnglishDiaries { get; }
+            public GradeRepository Grades { get; }
+            public OperationTypeRepository OperationTypes { get; }
+            public ProverbRepository Proverbs { get; }
+            public ReviewLogRepository ReviewLogs { get; }
+            public ReviewTypeRepository ReviewTypes { get; }
+            public SubGenreRepository SubGenres { get; }
+            public TestResultDetailRepository TestResultDetails { get; }
+            public TestResultRepository TestResults { get; }
+
+            public Repos(EngDbContext ctx)
+            {
+                Phrases = new PhraseRepository(ctx);
+                PhraseImages = new PhraseImageRepository(ctx);
+                PhraseGenres = new PhraseGenreRepository(ctx);
+                Genres = new GenreRepository(ctx);
+                DailyUsages = new DailyUsageRepository(ctx);
+                DiaryTags = new DiaryTagRepository(ctx);
+                EnglishDiaries = new EnglishDiaryRepository(ctx);
+                Grades = new GradeRepository(ctx);
+                OperationTypes = new OperationTypeRepository(ctx);
+                Proverbs = new ProverbRepository(ctx);
+                ReviewLogs = new ReviewLogRepository(ctx);
+                ReviewTypes = new ReviewTypeRepository(ctx);
+                SubGenres = new SubGenreRepository(ctx);
+                TestResultDetails = new TestResultDetailRepository(ctx);
+                TestResults = new TestResultRepository(ctx);
+            }
         }
 
-        public EngDbContext Context => _context ?? throw new InvalidOperationException("Call BeginAsync() before accessing Context.");
-
-        public async Task BeginAsync(CancellationToken ct = default)
+        // 読み取り専用（Txなし・NoTracking・Saveなし）
+        public async Task<T> ReadAsync<T>(Func<Repos, Task<T>> work)
         {
-            if (_context != null) return; // already initialized in this scope
-            _context = await _factory.CreateDbContextAsync(ct);
-            _tx = await _context.Database.BeginTransactionAsync(ct);
+            await using var ctx = await _factory.CreateDbContextAsync();
+            ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            var repos = new Repos(ctx);
+            return await work(repos);
         }
 
-        public Task<int> SaveChangesAsync(CancellationToken ct = default) => Context.SaveChangesAsync(ct);
-
-        public async Task CommitAsync(CancellationToken ct = default)
+        // 書き込み（Txあり・最後に1回だけ Save + Commit）
+        public async Task ExecuteInTransactionAsync(Func<Repos, Task> work)
         {
-            await Context.SaveChangesAsync(ct);
-            if (_tx != null) await _tx.CommitAsync(ct);
+            await using var ctx = await _factory.CreateDbContextAsync();
+            await using var tx = await ctx.Database.BeginTransactionAsync();
+            var repos = new Repos(ctx);
+
+            try
+            {
+                await work(repos);        // RepoはAdd/Update/Removeだけ。Saveはここで1回
+                await ctx.SaveChangesAsync();
+                await tx.CommitAsync();
+            }
+            catch
+            {
+                try { await tx.RollbackAsync(); } catch { /* ログするならここ */ }
+                throw;
+            }
         }
 
-        public async Task RollbackAsync(CancellationToken ct = default)
-        {
-            if (_tx != null) await _tx.RollbackAsync(ct);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            if (_tx != null) await _tx.DisposeAsync();
-            if (_context != null) await _context.DisposeAsync();
-        }
-
-        // Lazy repos
-        public PhraseRepository Phrases => _phrases ??= new PhraseRepository(Context);
-        public PhraseImageRepository PhraseImages => _phraseImages ??= new PhraseImageRepository(Context);
-        public PhraseGenreRepository PhraseGenres => _phraseGenres ??= new PhraseGenreRepository(Context);
-        public GenreRepository Genres => _genres ??= new GenreRepository(Context);
-        public DailyUsageRepository DailyUsages => _dailyUsages ??= new DailyUsageRepository(Context);
-        public DiaryTagRepository DiaryTags => _diaryTags ??= new DiaryTagRepository(Context);
-        public EnglishDiaryRepository EnglishDiaries => _englishDiaries ??= new EnglishDiaryRepository(Context);
-        public GradeRepository Grades => _grades ??= new GradeRepository(Context);
-        public OperationTypeRepository OperationTypes => _operationTypes ??= new OperationTypeRepository(Context);
-        public ProverbRepository Proverbs => _proverbs ??= new ProverbRepository(Context);
-        public ReviewLogRepository ReviewLogs => _reviewLogs ??= new ReviewLogRepository(Context);
-        public ReviewTypeRepository ReviewTypes => _reviewTypes ??= new ReviewTypeRepository(Context);
-        public SubGenreRepository SubGenres => _subGenres ??= new SubGenreRepository(Context);
-        public TestResultDetailRepository TestResultDetails => _testResultDetails ??= new TestResultDetailRepository(Context);
-        public TestResultRepository TestResults => _testResults ??= new TestResultRepository(Context);
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

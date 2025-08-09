@@ -3,6 +3,8 @@
 @using CsvHelper.Configuration
 @using Microsoft.AspNetCore.Components.Forms
 @inject ISnackbar Snackbar
+@inject CsvService CsvService
+@inject PhraseService PhraseService
 
 <DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
                    DialogTitle="CSV読込"
@@ -62,28 +64,16 @@
             using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 最大10MB
             using var reader = new StreamReader(stream);
 
-            // CSV設定：ヘッダーなし
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                HasHeaderRecord = false,
-                MissingFieldFound = null,      // CSVにないプロパティがあっても無視
-                IgnoreBlankLines = true,
-                TrimOptions = TrimOptions.Trim
-            };
-            using var csv = new CsvReader(reader, config);
+            var dtos = await CsvService.ReadToListAsync<PhraseImportDto>(stream);
+            var phraseModels = dtos.Select(x => x.ToPhraseModel()).ToList();
+
+            await PhraseService.CreatePhrasesAsync(phraseModels);
 
 
-            // 非同期で読み込む
-            var records = new List<PhraseModel>();
-            await foreach (var record in csv.GetRecordsAsync<PhraseModel>())
-            {
-                records.Add(record);
-            }
-
-            await OnUploadCompleted.InvokeAsync(records);
+            await OnUploadCompleted.InvokeAsync(phraseModels);
 
             Snackbar.Add("CSV読込が完了しました。", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(records));
+            MudDialog.Close(DialogResult.Ok(phraseModels));
         }
         catch (Exception ex)
         {

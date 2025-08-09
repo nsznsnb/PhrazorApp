@@ -103,8 +103,8 @@
         if (result!.Canceled) return;
 
         var serviceResult = isEdit
-            ? await PhraseService.UpdatePhraseAsync(model, default)
-            : await PhraseService.CreatePhraseAsync(model, default);
+            ? await PhraseService.UpdatePhraseAsync(model)
+            : await PhraseService.CreatePhraseAsync(model);
 
         Snackbar.AddServiceResult(serviceResult);
 

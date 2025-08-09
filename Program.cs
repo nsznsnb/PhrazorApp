@@ -70,10 +70,7 @@ namespace PhrazorApp
                     builder.Configuration.GetConnectionString("EngDbContext"));
             });
 
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            // ユーザーシークレットを使用（開発時のみ）
-            //builder.Configuration.AddUserSecrets<Program>();
+            builder.Services.AddScoped<UnitOfWork>();
 
 
             // Http関連
@@ -128,7 +125,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<GenreService>();
             builder.Services.AddScoped<PhraseService>();
-
+            builder.Services.AddScoped<CsvService>();
 
             // オプションパターン
             builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));
