@@ -2,7 +2,7 @@
 
 namespace PhrazorApp.Models.Mappings
 {
-    public static class GenreMapper
+    public static class GenreModelMapper
     {
         public static GenreModel ToModel(this MGenre e) => new()
         {
