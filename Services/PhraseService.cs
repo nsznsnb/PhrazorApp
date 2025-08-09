@@ -88,12 +88,17 @@ namespace PhrazorApp.Services
                 {
                     var nowUtc = DateTime.UtcNow;
 
+
+
                     var phraseEntities = new List<DPhrase>(list.Count);
                     var imageEntities = new List<DPhraseImage>();
                     var phraseGenreEntities = new List<MPhraseGenre>();
 
                     foreach (var model in list)
                     {
+                        // 新規はここで必ず発番（画面の値は無視）
+                        model.Id = Guid.NewGuid();
+
                         var phrase = model.ToEntity();
                         phraseEntities.Add(phrase);
 
