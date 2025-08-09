@@ -3,9 +3,8 @@
                      DialogTitle="@titleText"
                      ExecuteButtonText="@executeButtonText"
                      CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
-                     OnExecuteCallback="Submit"
-                     ExecuteResult="true"
-                     ShowExecuteButton="true">
+                     ShowExecuteButton="true"
+                     OnExecuteAsync="SubmitAsync">
     <MudText>@ContentText</MudText>
 </DialogBaseWrapper>
 
@@ -41,5 +40,5 @@
         }
     }
 
-    private Task Submit() => Task.CompletedTask; // 実行処理は親でハンドリングされるためここでは何もしない
+    private ValueTask<bool> SubmitAsync() => ValueTask.FromResult(true); // 実行処理は親でハンドリングされるためここでは何もしない
 }

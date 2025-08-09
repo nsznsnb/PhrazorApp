@@ -20,6 +20,7 @@
 
 
         public const string MSG_E_REQUIRED_DETAIL = "{0}を入力してください。";
+        public const string MSG_E_CHOICE_DETAIL = "{0}を選択してください。";
         public const string MSG_E_RANGE_LESS_THAN = "{0}は{1}文字以内で入力してください。";
         public const string MSG_E_HANKAKU_LESS_THAN10 = "{0}は半角10文字以内で入力してください。";
         public const string MSG_E_HANKAKU_LESS_THAN20 = "{0}は半角20文字以内で入力してください。";
@@ -38,5 +39,7 @@
         public const string MSG_E_FAILURE_DETAIL2 = "{0}に失敗しました。({1})";
         public const string MSG_E_MISMATCH_ID_OR_PASSWORD = "ログインIDまたはパスワードが一致しません。";
         public const string MSG_E_MISMATCH_PASSWORD = "パスワードと確認用パスワードが一致しません。";
+        public const string MSG_E_FILE_TOO_LARGE = "{0}のサイズは{1}MB以下にしてください。";
+        public const string MSG_E_FILE_INVALID_TYPE = "{0}の形式が不正です。許可されている形式: {1}";
     }
 }

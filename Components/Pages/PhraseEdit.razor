@@ -97,10 +97,13 @@
         await form.Validate();
         if (!form.IsValid) return;
 
-        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.RegisterConfirm, string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase));
-        var result = await dialog.Result;
-
-        if (result!.Canceled) return;
+        // 確認ダイアログ（OKなら続行）
+        if (!await DialogService.ShowConfirmAsync(
+                DialogConfirmType.RegisterConfirm,
+                string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase)))
+        {
+            return;
+        }
 
         var serviceResult = isEdit
             ? await PhraseService.UpdatePhraseAsync(model)

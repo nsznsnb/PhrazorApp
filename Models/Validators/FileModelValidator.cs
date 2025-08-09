@@ -2,27 +2,39 @@
 
 namespace PhrazorApp.Models.Validators
 {
-    public class FileModelValidator : AbstractValidator<FileModel>
+    public class FileModelValidator : AppValidator<FileModel>
     {
+        // 最大10MB
+        private const long MaxFileSize = 10 * 1024 * 1024;
+
+        // 許可するContentType
+        private static readonly string[] AllowedContentTypes = new[]
+        {
+            "text/csv",
+            "application/vnd.ms-excel",                // Excelがcsvを開く場合
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        };
+
         public FileModelValidator()
         {
-            RuleFor(x => x.Name)
-                .NotEmpty()
-                .Length(1, 100);
             RuleFor(x => x.File)
-            .NotEmpty();
-            When(x => x.File != null, () =>
-            {
-                RuleFor(x => x.File.Size).LessThanOrEqualTo(10485760).WithMessage("The maximum file size is 10 MB");
-            });
+                .Cascade(CascadeMode.Stop)
+                // ファイル必須（NotNull + Nameチェックまとめ）
+                .Must(f => f != null && !string.IsNullOrWhiteSpace(f.Name))
+                    .WithMessage(string.Format(AppMessages.MSG_E_CHOICE_DETAIL, "CSVファイル"))
+
+                // サイズチェック
+                .Must(f => f == null || f.Size <= MaxFileSize)
+                    .WithMessage(string.Format(
+                        AppMessages.MSG_E_INVALID_FORMAT,
+                        $"ファイルサイズは {MaxFileSize / (1024 * 1024)}MB 以下"))
+
+                // ContentTypeチェック
+                .Must(f => f == null || AllowedContentTypes.Contains(f.ContentType))
+                    .WithMessage(string.Format(
+                        AppMessages.MSG_E_INVALID_FORMAT,
+                        "CSV形式"));
         }
 
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<FileModel>.CreateWithOptions((FileModel)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
     }
 }

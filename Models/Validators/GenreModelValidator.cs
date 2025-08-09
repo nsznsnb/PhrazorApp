@@ -3,16 +3,17 @@ using PhrazorApp.Commons;
 
 namespace PhrazorApp.Models.Validators
 {
-    public class GenreModelValidator : AbstractValidator<GenreModel>
+    public class GenreModelValidator : AppValidator<GenreModel>
     {
         public GenreModelValidator()
         {
             RuleFor(x => x.Id)
                 .NotEmpty()
-                .WithName("ジャンルId")
-                .WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "ジャンルId"));
+                .WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, AppConstants.FLUENT_PROP_TEMPLATE));
+
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "ジャンル名"));
+                .NotEmpty()
+                .WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, AppConstants.FLUENT_PROP_TEMPLATE));
 
             RuleFor(x => x.SubGenres)
                 .Must(x => x.Count <= 3)
@@ -20,15 +21,7 @@ namespace PhrazorApp.Models.Validators
 
             RuleForEach(x => x.SubGenres)
                 .SetValidator(new SubGenreModelValidator());
-
         }
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<GenreModel>.CreateWithOptions((GenreModel)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
 
     }
 }

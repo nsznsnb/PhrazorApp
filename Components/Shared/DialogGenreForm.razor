@@ -5,8 +5,7 @@
                    CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                    ContentClass="py-5"
                    ShowExecuteButton="false"
-                   OnExecuteCallback="Submit"
-                   ExecuteResult="@genreModel">
+                    >
 
     <GenreForm @ref="formRef" IsDialog="true" Id="GenreId" />
 
@@ -18,12 +17,14 @@
 
     [Parameter] public Guid? GenreId { get; set; }
 
-    private async Task Submit()
+    private async Task<bool> SubmitAsync()
     {
         if (formRef is not null)
         {
             await formRef.SubmitAsync(); // internal処理をpublicに公開
             genreModel = formRef.GetModel(); // モデルも外部へ返却
         }
+
+        return true;
     }
 }

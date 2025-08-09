@@ -55,5 +55,8 @@ namespace PhrazorApp.Commons.Constants
         public const Size SIZE_BUTTON = Size.Small;
         // カードのデフォルトのElevation値
         public const int DEFAULT_ELEVATION = 1;
+
+        // FluentValidationのプロパティテンプレート
+        public const string FLUENT_PROP_TEMPLATE = "{PropertyName}";
     }
 }

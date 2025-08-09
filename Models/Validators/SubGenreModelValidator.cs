@@ -2,27 +2,17 @@
 
 namespace PhrazorApp.Models.Validators
 {
-    public class SubGenreModelValidator : AbstractValidator<SubGenreModel>
+    public class SubGenreModelValidator : AppValidator<SubGenreModel>
     {
         public SubGenreModelValidator()
         {
             RuleFor(x => x.Id)
                         .NotEmpty()
-                        .WithName("サブジャンルId")
-                        .WithMessage("{PropertyName}を入力してください。");
+                        .WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL,AppConstants.FLUENT_PROP_TEMPLATE));
             RuleFor(x => x.Name)
                         .NotEmpty()
-                        .WithName("サブジャンル名")
-                        .WithMessage("{PropertyName}を入力してください。");
+                        .WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, AppConstants.FLUENT_PROP_TEMPLATE));
         }
-
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<SubGenreModel>.CreateWithOptions((SubGenreModel)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
 
 
     }

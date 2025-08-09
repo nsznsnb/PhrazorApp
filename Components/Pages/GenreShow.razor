@@ -77,11 +77,10 @@
 
     private async Task OnDeleteButtonClickedAsync(GenreModel item)
     {
-        // 確認ダイアログ表示
-        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name));
-        var dialogResult = await dialog.Result;
-
-        if (dialogResult!.Canceled)
+        // 確認ダイアログ（OKなら続行）
+        if (!await DialogService.ShowConfirmAsync(
+                DialogConfirmType.DeleteConfirm,
+                string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name)))
         {
             return;
         }

@@ -2,6 +2,7 @@
 @using CsvHelper
 @using CsvHelper.Configuration
 @using Microsoft.AspNetCore.Components.Forms
+@inherits DialogCsvUploadBase<PhraseModel>        
 @inject ISnackbar Snackbar
 @inject CsvService CsvService
 @inject PhraseService PhraseService
@@ -11,73 +12,94 @@
                    ExecuteButtonText="読込"
                    CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                    ContentClass="py-5 my-1"
-                   OnExecuteCallback="Submit"
-                   ExecuteResult="true">
+                   OnExecuteAsync="SubmitAsync">
+<MudForm Model="@model" @ref="@form" Validation="@(ValidationRules.ValidateValue)" ValidationDelay="0">
+  <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
+  <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+    <MudFileUpload T="IBrowserFile"
+                    @ref="_file"
+                    For="@(() => model.File)"
+                    @bind-Files="model.File"
+                   Accept=".csv"
+                   MaximumFileCount="1"
+                   OnFilesChanged="OnFilesChanged"
+                   SuppressOnChangeWhenInvalid="true"
+                   Class="my-2">
+      <ActivatorContent>
+        <MudButton Variant="Variant.Filled"
+                   Size="@AppConstants.SIZE_BUTTON"
+                   StartIcon="@Icons.Material.TwoTone.AttachFile">
+          @AppConstants.LABEL_BUTTON_CHOICE_FILE
+        </MudButton>
+      </ActivatorContent>
+    </MudFileUpload>
 
-    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
-        <MudFileUpload T="IBrowserFile"
-                       FilesChanged="UploadFiles"
-                       Accept=".csv"
-                       MaximumFileCount="1"
-                       Class="my-2">
-            <ActivatorContent>
-                <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" StartIcon="@Icons.Material.TwoTone.AttachFile">
-                    @AppConstants.LABEL_BUTTON_CHOICE_FILE
-                </MudButton>
-            </ActivatorContent>
-        </MudFileUpload>
+    <MudList T="string">
+        <MudListItem >@(model.File?.Name ?? string.Empty)</MudListItem>
 
-        <MudList T="string">
-            @foreach (var file in _files)
-            {
-                <MudListItem @key="file">@file.Name</MudListItem>
-            }
-        </MudList>
-    </MudStack>
+    </MudList>
+  </MudStack>
+
+  @* ← ここが「ボタン直下」のエラー表示 *@
+  @if (_fvFileErrors?.Any() == true)
+  {
+    @foreach (var msg in _fvFileErrors)
+    {
+      <MudText Color="Color.Error" Class="mt-1">@msg</MudText>
+    }
+  }
+</MudForm>
+
+
 </DialogBaseWrapper>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-    [Parameter] public EventCallback<List<PhraseModel>> OnUploadCompleted { get; set; }
 
-    private IList<IBrowserFile> _files = new List<IBrowserFile>();
+    // ★↓↓ ここを削除（Base 側で宣言済み）↓↓
+    // [Parameter] public EventCallback<List<PhraseModel>> OnUploadCompleted { get; set; }
 
-    private void UploadFiles(IBrowserFile file)
+    private MudForm form = default!;
+    private FileModel model = new();
+    private FileModelValidator ValidationRules = new();
+    private MudFileUpload<IBrowserFile> _file;
+    private List<string> _fvFileErrors = new();
+
+    private async Task OnFilesChanged(InputFileChangeEventArgs e)
+        => await UpdateFileValidationAsync();
+
+    private async Task UpdateFileValidationAsync()
     {
-        _files.Clear(); // 単一ファイルに制限する場合
-        _files.Add(file);
+        var result = await ValidationRules.ValidateValue(model, nameof(FileModel.File));
+        _fvFileErrors = result?.ToList() ?? [];
     }
 
-    private async Task Submit()
+    private Task ClearAsync() => _file?.ClearAsync() ?? Task.CompletedTask;
+
+    private async ValueTask<bool> SubmitAsync()
     {
-        if (_files.Count == 0)
-        {
-            Snackbar.Add("CSVファイルを選択してください。", Severity.Warning);
-            return;
-        }
+        await form.Validate();
+        if (!form.IsValid) return false;
 
         try
         {
-            var file = _files.First();
-            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 最大10MB
-            using var reader = new StreamReader(stream);
-
+            using var stream = model.File.OpenReadStream(10 * 1024 * 1024);
             var dtos = await CsvService.ReadToListAsync<PhraseImportDto>(stream);
             var phraseModels = dtos.Select(x => x.ToPhraseModel()).ToList();
 
             await PhraseService.CreatePhrasesAsync(phraseModels);
 
-
-            await OnUploadCompleted.InvokeAsync(phraseModels);
+            // ★ 呼び出し元へ通知は Base のメソッドで
+            await RaiseCompletedAsync(phraseModels);
 
             Snackbar.Add("CSV読込が完了しました。", Severity.Success);
-            MudDialog.Close(DialogResult.Ok(phraseModels));
+            return true;   // 成功時だけ閉じる（DialogBaseWrapper 側の仕様に合わせて継続）
         }
         catch (Exception ex)
         {
             Snackbar.Add($"CSVの読み込みに失敗しました: {ex.Message}", Severity.Error);
+            return false;
         }
     }
 }
