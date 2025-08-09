@@ -16,6 +16,10 @@
             {
                 <MudIcon Icon="@Icons.Material.TwoTone.Warning" Color="Color.Warning" />
             }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.TwoTone.Info" Color="Color.Info" />
+            }
 
             <MudText Typo="Typo.h6">@DialogTitle</MudText>
         </MudStack>
@@ -55,7 +59,7 @@
     }
 
     .mud-dialog .mud-dialog-title {
-        padding: 14px 24px;
+        padding: 12px 24px;
     }
 
     .dialog-background {
@@ -63,7 +67,7 @@
     }
 
     .dialog-background-title {
-        background: rgb(from var(--mud-palette-dark-lighten) r g b / 40%);
+        background: rgb(from var(--mud-palette-dark-lighten) r g b / 30%);
         color: var(--mud-palette-white);
     }
 
