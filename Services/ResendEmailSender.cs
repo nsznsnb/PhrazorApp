@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using PhrazorApp.Commons;
 using PhrazorApp.Data;
 using PhrazorApp.Extensions;
-using PhrazorApp.Options;
 using Resend;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -39,16 +38,16 @@ namespace PhrazorApp.Services
 
 
             var message = new EmailMessage();
-            message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
+            message.From = $"{AppConstants.APP_NAME} <onboarding@resend.dev>";
             message.To.Add(email);
-            message.Subject = $"【{ComDefine.APP_NAME}】{confirmContent}本登録のご案内";
+            message.Subject = $"【{AppConstants.APP_NAME}】{confirmContent}本登録のご案内";
 
             var html = $"""
-<h2 style="color: #333333;">【{ComDefine.APP_NAME}】{confirmContent}本登録のご案内</h2>
+<h2 style="color: #333333;">【{AppConstants.APP_NAME}】{confirmContent}本登録のご案内</h2>
 
 <p>{user.UserName} 様</p>
 
-<p>{ComDefine.APP_NAME}へのご利用ありがとうございます。</p>
+<p>{AppConstants.APP_NAME}へのご利用ありがとうございます。</p>
 
 <p>現在、{confirmContent}は<strong>仮登録</strong>の状態です。</p>
 <p>以下のボタンをクリックして、<strong>本登録</strong>を完了してください。</p>
@@ -63,7 +62,7 @@ namespace PhrazorApp.Services
 <p>※期限が切れた場合は、再度登録手続きを行ってください。</p>
 <p>※このメールに心当たりがない場合は、リンクをクリックせずにこのメールを破棄してください。</p>
 
-<p>引き続き、{ComDefine.APP_NAME}をよろしくお願いいたします。</p>
+<p>引き続き、{AppConstants.APP_NAME}をよろしくお願いいたします。</p>
 """;
 
             message.HtmlBody = html;
@@ -76,7 +75,7 @@ namespace PhrazorApp.Services
             }
             catch (Exception ex)
             {
-                _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
+                _logger.LogErrorWithContext(LogEvents.SendItem, ex, string.Format(AppMessages.MSG_E_FAILURE_DETAIL2, "メール送信", email));
             }
         }
 
@@ -88,14 +87,14 @@ namespace PhrazorApp.Services
         public async Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
         {
             var message = new EmailMessage();
-            message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
+            message.From = $"{AppConstants.APP_NAME} <onboarding@resend.dev>";
             message.To.Add(email);
             message.Subject = "パスワードリセットコードのご送付";
 
             var html = $"""
-        <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワードリセットコードのご送付</h2>
+        <h2 style="color: #333333;">【{AppConstants.APP_NAME}】パスワードリセットコードのご送付</h2>
         <p>{user.UserName} 様</p>
-        <p>いつも{ComDefine.APP_NAME}をご利用いただき、ありがとうございます。</p>
+        <p>いつも{AppConstants.APP_NAME}をご利用いただき、ありがとうございます。</p>
         <p>パスワードリセットに必要な確認コードは以下の通りです。</p>
 
         <p style="margin: 24px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px;">{resetCode}</p>
@@ -115,7 +114,7 @@ namespace PhrazorApp.Services
             }
             catch (Exception ex)
             {
-                _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
+                _logger.LogErrorWithContext(LogEvents.SendItem, ex, string.Format(AppMessages.MSG_E_FAILURE_DETAIL2, "メール送信", email));
             }
         }
 
@@ -129,14 +128,14 @@ namespace PhrazorApp.Services
         public async Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
         {
             var message = new EmailMessage();
-            message.From = $"{ComDefine.APP_NAME} <onboarding@resend.dev>";
+            message.From = $"{AppConstants.APP_NAME} <onboarding@resend.dev>";
             message.To.Add(email);
             message.Subject = "パスワードリセットのご案内";
 
             var html = $"""
-      <h2 style="color: #333333;">【{ComDefine.APP_NAME}】パスワードリセットのご案内</h2>
+      <h2 style="color: #333333;">【{AppConstants.APP_NAME}】パスワードリセットのご案内</h2>
       <p>{user.UserName} 様</p>
-      <p>いつも{ComDefine.APP_NAME}をご利用いただき、ありがとうございます。</p>
+      <p>いつも{AppConstants.APP_NAME}をご利用いただき、ありがとうございます。</p>
       <p>パスワードリセットのリクエストを受け付けました。以下のリンクより、新しいパスワードを設定してください。</p>
 
       <p style="margin: 24px 0;">
@@ -159,7 +158,7 @@ namespace PhrazorApp.Services
             }
             catch (Exception ex)
             {
-                _logger.LogErrorWithContext(ComLogEvents.SendItem, ex, string.Format(ComMessage.MSG_E_FAILURE_DETAIL2, "メール送信", email));
+                _logger.LogErrorWithContext(LogEvents.SendItem, ex, string.Format(AppMessages.MSG_E_FAILURE_DETAIL2, "メール送信", email));
             }
         }
 

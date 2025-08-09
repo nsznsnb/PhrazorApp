@@ -1,9 +1,9 @@
-﻿namespace PhrazorApp.Commons
+﻿namespace PhrazorApp.Commons.Logging
 {
     /// <summary>
     /// イベントID管理クラス
     /// </summary>
-    public class ComLogEvents
+    public class LogEvents
     {
         /// <summary>
         /// アイテム取得

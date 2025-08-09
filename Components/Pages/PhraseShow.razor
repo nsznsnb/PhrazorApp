@@ -9,11 +9,11 @@
 <MudContainer>
     <MudStack Spacing="2">
         <SectionTitle Title="フレーズ一覧" />
-        <MudCard Elevation="@ComDefine.DEFAULT_ELEVATION">
+        <MudCard Elevation="@AppConstants.DEFAULT_ELEVATION">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/phrases/create"))">新規追加</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.UploadFile"
+                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/phrases/create"))">新規追加</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.UploadFile"
                                OnClick="OpenCsvUploadDialog" >CSV読込</MudButton>
                     
                 </MudStack>
@@ -21,12 +21,12 @@
         </MudCard>
         <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true"
                   Bordered="true"
-                  Elevation="@ComDefine.DEFAULT_ELEVATION" Class="px-4"
+                  Elevation="@AppConstants.DEFAULT_ELEVATION" Class="px-4"
                   MultiSelection="true" SelectionChangeable="true" @bind-SelectedItems="selectedItems"
                   Filter="new Func<PhraseModel, bool>(FilterFunc)">
             <ToolBarContent>
                 <MudStack Row Spacing="4">
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="OnBulkDeleteButtonClickedAsync">@ComDefine.LABEL_BUTTON_BULK_DELETE</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="OnBulkDeleteButtonClickedAsync">@AppConstants.LABEL_BUTTON_BULK_DELETE</MudButton>
                 </MudStack>
                 <MudSpacer />
                 <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -45,8 +45,8 @@
                 </MudTd>
                 <MudTd Align="Right" style="min-width: 200px;">
                     <MudStack Row="true">
-                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/phrases/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/phrases/edit/{context.Id}"))">@AppConstants.LABEL_BUTTON_EDIT</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@AppConstants.LABEL_BUTTON_DELETE</MudButton>
                     </MudStack>
                 </MudTd>
             </RowTemplate>
@@ -91,7 +91,7 @@
     private async Task OnBulkDeleteButtonClickedAsync()
     {
         // 確認ダイアログ表示
-        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, "選択されたフレーズ"));
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(AppMessages.MSG_I_CONFIRM_DELETE, "選択されたフレーズ"));
         var dialogResult = await dialog.Result;
 
         if (dialogResult!.Canceled)
@@ -106,7 +106,7 @@
         var suffix = item.Phrase.Length > 50 ? "..." : "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
         // 確認ダイアログ表示
-        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, targetPhrase));
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
         var dialogResult = await dialog.Result;
 
         if (dialogResult!.Canceled)

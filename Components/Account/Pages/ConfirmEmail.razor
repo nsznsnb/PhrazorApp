@@ -63,7 +63,7 @@
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            errorMessage = string.Format(ComMessage.MSG_E_NOT_FOUND, $"ID:{UserId} に紐づくユーザー");
+            errorMessage = string.Format(AppMessages.MSG_E_NOT_FOUND, $"ID:{UserId} に紐づくユーザー");
         }
         else
         {
@@ -71,7 +71,7 @@
             var result = await UserManager.ConfirmEmailAsync(user, code);
             if (!result!.Succeeded)
             {
-                errorMessage = string.Format(ComMessage.MSG_E_ERROR_DETEIL, "本登録中");
+                errorMessage = string.Format(AppMessages.MSG_E_ERROR_DETEIL, "本登録中");
             }
         }
     }

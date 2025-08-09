@@ -18,7 +18,7 @@
     アカウントを削除します。
 </MudAlert>
 
-<EditForm id="@ComDefine.ID_FORM" Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+<EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
     <DataAnnotationsValidator />
 
     <MudGrid Spacing="2" Class="mt-2">
@@ -28,12 +28,12 @@
                 <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
                                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
                                     AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
-                                    HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_DETAIL, "アカウントを削除するにはパスワード")"
+                                    HelperText="@string.Format(AppMessages.MSG_I_HELPER_REQUIRED_DETAIL, "アカウントを削除するにはパスワード")"
                                     UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })" />
             </MudItem>
         }
         <MudItem xs="12">
-            <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@ComDefine.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">アカウント削除</MudStaticButton>
+            <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">アカウント削除</MudStaticButton>
         </MudItem>
     </MudGrid>
 </EditForm>

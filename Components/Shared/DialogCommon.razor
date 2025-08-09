@@ -2,7 +2,7 @@
 <DialogBaseWrapper DialogAlertType="@alertType"
                      DialogTitle="@titleText"
                      ExecuteButtonText="@executeButtonText"
-                     CancelButtonText="@ComDefine.LABEL_BUTTON_CANCEL"
+                     CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                      OnExecuteCallback="Submit"
                      ExecuteResult="true"
                      ShowExecuteButton="true">
@@ -25,13 +25,13 @@
         {
             case DialogConfirmType.DeleteConfirm:
                 alertType = DialogAlertType.Error;
-                titleText = ComDefine.LABEL_DIALOG_TITLE_DELETE_CONFIRM;
-                executeButtonText = ComDefine.LABEL_BUTTON_DELETE;
+                titleText = AppConstants.LABEL_DIALOG_TITLE_DELETE_CONFIRM;
+                executeButtonText = AppConstants.LABEL_BUTTON_DELETE;
                 break;
             case DialogConfirmType.RegisterConfirm:
                 alertType = DialogAlertType.Info;
-                titleText = ComDefine.LABEL_DIALOG_TITLE_REGISTER_CONFIRM;
-                executeButtonText = ComDefine.LABEL_BUTTON_REGISTER;
+                titleText = AppConstants.LABEL_DIALOG_TITLE_REGISTER_CONFIRM;
+                executeButtonText = AppConstants.LABEL_BUTTON_REGISTER;
                 break;
             default:
                 alertType = DialogAlertType.Info;

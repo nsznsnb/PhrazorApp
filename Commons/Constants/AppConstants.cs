@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PhrazorApp.Commons
+namespace PhrazorApp.Commons.Constants
 {
-    public class ComDefine
+    public class AppConstants
     {
         // アプリケーション名
         public const string APP_NAME = "Phrazor App";

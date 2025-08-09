@@ -17,7 +17,7 @@
 
 <StatusMessage Message="@message" />
 
-@if (message != null && message.StartsWith(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE))
+@if (message != null && message.StartsWith(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE))
 {
     // 完了メッセージ表示時はフォームを表示しない
 }
@@ -27,7 +27,7 @@ else
     <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
         <AntiforgeryToken />
     </form>
-    <EditForm id="@ComDefine.ID_FORM" Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
+    <EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
         <DataAnnotationsValidator />
 
         <MudGrid Spacing="2" Class="mt-2">
@@ -46,19 +46,19 @@ else
                                         ShrinkLabel Disabled="true" AdornmentIcon="Icons.Material.TwoTone.Check" AdornmentColor="Color.Success" />
                 </MudItem>
                 <MudItem xs="12">
-                    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" Size="@ComDefine.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">本登録用メール送信</MudStaticButton>
+                    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">本登録用メール送信</MudStaticButton>
                 </MudItem>
             }
 
             <MudItem xs="12">
                 <MudStaticTextField @bind-Value="@Input.NewEmail" For="@(() => Input.NewEmail)" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="新しいメールアドレス"
                                     ShrinkLabel
-                                    HelperText="@string.Format(ComMessage.MSG_I_HELPER_REQUIRED_DETAIL, "新しいメールアドレス")"
+                                    HelperText="@string.Format(AppMessages.MSG_I_HELPER_REQUIRED_DETAIL, "新しいメールアドレス")"
                                     UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
             </MudItem>
 
             <MudItem xs="12">
-                <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@ComDefine.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">@ComDefine.LABEL_BUTTON_CHANGE</MudStaticButton>
+                <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">@AppConstants.LABEL_BUTTON_CHANGE</MudStaticButton>
             </MudItem>
         </MudGrid>
     </EditForm>
@@ -106,7 +106,7 @@ else
 
         await EmailSender.SendConfirmationLinkAsync(user, Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
 
-        message = ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE + "新しいメールアドレス宛に変更用のメールを送信しました。<br />メール本文のリンクをクリックして変更を完了してください。";
+        message = AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE + "新しいメールアドレス宛に変更用のメールを送信しました。<br />メール本文のリンクをクリックして変更を完了してください。";
     }
 
     private async Task OnSendEmailVerificationAsync()
@@ -125,14 +125,14 @@ else
 
         await EmailSender.SendConfirmationLinkAsync(user, email, HtmlEncoder.Default.Encode(callbackUrl));
 
-        message = ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE + "本登録用のメールを送信しました。メールをご確認ください。";
+        message = AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE + "本登録用のメールを送信しました。メールをご確認ください。";
     }
 
     private sealed class InputModel
     {
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
         [EmailAddress]
-        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN50, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN50)]
+        [RegularExpression(AppConstants.REGEX_HANKAKU_LESS_THAN50, ErrorMessage = AppMessages.MSG_E_HANKAKU_LESS_THAN50)]
         [Display(Name = "新しいメールアドレス")]
         public string? NewEmail { get; set; }
     }

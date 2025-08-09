@@ -13,10 +13,10 @@
 }
 else if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var severity = DisplayMessage.StartsWith(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE) ? Severity.Success : Severity.Error;
+    var severity = DisplayMessage.StartsWith(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE) ? Severity.Success : Severity.Error;
 
     <MudAlert Variant="Variant.Outlined" Severity="@severity">
-        @(DisplayMessage.Replace(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE,""))
+        @(DisplayMessage.Replace(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE,""))
     </MudAlert>
 }
 

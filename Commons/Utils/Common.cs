@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace PhrazorApp.Commons
+namespace PhrazorApp.Commons.Utils
 {
     public static class Common
     {

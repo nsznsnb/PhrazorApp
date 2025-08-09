@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 
-namespace PhrazorApp.Commons
+namespace PhrazorApp.Commons.Settings
 {
     /// <summary>
     /// Blazorのカスタムレンダリングモードを定義するクラス。
     /// </summary>
-    public static class CustomRenderingMode
+    public static class RenderingModeSettings
     {
         /// <summary>
         /// Serverモード

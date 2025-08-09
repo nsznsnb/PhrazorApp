@@ -14,7 +14,7 @@
 
 <StatusMessage />
 
-<EditForm id="@ComDefine.ID_FORM" Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+<EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
     <DataAnnotationsValidator />
 
     <MudGrid Spacing="2" Class="mt-2">
@@ -32,13 +32,13 @@
                 <MudItem xs="12" sm="6">
                     <MudStaticTextField @bind-Value="@Input.LastName" For="() => Input.LastName"
                                         Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="姓" ShrinkLabel　
-                                        HelperText="@string.Format(ComMessage.MSG_I_HELPER_ARBITRAY_DETAIL, "姓")"
+                                        HelperText="@string.Format(AppMessages.MSG_I_HELPER_ARBITRAY_DETAIL, "姓")"
                                         UserAttributes="@(new() { { "autocomplete", "name" } })" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudStaticTextField @bind-Value="@Input.FirstName" For="() => Input.FirstName"
                                         Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="名" ShrinkLabel　
-                                        HelperText="@string.Format(ComMessage.MSG_I_HELPER_ARBITRAY_DETAIL, "名")"
+                                        HelperText="@string.Format(AppMessages.MSG_I_HELPER_ARBITRAY_DETAIL, "名")"
                                         UserAttributes="@(new() { { "autocomplete", "name" } })" />
                 </MudItem>
             </MudGrid>
@@ -46,7 +46,7 @@
         
 
         <MudItem xs="12">
-            <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">保存</MudStaticButton>
+            <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">保存</MudStaticButton>
         </MudItem>
     </MudGrid>
 </EditForm>
@@ -89,20 +89,20 @@
         if (!updateResult.Succeeded)
         {
             // エラー処理（例: ログ記録やModelStateへの追加）
-            RedirectManager.RedirectToCurrentPageWithStatus(string.Format(ComMessage.MSG_E_FAILURE_DETAIL, "プロフィールの保存"), HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "プロフィールの保存"), HttpContext);
 
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE + "プロフィールを保存しました。", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE + "プロフィールを保存しました。", HttpContext);
     }
 
     private sealed class InputModel
     {
-        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [StringLength(10, ErrorMessage = AppMessages.MSG_E_RANGE_LESS_THAN)]
         [Display(Name = "名")]
         public string? FirstName { get; set; }
-        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [StringLength(10, ErrorMessage = AppMessages.MSG_E_RANGE_LESS_THAN)]
         [Display(Name = "姓")]
         public string? LastName { get; set; }
 

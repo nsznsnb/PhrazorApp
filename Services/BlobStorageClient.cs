@@ -3,7 +3,6 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
 using PhrazorApp.Commons;
 using PhrazorApp.Extensions;
-using PhrazorApp.Options;
 using System.Net.Http;
 
 namespace PhrazorApp.Services
@@ -53,12 +52,12 @@ namespace PhrazorApp.Services
                 // png画像としてアップロード
                 await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = "image/png" });
 
-                _logger.LogInformationWithContext(ComLogEvents.UploadItem, string.Format(ComMessage.MSG_I_SUCCESS_UPLOAD_DETAIL, fileName));
+                _logger.LogInformationWithContext(LogEvents.UploadItem, string.Format(AppMessages.MSG_I_SUCCESS_UPLOAD_DETAIL, fileName));
                 return blobClient.Uri.ToString();
             }
             catch (Exception ex)
             {
-                _logger.LogErrorWithContext(ComLogEvents.UploadItem, ex, string.Format(ComMessage.MSG_I_SUCCESS_UPLOAD_DETAIL, fileName));
+                _logger.LogErrorWithContext(LogEvents.UploadItem, ex, string.Format(AppMessages.MSG_I_SUCCESS_UPLOAD_DETAIL, fileName));
                 return null;
             }
         }

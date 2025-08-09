@@ -9,17 +9,17 @@
 <MudContainer>
     <MudStack Spacing="2">
         <SectionTitle HeadingLevel="2" Title="フレーズジャンル一覧" />
-        <MudCard Elevation="ComDefine.DEFAULT_ELEVATION">
+        <MudCard Elevation="AppConstants.DEFAULT_ELEVATION">
             <MudCardContent Class="py-2">
                 <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
                 </MudStack>
             </MudCardContent>
         </MudCard>
-        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" Dense="true" Elevation="ComDefine.DEFAULT_ELEVATION" Class="px-4">
+        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" Dense="true" Elevation="AppConstants.DEFAULT_ELEVATION" Class="px-4">
             <ToolBarContent>
                 <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
-                              Title="@ComDefine.LABEL_TABLE_TITLE" />
+                              Title="@AppConstants.LABEL_TABLE_TITLE" />
                 <MudSpacer />
             </ToolBarContent>
             <HeaderContent>
@@ -46,8 +46,8 @@
                 </MudTd>
                 <MudTd Align="Right" style="min-width: 200px;">
                     <MudStack Row="true">
-                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@ComDefine.LABEL_BUTTON_EDIT</MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@ComDefine.LABEL_BUTTON_DELETE</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@AppConstants.LABEL_BUTTON_EDIT</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@AppConstants.LABEL_BUTTON_DELETE</MudButton>
                     </MudStack>
                 </MudTd>
             </RowTemplate>
@@ -78,7 +78,7 @@
     private async Task OnDeleteButtonClickedAsync(GenreModel item)
     {
         // 確認ダイアログ表示
-        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(ComMessage.MSG_I_CONFIRM_DELETE, item.Name));
+        var dialog = await DialogService.ShowDialogCommonAsync(DialogConfirmType.DeleteConfirm, string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name));
         var dialogResult = await dialog.Result;
 
         if (dialogResult!.Canceled)

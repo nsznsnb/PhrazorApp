@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Options;
 using PhrazorApp.Commons;
 using PhrazorApp.Extensions;
-using PhrazorApp.Options;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -58,7 +57,7 @@ namespace PhrazorApp.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogErrorWithContext(ComLogEvents.GetItem, string.Format(ComMessage.MSG_E_FAILURE_DETAIL, "画像生成", $"ステータスコード({response.StatusCode})"));
+                _logger.LogErrorWithContext(LogEvents.GetItem, string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "画像生成", $"ステータスコード({response.StatusCode})"));
             }
 
             var json = await response.Content.ReadAsStringAsync();

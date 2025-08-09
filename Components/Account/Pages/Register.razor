@@ -71,7 +71,7 @@
 
 
 
-                    <MudStaticButton id="btnSubmit" Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" FullWidth="true">登録</MudStaticButton>
+                    <MudStaticButton id="btnSubmit" Class="my-4" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" FullWidth="true">登録</MudStaticButton>
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
                         <MudLink Href="/Account/Login" Typo="Typo.body2" Color="Color.Primary"><b>ログイン画面に戻る</b></MudLink>
                     </MudStack>
@@ -165,34 +165,34 @@
 
     private sealed class InputModel
     {
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
-        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN20, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN20)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
+        [RegularExpression(AppConstants.REGEX_HANKAKU_LESS_THAN20, ErrorMessage = AppMessages.MSG_E_HANKAKU_LESS_THAN20)]
         [Display(Name = "ユーザーID")]
         public string UserName { get; set; } = "";
 
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
         [EmailAddress]
-        [RegularExpression(ComDefine.REGEX_HANKAKU_LESS_THAN50, ErrorMessage = ComMessage.MSG_E_HANKAKU_LESS_THAN50)]
+        [RegularExpression(AppConstants.REGEX_HANKAKU_LESS_THAN50, ErrorMessage = AppMessages.MSG_E_HANKAKU_LESS_THAN50)]
         [Display(Name = "メールアドレス")]
         public string Email { get; set; } = "";
 
-        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [StringLength(10, ErrorMessage = AppMessages.MSG_E_RANGE_LESS_THAN)]
         [Display(Name = "名")]
         public string? FirstName { get; set; }
-        [StringLength(10, ErrorMessage = ComMessage.MSG_E_RANGE_LESS_THAN)]
+        [StringLength(10, ErrorMessage = AppMessages.MSG_E_RANGE_LESS_THAN)]
         [Display(Name = "姓")]
         public string? LastName { get; set; }
 
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
-        [StringLength(100, ErrorMessage = ComMessage.MSG_E_RANGE_BETWEEN, MinimumLength = 6)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
+        [StringLength(100, ErrorMessage = AppMessages.MSG_E_RANGE_BETWEEN, MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "パスワード")]
         public string Password { get; set; } = "";
 
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
         [DataType(DataType.Password)]
         [Display(Name = "確認用パスワード")]
-        [Compare(nameof(Password), ErrorMessage = ComMessage.MSG_E_MISMATCH_PASSWORD)]
+        [Compare(nameof(Password), ErrorMessage = AppMessages.MSG_E_MISMATCH_PASSWORD)]
         public string ConfirmPassword { get; set; } = "";
     }
 }

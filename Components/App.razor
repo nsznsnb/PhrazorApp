@@ -33,5 +33,5 @@
     private HttpContext HttpContext { get; set; } = default!;
 
     private IComponentRenderMode? PageRenderMode =>
-        HttpContext.AcceptsInteractiveRouting() ? CustomRenderingMode.InteractiveServerWithourPrerendering : null;
+        HttpContext.AcceptsInteractiveRouting() ? RenderingModeSettings.InteractiveServerWithourPrerendering : null;
 }

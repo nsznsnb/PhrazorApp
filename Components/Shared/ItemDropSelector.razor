@@ -14,10 +14,10 @@
                 <MudItem xs="12">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudListSubheader>@UnassignedLabel</MudListSubheader>
-                        <MudButton Variant="Variant.Outlined" Size="@ComDefine.SIZE_BUTTON" Color="Color.Primary"
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary"
                                    StartIcon="@Icons.Material.Filled.Add"
                                    OnClick="OnAddButtonClicked">
-                            @ComDefine.LABEL_BUTTON_CREATE
+                            @AppConstants.LABEL_BUTTON_CREATE
                         </MudButton>
                     </MudStack>
                     <MudDropZone T="DropItemModel"

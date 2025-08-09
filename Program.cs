@@ -9,7 +9,6 @@ using PhrazorApp.Components.Account;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Data.UnitOfWork;
-using PhrazorApp.Options;
 using PhrazorApp.Services;
 using Resend;
 
@@ -132,6 +131,10 @@ namespace PhrazorApp
             builder.Services.Configure<AzureBlobOptions>(builder.Configuration.GetSection("AzureBlob"));
             builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
             builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
+
+
+            // FluentValidation ê›íË
+            ValidationBootstrapper.Configure();
 
             var app = builder.Build();
 

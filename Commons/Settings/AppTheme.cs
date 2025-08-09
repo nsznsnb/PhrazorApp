@@ -1,6 +1,6 @@
 ﻿using MudBlazor;
 
-namespace PhrazorApp.Commons
+namespace PhrazorApp.Commons.Settings
 {
     /// <summary>
     /// アプリのテーマ設定
@@ -44,9 +44,9 @@ namespace PhrazorApp.Commons
                 Default = new DefaultTypography()
                 {
                     FontFamily = new[] {
-                    ComDefine.FONT_FAMILY_1,
-                    ComDefine.FONT_FAMILY_2,
-                    ComDefine.FONT_FAMILY_3
+                    AppConstants.FONT_FAMILY_1,
+                    AppConstants.FONT_FAMILY_2,
+                    AppConstants.FONT_FAMILY_3
                 }
                 }
             }

@@ -22,7 +22,7 @@
             </MudItem>
             <MudItem>
 
-                @if (string.IsNullOrEmpty(message) || message.StartsWith(ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE))
+                @if (string.IsNullOrEmpty(message) || message.StartsWith(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE))
                 {
                     <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
                         <MudIcon Icon="@Icons.Material.TwoTone.Email" Color="Color.Secondary" />
@@ -74,7 +74,7 @@
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
-            message = string.Format(ComMessage.MSG_E_NOT_FOUND, $"ID:{UserId} に紐づくユーザー");
+            message = string.Format(AppMessages.MSG_E_NOT_FOUND, $"ID:{UserId} に紐づくユーザー");
             return;
         }
 
@@ -82,7 +82,7 @@
         var result = await UserManager.ChangeEmailAsync(user, Email, code);
         if (!result.Succeeded)
         {
-            message = string.Format(ComMessage.MSG_E_ERROR_DETEIL, "メールアドレス変更中");
+            message = string.Format(AppMessages.MSG_E_ERROR_DETEIL, "メールアドレス変更中");
             return;
         }
 
@@ -96,6 +96,6 @@
         // }
 
         await SignInManager.RefreshSignInAsync(user);
-        message = ComDefine.PREFIX_ACCOUNT_INFO_MESSAGE  +  "メールアドレス変更が完了しました。";
+        message = AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE  +  "メールアドレス変更が完了しました。";
     }
 }

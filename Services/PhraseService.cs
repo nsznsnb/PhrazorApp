@@ -66,12 +66,12 @@ namespace PhrazorApp.Services
                         await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ登録で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -114,12 +114,12 @@ namespace PhrazorApp.Services
                     if (phraseGenreEntities.Count > 0) await u.PhraseGenres.AddRangeAsync(phraseGenreEntities);
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ一括登録で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -134,7 +134,7 @@ namespace PhrazorApp.Services
                 {
                     var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id, userId);
                     if (phraseEntity == null)
-                        throw new InvalidOperationException(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
+                        throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
                     // 本体更新
                     phraseEntity.Phrase = model.Phrase;
@@ -171,12 +171,12 @@ namespace PhrazorApp.Services
                         await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ更新で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -191,7 +191,7 @@ namespace PhrazorApp.Services
                 {
                     var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId);
                     if (phrase == null)
-                        throw new InvalidOperationException(string.Format(ComMessage.MSG_E_NOT_FOUND, MSG_PREFIX));
+                        throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
                     if (phrase.DPhraseImage is not null)
                         await u.PhraseImages.DeleteAsync(phrase.DPhraseImage);
@@ -202,12 +202,12 @@ namespace PhrazorApp.Services
                     await u.Phrases.DeleteAsync(phrase);
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ削除で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
     }

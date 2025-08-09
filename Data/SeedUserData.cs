@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using PhrazorApp.Data;
-using PhrazorApp.Options;
 
 namespace PhrazorApp.Data
 {

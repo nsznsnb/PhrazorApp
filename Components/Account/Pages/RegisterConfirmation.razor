@@ -65,7 +65,7 @@
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            errorMessage =　string.Format(ComMessage.MSG_E_ERROR_DETEIL,"仮登録中");
+            errorMessage =　string.Format(AppMessages.MSG_E_ERROR_DETEIL,"仮登録中");
         }
         else if (EmailSender is IdentityNoOpEmailSender)
         {

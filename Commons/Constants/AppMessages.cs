@@ -1,9 +1,9 @@
-﻿namespace PhrazorApp.Commons
+﻿namespace PhrazorApp.Commons.Constants
 {
     /// <summary>
     /// メッセージ定数
     /// </summary>
-    public class ComMessage
+    public class AppMessages
     {
         public const string MSG_I_SUCCESS_CREATE_DETAIL = "{0}を作成しました。";
         public const string MSG_I_SUCCESS_UPDATE_DETAIL = "{0}を更新しました。";

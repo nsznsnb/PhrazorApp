@@ -19,14 +19,14 @@
                 <AppLogo />
             </MudItem>
             <MudItem>
-                <EditForm id="@ComDefine.ID_FORM" Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+                <EditForm id="@AppConstants.ID_FORM" Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                     <DataAnnotationsValidator />
                     <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
                         <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="transform: translateX(-10px);">
                             <MudIcon Icon="@Icons.Material.TwoTone.Lock" Color="Color.Secondary" />
                             <MudText Typo="Typo.h5">ログイン</MudText>
                         </MudStack>
-                        <MudText Typo="Typo.caption">@ComDefine.APP_NAME を使用するにはアカウントにログインしてください。</MudText>
+                        <MudText Typo="Typo.caption">@AppConstants.APP_NAME を使用するにはアカウントにログインしてください。</MudText>
                     </MudStack>
                     <StatusMessage Message="@errorMessage" />
 
@@ -39,7 +39,7 @@
 
 
 
-                    <MudStaticButton id="@ComDefine.ID_BUTTON_SUBMIT" Class="my-2" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" Size="@ComDefine.SIZE_BUTTON" FullWidth="true">ログイン</MudStaticButton>
+                    <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Class="my-2" FormAction="FormAction.Submit" Color="Color.Primary" Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" FullWidth="true">ログイン</MudStaticButton>
 
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
                         <MudText Typo="Typo.body2">アカウントが未登録ですか？</MudText>
@@ -102,7 +102,7 @@
         }
         else
         {
-            errorMessage = string.Format(ComMessage.MSG_E_MISMATCH_DETAIL, "ユーザーIDまたはパスワード"); 
+            errorMessage = string.Format(AppMessages.MSG_E_MISMATCH_DETAIL, "ユーザーIDまたはパスワード"); 
         }
     }
 
@@ -111,11 +111,11 @@
     /// </summary>
     private sealed class InputModel
     {
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
         [Display(Name = "ユーザーID")]
         public string UserId { get; set; } = "";
 
-        [Required(ErrorMessage = ComMessage.MSG_E_REQUIRED_DETAIL)]
+        [Required(ErrorMessage = AppMessages.MSG_E_REQUIRED_DETAIL)]
         [DataType(DataType.Password)]
         [Display(Name = "パスワード")]
         public string Password { get; set; } = "";

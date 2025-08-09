@@ -61,12 +61,12 @@ namespace PhrazorApp.Services
                     await u.Genres.AddAsync(entity);
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル作成エラー");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -96,12 +96,12 @@ namespace PhrazorApp.Services
                     await u.Genres.UpdateAsync(old);
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル更新エラー");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
@@ -115,7 +115,7 @@ namespace PhrazorApp.Services
                 {
                     var genre = await u.Genres.GetGenreByIdAsync(genreId, userId);
                     if (genre == null)
-                        throw new InvalidOperationException(string.Format(ComMessage.MSG_E_NOT_FOUND, "指定されたジャンル"));
+                        throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, "指定されたジャンル"));
 
                     if (genre.MSubGenres is { Count: > 0 })
                         await u.SubGenres.DeleteRangeAsync(genre.MSubGenres);
@@ -123,12 +123,12 @@ namespace PhrazorApp.Services
                     await u.Genres.DeleteAsync(genre);
                 });
 
-                return ServiceResult.Success(string.Format(ComMessage.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル削除エラー");
-                return ServiceResult.Failure(string.Format(ComMessage.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
     }

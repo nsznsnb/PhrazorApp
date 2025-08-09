@@ -10,9 +10,9 @@ namespace PhrazorApp.Models.Validators
             RuleFor(x => x.Id)
                 .NotEmpty()
                 .WithName("ジャンルId")
-                .WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "ジャンルId"));
+                .WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "ジャンルId"));
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage(string.Format(ComMessage.MSG_E_REQUIRED_DETAIL, "ジャンル名"));
+                .NotEmpty().WithMessage(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "ジャンル名"));
 
             RuleFor(x => x.SubGenres)
                 .Must(x => x.Count <= 3)
