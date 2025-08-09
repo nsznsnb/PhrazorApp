@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace PhrazorApp.Components.Shared
+namespace PhrazorApp.Components.Shared.Dialogs
 {
     /// <summary>
     /// CSVアップロードダイアログの共通基底クラス

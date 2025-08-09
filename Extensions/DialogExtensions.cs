@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using PhrazorApp.Components.Shared;
+using PhrazorApp.Components.Shared.Dialogs;
 using System.Linq.Expressions;
 
 public static class DialogServiceExtensions
