@@ -1,7 +1,4 @@
 ﻿using MudBlazor;
-using PhrazorApp.Components.Shared;
-using PhrazorApp.Services;
-using static MudBlazor.Defaults.Classes;
 
 namespace PhrazorApp.Extensions
 {

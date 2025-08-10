@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
 
-namespace PhrazorApp.Services
+namespace PhrazorApp.Commons.Results
 {
     public enum ServiceStatus
     {
