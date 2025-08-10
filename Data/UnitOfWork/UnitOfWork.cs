@@ -55,31 +55,62 @@ namespace PhrazorApp.Data.UnitOfWork
         }
 
         // 読み取り専用（Txなし・NoTracking・Saveなし）
-        public async Task<T> ReadAsync<T>(Func<Repos, Task<T>> work)
+        public async Task<T> ReadAsync<T>(
+            Func<UnitOfWork.Repos, CancellationToken, Task<T>> work,
+            CancellationToken ct = default)
         {
-            await using var ctx = await _factory.CreateDbContextAsync();
+            await using var ctx = await _factory.CreateDbContextAsync(ct);
             ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             var repos = new Repos(ctx);
-            return await work(repos);
+            return await work(repos, ct);
         }
 
+
+
         // 書き込み（Txあり・最後に1回だけ Save + Commit）
-        public async Task ExecuteInTransactionAsync(Func<Repos, Task> work)
+        public async Task ExecuteInTransactionAsync(
+            Func<UnitOfWork.Repos, CancellationToken, Task> work,
+            CancellationToken ct = default)
         {
-            await using var ctx = await _factory.CreateDbContextAsync();
-            await using var tx = await ctx.Database.BeginTransactionAsync();
-            var repos = new Repos(ctx);
+            // 1) 毎回フレッシュな DbContext（失敗後に再利用しない）
+            await using var ctx = await _factory.CreateDbContextAsync(ct);
+
+            // 2) 大量処理向け最適化：自動変更検出をOFF（常時）
+            var originalAutoDetect = ctx.ChangeTracker.AutoDetectChangesEnabled;
+            ctx.ChangeTracker.AutoDetectChangesEnabled = false;
+
+            // 3) 一時障害向けの実行戦略（内部で必要に応じて再試行）
+            var strategy = ctx.Database.CreateExecutionStrategy();
 
             try
             {
-                await work(repos);        // RepoはAdd/Update/Removeだけ。Saveはここで1回
-                await ctx.SaveChangesAsync();
-                await tx.CommitAsync();
+                await strategy.ExecuteAsync(async () =>
+                {
+                    // 4) 明示トランザクション
+                    await using var tx = await ctx.Database.BeginTransactionAsync(ct);
+                    try
+                    {
+                        var repos = new UnitOfWork.Repos(ctx);
+
+                        // ※必ず Add/Remove/Update or Entry(...).State/IsModified を使う
+                        await work(repos, ct);
+
+                        // 5) SaveChanges は1回だけ
+                        await ctx.SaveChangesAsync(ct);
+
+                        await tx.CommitAsync(ct);
+                    }
+                    catch
+                    {
+                        try { await tx.RollbackAsync(ct); } catch { /* ログするならここ */ }
+                        throw;
+                    }
+                });
             }
-            catch
+            finally
             {
-                try { await tx.RollbackAsync(); } catch { /* ログするならここ */ }
-                throw;
+                // 6) フラグを元に戻す
+                ctx.ChangeTracker.AutoDetectChangesEnabled = originalAutoDetect;
             }
         }
 
