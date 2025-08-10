@@ -10,7 +10,7 @@ namespace PhrazorApp.Commons.Constants
     public class AppConstants
     {
         // アプリケーション名
-        public const string APP_NAME = "Phrazor App";
+        public const string APP_NAME = "Phrazor";
 
         // フォント
         public const string FONT_FAMILY_1 = "BIZ UDPGothic";
@@ -54,7 +54,7 @@ namespace PhrazorApp.Commons.Constants
         // ボタンのデフォルトのサイズ値
         public const Size SIZE_BUTTON = Size.Small;
         // カードのデフォルトのElevation値
-        public const int DEFAULT_ELEVATION = 1;
+        public const int DEFAULT_ELEVATION = 0;
 
         // FluentValidationのプロパティテンプレート
         public const string FLUENT_PROP_TEMPLATE = "{PropertyName}";

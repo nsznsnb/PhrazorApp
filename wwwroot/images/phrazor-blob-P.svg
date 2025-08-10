@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="blobGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#009E95"/>
+      <stop offset="100%" stop-color="#00E5FF"/>
+    </linearGradient>
+    <radialGradient id="innerHi" cx="30%" cy="25%" r="75%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- floating dot -->
+  <circle cx="38" cy="16" r="5.2" fill="url(#blobGrad)"/>
+  <!-- organic blob -->
+  <g>
+    <path d="M62 12
+             C 81 12, 101 23, 108 41
+               115 58, 110 81, 97 95
+               83 109, 60 112, 44 108
+               27 104, 13 89, 12 72
+               11 55, 20 37, 34 26
+               44 18, 53 14, 62 12 Z"
+          fill="url(#blobGrad)"/>
+    <path d="M62 12
+             C 81 12, 101 23, 108 41
+               115 58, 110 81, 97 95
+               83 109, 60 112, 44 108
+               27 104, 13 89, 12 72
+               11 55, 20 37, 34 26
+               44 18, 53 14, 62 12 Z"
+          fill="url(#innerHi)"/>
+  </g>
+
+  <!-- White monogram 'P' (rounded stem + circular bowl) -->
+  <g fill="#FFFFFF">
+    <!-- Stem -->
+    <rect x="48" y="40" width="11" height="46" rx="5.5" ry="5.5"/>
+    <!-- Bowl outer -->
+    <circle cx="67" cy="47" r="16"/>
+    <!-- Counter (knockout by painting with gradient) -->
+    <circle cx="67" cy="47" r="8.2" fill="url(#blobGrad)"/>
+  </g>
+</svg>
