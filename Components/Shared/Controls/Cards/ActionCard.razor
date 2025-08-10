@@ -1,0 +1,30 @@
+﻿<BaseCard Elevation="@Elevation" Outlined="@Outlined" Class="@Class" Style="@Style">
+    <MudCardContent Class="py-2">
+        <MudStack Row="@(Responsive? IsMdUp : true)"
+                  Spacing="@Spacing"
+                  AlignItems="@(Responsive ? (IsMdUp ? AlignItems.Center : AlignItems.Stretch) : AlignItems.Center)"
+                  Class="@((Responsive && FullWidthOnSmall && !IsMdUp) ? "ac-sm-full" : null)">
+            @ChildContent
+        </MudStack>
+    </MudCardContent>
+</BaseCard>
+
+@code {
+    // 追加：親レイアウトから受け取る
+    [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
+    private bool IsMdUp => CurrentBreakpoint >= Breakpoint.Md;
+
+    // 既存
+    [Parameter] public int Elevation { get; set; } = AppConstants.DEFAULT_ELEVATION;
+    [Parameter] public bool Outlined { get; set; } = true;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // 追加（オプション）
+    [Parameter] public bool Responsive { get; set; } = true;          // 画面幅で横/縦を切替
+    [Parameter] public bool FullWidthOnSmall { get; set; } = true;    // 小画面で子要素を100%幅に
+    [Parameter] public int Spacing { get; set; } = 1;                 // MudStack の Spacing
+    [Parameter] public Breakpoint BreakpointThreshold { get; set; } = Breakpoint.Md;
+
+}

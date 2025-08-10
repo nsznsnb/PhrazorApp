@@ -2,12 +2,10 @@
 @page "/genres/edit/{Id:guid}"
 @attribute [Authorize]
 
-<MudContainer>
-    <ReturnLink Href="/genres"/>
-    <SectionTitle Title="@(IsEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
+<BackLink Href="/genres" />
+<SectionTitle Title="@(IsEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
 
-    <GenreForm Id="Id" IsDialog="false" />
-</MudContainer>
+<GenreForm Id="Id" IsDialog="false" />
 @code {
     [Parameter] public Guid? Id { get; set; }
 

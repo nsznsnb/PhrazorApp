@@ -6,126 +6,166 @@
 @inject ISnackbar Snackbar
 @inject PhraseService PhraseService
 
-<MudContainer>
-    <MudStack Spacing="2">
-        <SectionTitle Title="フレーズ一覧" />
-        <MudCard Elevation="@AppConstants.DEFAULT_ELEVATION">
-            <MudCardContent Class="py-2">
-                <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/phrases/create"))">新規追加</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.UploadFile"
-                               OnClick="OpenCsvUploadDialog" >CSV読込</MudButton>
-                    
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" FixedFooter="true" Dense="true"
-                  Bordered="true"
-                  Elevation="@AppConstants.DEFAULT_ELEVATION" Class="px-4"
-                  MultiSelection="true" SelectionChangeable="true" @bind-SelectedItems="selectedItems"
-                  Filter="new Func<PhraseModel, bool>(FilterFunc)">
-            <ToolBarContent>
-                <MudStack Row Spacing="4">
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="OnBulkDeleteButtonClickedAsync">@AppConstants.LABEL_BUTTON_BULK_DELETE</MudButton>
-                </MudStack>
-                <MudSpacer />
-                <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-            </ToolBarContent>
-            <HeaderContent>
+<MudStack Spacing="2">
+    <SectionTitle Title="フレーズ一覧" />
+
+    <!-- 上部アクション -->
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.Add"
+                   OnClick="GoCreate">
+            新規追加
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
+                   StartIcon="@Icons.Material.TwoTone.UploadFile"
+                   OnClick="OpenCsvUploadDialog">
+            CSV読込
+        </MudButton>
+    </ActionCard>
+
+    <BaseCard>
+        <!-- 汎用テーブル（ツールバー＋表本体を内包） -->
+        <SelectableTable TItem="PhraseModel"
+                         Items="Elements"
+                         IdSelector="@(x => x.Id)"
+                         @bind-SearchText="searchString"
+                         Filter="@( (PhraseModel e, string s) =>
+                                             string.IsNullOrWhiteSpace(s)
+                                             || e.Phrase.Contains(s, StringComparison.OrdinalIgnoreCase)
+                                             || e.Meaning.Contains(s, StringComparison.OrdinalIgnoreCase) )"
+                         @bind-Page="Page"
+                         RowsPerPage="@_rowsPerPage"
+                         SelectedIds="SelectedIds"
+                         SelectedIdsChanged="@(ids => SelectedIds = ids)"
+                         OnBulkDelete="OnBulkDeleteRequested"
+                         BulkDeleteLabel="@AppConstants.LABEL_BUTTON_BULK_DELETE"
+                         MobileSelectAllLabel="全選択（検索結果）"
+                         Height="500px">
+
+            <HeaderCells>
                 <MudTh>フレーズ</MudTh>
-                <MudTh style="min-width: 200px;">操作</MudTh>
-            </HeaderContent>
-            <RowTemplate>
+                <MudTh style="min-width:200px;">操作</MudTh>
+            </HeaderCells>
+
+            <RowCells Context="x">
                 <MudTd>
                     <MudStack Spacing="1">
-                        <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Phrase</MudText>
-                        <MudText Typo="Typo.subtitle1">@context.Meaning</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@x.Phrase</MudText>
+                        <MudText Typo="Typo.subtitle1">@x.Meaning</MudText>
                     </MudStack>
+                </MudTd>
+                <MudTd Align="Align.Right" style="min-width:200px;">
+                    <MudStack Row>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                                   StartIcon="@Icons.Material.TwoTone.Edit"
+                                   OnClick="@(() => GoEdit(x.Id))">
+                            @AppConstants.LABEL_BUTTON_EDIT
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"
+                                   StartIcon="@Icons.Material.TwoTone.Delete"
+                                   OnClick="@(() => OnDeleteButtonClickedAsync(x))">
+                            @AppConstants.LABEL_BUTTON_DELETE
+                        </MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowCells>
 
-                </MudTd>
-                <MudTd Align="Right" style="min-width: 200px;">
-                    <MudStack Row="true">
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/phrases/edit/{context.Id}"))">@AppConstants.LABEL_BUTTON_EDIT</MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@AppConstants.LABEL_BUTTON_DELETE</MudButton>
-                    </MudStack>
-                </MudTd>
-            </RowTemplate>
+            <!-- ★ ツールバーに“テスト開始”を追加 -->
+            <ToolbarContent Context="tb">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                           Disabled="@(tb.SelectedCountInView == 0)"
+                           FullWidth="@(!tb.IsMdUp)"
+                           OnClick="@(() => StartTest(tb.GetSelectedIdsInView?.Invoke() ?? new HashSet<Guid>()))">
+                    テスト開始
+                </MudButton>
+            </ToolbarContent>
+
             <PagerContent>
                 <MudTablePager />
             </PagerContent>
-        </MudTable>
+        </SelectableTable>
 
-
-    </MudStack>
-</MudContainer>
-
-
+    </BaseCard>
+</MudStack>
 
 @code {
+    // データ
+    private List<PhraseModel> Elements = new();
+
+    // 検索（SelectableTable から @bind で更新される）
     private string searchString = "";
 
-    private PhraseModel model = new PhraseModel();
+    // ページング
+    private int Page;
+    private int _rowsPerPage = 10;
 
-    private List<PhraseModel> Elements = new();
-    private HashSet<PhraseModel> selectedItems = new HashSet<PhraseModel>();
-
+    // 選択されたID（SelectableTable と双方向バインド）
+    private HashSet<Guid> SelectedIds = new();
 
     protected override async Task OnInitializedAsync()
     {
-        // 一覧取得
         Elements = await PhraseService.GetPhraseViewModelListAsync();
-
     }
 
-    private bool FilterFunc(PhraseModel element)
+    private async Task StartTest(HashSet<Guid> idsInView)
     {
-        if (string.IsNullOrWhiteSpace(searchString))
-            return true;
-        if (element.Phrase.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-        if (element.Meaning.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-        return false;
-    }
-
-    private async Task OnBulkDeleteButtonClickedAsync()
-    {
-
-        // 確認ダイアログ（OKなら続行）
-        if (!await DialogService.ShowConfirmAsync(
-                DialogConfirmType.DeleteConfirm,
-                string.Format(AppMessages.MSG_I_CONFIRM_DELETE, "選択されたフレーズ")))
+        if (idsInView.Count == 0)
         {
+            Snackbar.Add("テスト対象が選択されていません。", Severity.Warning);
             return;
         }
 
+        // ここでテスト用の画面へ遷移／ダイアログ起動など
+        // 例: NavigationManager.NavigateTo($"/phrases/test?ids={string.Join(',', idsInView)}");
+        Snackbar.Add($"テスト開始: {idsInView.Count} 件", Severity.Info);
     }
 
+
+    // 一括削除（SelectableTable からコールバック）
+    private async Task OnBulkDeleteRequested(HashSet<Guid> ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            Snackbar.Add("削除対象が選択されていません。", Severity.Warning);
+            return;
+        }
+
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DeleteConfirm,
+            $"選択中 {ids.Count} 件を削除します。よろしいですか？");
+        if (!ok) return;
+
+        // Bulk API があれば置き換え
+        foreach (var id in ids.ToList())
+            await PhraseService.DeletePhraseAsync(id);
+
+        SelectedIds.Clear();
+        Elements = await PhraseService.GetPhraseViewModelListAsync();
+        Snackbar.Add($"{ids.Count} 件を削除しました。", Severity.Success);
+    }
+
+    // 個別削除
     private async Task OnDeleteButtonClickedAsync(PhraseModel item)
     {
         var suffix = item.Phrase.Length > 50 ? "..." : "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
-        // 確認ダイアログ（OKなら続行）
-        if (!await DialogService.ShowConfirmAsync(
-                DialogConfirmType.DeleteConfirm,
-                string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase)))
-        {
-            return;
-        }
 
-        // ジャンル削除
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DeleteConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
+        if (!ok) return;
+
         var result = await PhraseService.DeletePhraseAsync(item.Id);
         Snackbar.AddServiceResult(result);
-        if (!result.IsSuccess)
-        {
-            return;
-        }
+        if (!result.IsSuccess) return;
 
-        // 一覧取得
         Elements = await PhraseService.GetPhraseViewModelListAsync();
-
     }
 
+    // CSV 読み込み
     private async Task OpenCsvUploadDialog()
     {
         await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload, PhraseModel>(
@@ -136,20 +176,16 @@
 
     private async Task OnCsvUploadCompleted(List<PhraseModel> importedPhrases)
     {
-        if (importedPhrases is null || !importedPhrases.Any())
-            return;
+        if (importedPhrases is null || !importedPhrases.Any()) return;
 
-        // 必要に応じてデータベースへ保存処理
         foreach (var phrase in importedPhrases)
-        {
             await PhraseService.CreatePhraseAsync(phrase);
-        }
 
-        // リロード
         Elements = await PhraseService.GetPhraseViewModelListAsync();
         Snackbar.Add("CSVからフレーズを読み込みました。", Severity.Success);
     }
 
-
-
+    // ナビ
+    private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
+    private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");
 }

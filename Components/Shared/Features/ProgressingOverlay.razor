@@ -1,0 +1,74 @@
+﻿@inject LoadingService Loading
+
+<MudOverlay Visible="Loading.IsVisible" LightBackground="true" Absolute="true"
+            ZIndex="9999">
+
+    <MudPaper Elevation="12" Class="loading-panel">
+        @if (Loading.ShowCancel)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           Size="Size.Small"
+                           Color="Color.Default"
+                           Class="loading-close-btn-inside"
+                           OnClick="() => Loading.RequestCancel()" />
+        }
+
+        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.subtitle1">@Loading.Message</MudText>
+
+            @if (Loading.Indeterminate)
+            {
+                <MudProgressLinear Striped="true" Rounded="true" Indeterminate="true"
+                                   Class="mt-2" Style="width: 220px;" />
+            }
+            else
+            {
+                <MudProgressLinear Striped="true" Rounded="true" Indeterminate="false"
+                                   Value="@SafeValue" Class="mt-2" Style="width: 220px;" />
+            }
+        </MudStack>
+    </MudPaper>
+</MudOverlay>
+<style>
+    /* メッセージ&プログレスの下地カード */
+    .loading-panel {
+        position: relative; /* ボタンの絶対位置基準 */
+        padding: 14px 18px;
+        border-radius: 14px;
+        /* ライト/ダークで読みやすい半透明 */
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(2px);
+        max-width: 280px;
+    }
+
+    /* ダークテーマ時の下地色 */
+    html.dark .loading-panel {
+        background: rgba(0, 0, 0, 0.70);
+    }
+
+    .loading-close-btn-inside {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 1;
+    }
+
+
+    /* ほんの少しだけ文字を持ち上げる */
+    .loading-text {
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0,0,0,.15);
+    }
+
+</style>
+
+
+@code {
+    private double SafeValue => Loading.Value ?? 0;
+
+    protected override void OnInitialized()
+        => Loading.VisibilityChanged += StateHasChanged;
+
+    public void Dispose()
+        => Loading.VisibilityChanged -= StateHasChanged;
+}

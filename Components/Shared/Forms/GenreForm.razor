@@ -6,57 +6,60 @@
 
 <MudForm Model="@model" @ref="@form" Validation="@(genreValidator.ValidateValue)" ValidationDelay="0">
     <MudStack Spacing="2">
-        <MudCard Elevation="AppConstants.DEFAULT_ELEVATION">
-            <MudCardContent Class="py-2">
-                <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await SubmitAsync())">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+        <ActionCard>
+            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="@(async () => await SubmitAsync())">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
+            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
+        </ActionCard>
 
         <!-- ジャンル名入力 -->
-        <MudCard Elevation="AppConstants.DEFAULT_ELEVATION">
-            <MudCardHeader Class="py-2">
+        <MudCard Elevation="AppConstants.DEFAULT_ELEVATION" Outlined>
+            <MudCardHeader>
                 <CardHeaderContent>
                     <SectionTitle HeadingLevel="3" Title="ジャンル入力" />
                 </CardHeaderContent>
             </MudCardHeader>
-            <MudCardContent Class="py-2">
+            <MudCardContent>
                 <MudGrid Spacing="1">
                     <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="@model.Name" Margin="Margin.Dense" Variant="Variant.Outlined" Label="ジャンル名" For="() => model.Name" ShrinkLabel />
                     </MudItem>
                 </MudGrid>
             </MudCardContent>
+            <MudDivider />
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row Spacing="4">
+                        <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="サブジャンル一覧入力" />
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@AppConstants.LABEL_BUTTON_ROW_ADD</MudButton>
+                    </MudStack>
+                    <MudSpacer />
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <!-- サブジャンルテーブル -->
+                <MudTable Items="@model.SubGenres" Outlined Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true" Elevation="AppConstants.DEFAULT_ELEVATION" Class="px-4">
+                    <HeaderContent>
+                        <MudTh>サブジャンル名</MudTh>
+                        <MudTh>操作</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudForm Model="@context" Validation=@(subGenreValidator.ValidateValue)>
+                                <MudTextField @bind-Value="@context.Name" For="() => model.Name" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="サブジャンル名" ShrinkLabel />
+                            </MudForm>
+                        </MudTd>
+                        <MudTd>
+                            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@AppConstants.LABEL_BUTTON_ROW_DELETE</MudButton>
+                            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" Disabled="@isFirst(context)" OnClick="@(() => MoveUp(context))">上へ</MudButton>
+                            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown" Disabled="@isLast(context)" OnClick="@(() => MoveDown(context))">下へ</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+
         </MudCard>
 
-        <!-- サブジャンルテーブル -->
-        <MudTable Items="@model.SubGenres" Dense="true" Hover="true" FixedHeader="true" Height="400px" Bordered="true" Elevation="AppConstants.DEFAULT_ELEVATION" Class="px-4">
-            <ToolBarContent>
-                <MudStack Row Spacing="4">
-                    <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt" Title="サブジャンル一覧入力" />
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Tertiary" StartIcon="@Icons.Material.TwoTone.Add" OnClick="OnAddButtonClicked">@AppConstants.LABEL_BUTTON_ROW_ADD</MudButton>
-                </MudStack>
-                <MudSpacer />
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh>サブジャンル名</MudTh>
-                <MudTh>操作</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd>
-                    <MudForm Model="@context" Validation=@(subGenreValidator.ValidateValue)>
-                        <MudTextField @bind-Value="@context.Name" For="() => model.Name" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="サブジャンル名" ShrinkLabel />
-                    </MudForm>
-                </MudTd>
-                <MudTd>
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="() => OnDeleteButtonClicked(context)">@AppConstants.LABEL_BUTTON_ROW_DELETE</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" Disabled="@isFirst(context)" OnClick="@(() => MoveUp(context))">上へ</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown" Disabled="@isLast(context)" OnClick="@(() => MoveDown(context))">下へ</MudButton>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
+       
     </MudStack>
 </MudForm>
 

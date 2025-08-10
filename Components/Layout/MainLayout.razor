@@ -9,11 +9,7 @@
     <MudAppBar Elevation="1">
         <MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.TwoTone.Menu"  Edge="Edge.Start" />
         <MudLink Href="/" Class="ml-3" Style="text-decoration: none; color: inherit;">
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Secondary" />
-                <MudText Typo="Typo.h5" Color="Color.Dark">@AppConstants.APP_NAME</MudText>
-
-            </MudStack>
+            <AppLogo />
         </MudLink>
         <MudSpacer />
         <UserMenu />
@@ -22,19 +18,19 @@
         <NavMenu />
     </MudDrawer>
     <MudMainContent Class="px-4 pt-2" Style="margin-top: var(--mud-appbar-height);">
-        @Body
+        <MudContainer>
+            <MudBreakpointProvider OnBreakpointChanged="OnBpChanged" />
+            <CascadingValue Value="CurrentBreakpoint">
+                @Body
+            </CascadingValue>
+        </MudContainer>
         <MudScrollToTop>
             <MudFab Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" />
         </MudScrollToTop>
     </MudMainContent>
-    @if (LoadingService.IsVisible)
-    {
-        <MudOverlay Visible="true" LightBackground="true" Absolute="true">
-            <MudProgressLinear Color="Color.Primary" Striped="true" Rounded="true" Indeterminate="true" Class="my-7" Style="width: 200px;" />
-        </MudOverlay>
 
-    }
 </MudLayout>
+<ProgressingOverlay />
 
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -47,15 +43,14 @@
 @code {
     private bool _drawerOpen = true;
 
-    protected override void OnInitialized()
-    {
-        LoadingService.VisiblityChanged += StateHasChanged;
-    }
+    // 初期値はデスクトップ想定（初回レンダー後に実値へ更新されます）
+    private Breakpoint CurrentBreakpoint = Breakpoint.Xl;
 
-    public void Dispose()
+    private void OnBpChanged(Breakpoint bp)
     {
-        LoadingService.VisiblityChanged -= StateHasChanged;
+        CurrentBreakpoint = bp;
+        StateHasChanged();
     }
-
 }
+
 

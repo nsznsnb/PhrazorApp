@@ -1,0 +1,24 @@
+﻿<MudCard Elevation="@Elevation"
+         Outlined="@Outlined"
+         Square="@Square"
+         Class="@Class"
+         Style="@Style"
+         @attributes="AdditionalAttributes">
+    @ChildContent
+</MudCard>
+
+@code {
+    // 既定値（必要に応じて調整可）
+    [Parameter] public int Elevation { get; set; } = AppConstants.DEFAULT_ELEVATION;
+    [Parameter] public bool Outlined { get; set; } = true;
+    [Parameter] public bool Square { get; set; } = false;
+
+    // パススルー
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // 未知の属性をMudCardにそのまま渡す（Id, data-*, aria-* など）
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

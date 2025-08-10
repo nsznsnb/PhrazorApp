@@ -1,0 +1,262 @@
+﻿@using MudBlazor
+@typeparam TItem
+
+<!-- Toolbar -->
+<MudCardContent Class="p-0">
+    <MudStack Row="@IsMdUp" Spacing="@(IsMdUp ? 3 : 2)" AlignItems="AlignItems.Center" Justify="Justify.FlexStart">
+        <!-- バッジは“表示中に含まれる選択数”を表示 -->
+        <MudBadge Content="@SelectedCountInView" MaxValue="999" Color="Color.Error" Style="@(!IsMdUp ? "width:100%" : null)">
+            <MudButton Variant="Variant.Outlined" Size="@ButtonSize" Color="Color.Error"
+                       StartIcon="@Icons.Material.TwoTone.Delete"
+                       Disabled="@(SelectedCountInView == 0)"
+                       FullWidth="@(!IsMdUp)"
+                       OnClick="TriggerBulkDeleteAsync">
+                @BulkDeleteLabel
+            </MudButton>
+        </MudBadge>
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <div style="width:100%">
+                <MudCheckBox T="bool"
+                             Value="@_selectAll"
+                             ValueChanged="@OnSelectAllChanged"
+                             Dense="true"
+                             Label="@MobileSelectAllLabel" />
+            </div>
+        </MudHidden>
+
+        @if (IsMdUp)
+        {
+            <MudSpacer />
+        }
+
+        @if (ShowSearch)
+        {
+            <MudTextField T="string"
+                          Value="@SearchText"
+                          ValueChanged="@( (string? v) => OnSearchChanged(v ?? string.Empty) )"
+                          Immediate="true"
+                          Placeholder="@SearchPlaceholder"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium"
+                          FullWidth="@(!IsMdUp)"
+                          Style="@(IsMdUp ? $"max-width: {SearchBoxMaxWidth};" : "width:100%")"
+                          Class="mt-0" />
+        }
+
+        @* ← ここに外部要素を差し込める *@
+        @if (ToolbarContent is not null)
+        {
+            var ctx = new SelectableTableToolbarContext {
+                SelectedCountInView = SelectedCountInView,
+                IsMdUp = IsMdUp,
+                SearchText = SearchText,
+                GetSelectedIdsInView = () => SelectedIdsInView.ToHashSet(),
+                GetSelectedIdsAll = () => new HashSet<Guid>(_selected)
+            };
+            @ToolbarContent(ctx)
+        }
+    </MudStack>
+</MudCardContent>
+
+<MudDivider />
+
+<!-- Table 本体（MudTable直下は許可スロットのみ & 無条件） -->
+<MudCardContent Class="p-0">
+    <MudTable T="TItem"
+              Items="@ItemsView"
+              Outlined="Outlined" Hover="Hover" Dense="Dense" Bordered="Bordered"
+              Height="Height" FixedHeader="FixedHeader" FixedFooter="FixedFooter"
+              Elevation="Elevation" Class="Class"
+              Page="@Page" PageChanged="OnTablePageChanged"
+              RowsPerPage="RowsPerPage"
+              @attributes="AdditionalAttributes">
+
+        <HeaderContent>
+            <MudTh style="width:48px;text-align:center;">
+                @if (IsMdUp)   @* = CurrentBreakpoint >= Breakpoint.Md *@
+                {
+                    <MudCheckBox T="bool"
+                                 Value="@_selectAll"
+                                 ValueChanged="@OnSelectAllChanged" />
+                }
+            </MudTh>
+            @HeaderCells
+        </HeaderContent>
+
+        <RowTemplate Context="context">
+            <!-- チェック列：tdクリックでトグル。チェック自体は伝播停止で二重トグル防止 -->
+            <MudTd style="width:48px;text-align:center; cursor:pointer;"
+                   @onclick="@(() => ToggleRow(GetId(context), !IsSelected(GetId(context))))">
+                <div @onclick:stopPropagation="true" @onmousedown:stopPropagation="true">
+                    <MudCheckBox @key="GetId(context)" T="bool"
+                                 Value="@IsSelected(GetId(context))"
+                                 ValueChanged="@( (bool v) => ToggleRow(GetId(context), v) )" />
+                </div>
+            </MudTd>
+
+            @RowCells(context)
+        </RowTemplate>
+
+        <PagerContent>
+            @PagerContent
+        </PagerContent>
+
+        <NoRecordsContent>
+            @NoRecordsContent
+        </NoRecordsContent>
+    </MudTable>
+</MudCardContent>
+
+@code {
+    // 追加：親レイアウトから受け取る
+    [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
+    private bool IsMdUp => CurrentBreakpoint >= Breakpoint.Md;
+
+    // --- 必須 ---
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public Func<TItem, Guid> IdSelector { get; set; } = default!;
+
+    // --- スロット ---
+    [Parameter] public RenderFragment? HeaderCells { get; set; }
+    [Parameter] public RenderFragment<TItem>? RowCells { get; set; }
+    [Parameter] public RenderFragment? PagerContent { get; set; }
+    [Parameter] public RenderFragment? NoRecordsContent { get; set; }
+
+    // ★ 新規：ツールバーに外部要素を差し込み
+    [Parameter] public RenderFragment<SelectableTableToolbarContext>? ToolbarContent { get; set; }
+
+    // --- 検索 ---
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public string SearchText { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchTextChanged { get; set; }
+    [Parameter] public string SearchPlaceholder { get; set; } = "検索";
+    [Parameter] public string SearchBoxMaxWidth { get; set; } = "400px";
+    [Parameter] public Func<TItem, string, bool>? Filter { get; set; }
+
+    // --- 見た目 ---
+    [Parameter] public bool Outlined { get; set; } = true;
+    [Parameter] public bool Hover { get; set; } = true;
+    [Parameter] public bool Dense { get; set; } = true;
+    [Parameter] public bool Bordered { get; set; } = true;
+    [Parameter] public bool FixedHeader { get; set; } = true;
+    [Parameter] public bool FixedFooter { get; set; } = true;
+    [Parameter] public int Elevation { get; set; } = AppConstants.DEFAULT_ELEVATION;
+    [Parameter] public string? Height { get; set; } = "500px";
+    [Parameter] public string? Class { get; set; } = "px-4";
+    [Parameter] public Size ButtonSize { get; set; } = AppConstants.SIZE_BUTTON;
+
+    // --- 選択 ---
+    [Parameter] public HashSet<Guid>? SelectedIds { get; set; }
+    [Parameter] public EventCallback<HashSet<Guid>> SelectedIdsChanged { get; set; }
+
+    // --- ページング（親へ伝播可） ---
+    [Parameter] public int Page { get; set; }
+    [Parameter] public EventCallback<int> PageChanged { get; set; }
+    [Parameter] public int RowsPerPage { get; set; } = 10;
+
+    // --- ツールバー（既存） ---
+    [Parameter] public EventCallback<HashSet<Guid>> OnBulkDelete { get; set; }
+    [Parameter] public string BulkDeleteLabel { get; set; } = "一括削除";
+    [Parameter] public string MobileSelectAllLabel { get; set; } = "全選択（検索結果）";
+
+    // --- その他委譲 ---
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // --- 内部状態 ---
+    private HashSet<Guid> _selected = new();
+    private bool _selectAll;
+
+    // フィルタ後の表示集合
+    private IEnumerable<TItem> ItemsView =>
+        (Items ?? Enumerable.Empty<TItem>())
+        .Where(x => Filter is null || Filter(x, SearchText));
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedIds is not null)
+            _selected = new HashSet<Guid>(SelectedIds); // 参照共有を避ける
+        RecalcSelectAll();
+    }
+
+    // ---- 選択ロジック ----
+    private Guid GetId(TItem item) => IdSelector(item);
+    private bool IsSelected(Guid id) => _selected.Contains(id);
+
+    // “表示中に含まれる選択だけ”を数える
+    private IEnumerable<Guid> SelectedIdsInView =>
+        ItemsView.Select(GetId).Where(id => _selected.Contains(id));
+    private int SelectedCountInView => SelectedIdsInView.Count();
+
+    private async Task OnSearchChanged(string value)
+    {
+        if (SearchText == value) return;
+        SearchText = value;
+        await SearchTextChanged.InvokeAsync(value); // 親へ通知（@bind-SearchText対応）
+        RecalcSelectAll(); // 表示集合が変わるため再計算
+    }
+
+    private void ToggleRow(Guid id, bool isChecked)
+    {
+        if (isChecked) _selected.Add(id);
+        else _selected.Remove(id);
+        RecalcSelectAll();
+        _ = NotifySelectionChangedAsync();
+    }
+
+    private void OnSelectAllChanged(bool v)
+    {
+        foreach (var x in ItemsView)
+        {
+            var id = GetId(x);
+            if (v) _selected.Add(id); else _selected.Remove(id);
+        }
+        RecalcSelectAll();
+        _ = NotifySelectionChangedAsync();
+    }
+
+    private void RecalcSelectAll()
+    {
+        var all = ItemsView.Select(GetId).ToList();
+        _selectAll = all.Count > 0 && all.All(_selected.Contains);
+        StateHasChanged();
+    }
+
+    private Task NotifySelectionChangedAsync()
+        => SelectedIdsChanged.HasDelegate
+            ? SelectedIdsChanged.InvokeAsync(new HashSet<Guid>(_selected))
+            : Task.CompletedTask;
+
+    private async Task OnTablePageChanged(int v)
+    {
+        if (Page != v)
+        {
+            Page = v;
+            RecalcSelectAll();
+            if (PageChanged.HasDelegate)
+                await PageChanged.InvokeAsync(v);
+        }
+    }
+
+    // 一括削除：表示中に含まれる選択のみ外へ渡す
+    private async Task TriggerBulkDeleteAsync()
+    {
+        var ids = SelectedIdsInView.ToHashSet();
+        if (ids.Count == 0) return;
+
+        if (OnBulkDelete.HasDelegate)
+            await OnBulkDelete.InvokeAsync(ids);
+    }
+
+    // ★ ツールバー用コンテキスト
+    public class SelectableTableToolbarContext
+    {
+        public int SelectedCountInView { get; set; }
+        public bool IsMdUp { get; set; }
+        public string SearchText { get; set; } = "";
+        public Func<HashSet<Guid>>? GetSelectedIdsInView { get; set; }
+        public Func<HashSet<Guid>>? GetSelectedIdsAll { get; set; }
+    }
+}

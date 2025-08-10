@@ -6,58 +6,48 @@
 @inject ISnackbar Snackbar
 @inject GenreService GenreService
 
-<MudContainer>
-    <MudStack Spacing="2">
-        <SectionTitle HeadingLevel="2" Title="フレーズジャンル一覧" />
-        <MudCard Elevation="AppConstants.DEFAULT_ELEVATION">
-            <MudCardContent Class="py-2">
-                <MudStack Row="true" Spacing="1">
-                    <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-        <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" Dense="true" Elevation="AppConstants.DEFAULT_ELEVATION" Class="px-4">
-            <ToolBarContent>
-                <SectionTitle HeadingLevel="3" Icon="@Icons.Material.TwoTone.ListAlt"
-                              Title="@AppConstants.LABEL_TABLE_TITLE" />
-                <MudSpacer />
-            </ToolBarContent>
-            <HeaderContent>
-                <MudTh>ジャンル</MudTh>
-                <MudTh style="min-width: 200px;">操作</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd>
-                    <MudStack Spacing="1">
-                        <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
-                        <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
-                            @foreach (var sub in context.SubGenres)
-                            {
-                                <MudChip Color="Color.Default"
-                                         T="string"
-                                         Variant="Variant.Text"
-                                         Size="Size.Small">
-                                    @sub.Name
-                                </MudChip>
-                            }
+<MudStack Spacing="2">
+    <SectionTitle HeadingLevel="2" Title="フレーズジャンル一覧" />
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">新規追加</MudButton>
+    </ActionCard>
+    <BaseCard>
+        <MudCardContent>
+            <MudTable Items="@Elements" Hover="true" Height="500px" FixedHeader="true" Dense="true" Elevation="AppConstants.DEFAULT_ELEVATION" Class="px-4">
+                <HeaderContent>
+                    <MudTh>ジャンル</MudTh>
+                    <MudTh style="min-width: 200px;">操作</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@context.Name</MudText>
+                            <MudStack Row Wrap="Wrap.Wrap" Spacing="0">
+                                @foreach (var sub in context.SubGenres)
+                                {
+                                    <MudChip Color="Color.Default"
+                                             T="string"
+                                             Variant="Variant.Text"
+                                             Size="Size.Small">
+                                        @sub.Name
+                                    </MudChip>
+                                }
+                            </MudStack>
                         </MudStack>
-                    </MudStack>
 
-                </MudTd>
-                <MudTd Align="Right" style="min-width: 200px;">
-                    <MudStack Row="true">
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@AppConstants.LABEL_BUTTON_EDIT</MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@AppConstants.LABEL_BUTTON_DELETE</MudButton>
-                    </MudStack>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-
-
-
-    </MudStack>
-</MudContainer>
-
+                    </MudTd>
+                    <MudTd Align="Right" style="min-width: 200px;">
+                        <MudStack Row="true">
+                            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/genres/edit/{context.Id}"))">@AppConstants.LABEL_BUTTON_EDIT</MudButton>
+                            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Delete" OnClick="@(() => OnDeleteButtonClickedAsync(context))">@AppConstants.LABEL_BUTTON_DELETE</MudButton>
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudCardContent>
+    </BaseCard>
+    
+</MudStack>
 
 
 @code {
