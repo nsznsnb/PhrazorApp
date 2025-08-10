@@ -8,7 +8,7 @@ namespace PhrazorApp.Data.Repositories
     {
         public PhraseRepository(EngDbContext context) : base(context) { }
 
-        public Task<List<DPhrase>> GetAllPhrasesAsync(string userId, CancellationToken ct = default)
+        public Task<List<DPhrase>> GetAllPhrasesAsync(string userId, CancellationToken ct)
         {
             return _context.Set<DPhrase>()
                 .Where(x => x.UserId == userId)
@@ -18,7 +18,7 @@ namespace PhrazorApp.Data.Repositories
                 .ToListAsync(ct);
         }
 
-        public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId, string userId, CancellationToken ct = default)
+        public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId, string userId, CancellationToken ct)
         {
             return _context.Set<DPhrase>()
                 .Where(x => x.UserId == userId)

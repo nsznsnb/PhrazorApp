@@ -22,7 +22,8 @@ namespace PhrazorApp.Data.Repositories
 
         public virtual Task AddRangeAsync(IEnumerable<TEntity> entities)
         {
-            foreach (var e in entities) Stamp(e, isNew: true);
+            var now = DateTime.UtcNow;
+            foreach (var e in entities) Stamp(e, isNew: true, now);
             Set.AddRange(entities);
             return Task.CompletedTask;
         }
@@ -36,7 +37,8 @@ namespace PhrazorApp.Data.Repositories
 
         public virtual Task UpdateRangeAsync(IEnumerable<TEntity> entities)
         {
-            foreach (var e in entities) Stamp(e, isNew: false);
+            var now = DateTime.UtcNow;
+            foreach (var e in entities) Stamp(e, isNew: false, now);
             Set.UpdateRange(entities);
             return Task.CompletedTask;
         }
@@ -53,11 +55,10 @@ namespace PhrazorApp.Data.Repositories
             return Task.CompletedTask;
         }
 
-        protected static void Stamp(object entity, bool isNew)
+        protected static void Stamp(object entity, bool isNew, DateTime? nowOverride = null)
         {
-            var now = DateTime.UtcNow;
+            var now = nowOverride ?? DateTime.UtcNow;
             var type = entity.GetType();
-
             var createdAt = type.GetProperty("CreatedAt", BindingFlags.Public | BindingFlags.Instance);
             var updatedAt = type.GetProperty("UpdatedAt", BindingFlags.Public | BindingFlags.Instance);
 

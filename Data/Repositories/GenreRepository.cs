@@ -8,7 +8,7 @@ namespace PhrazorApp.Data.Repositories
     {
         public GenreRepository(EngDbContext context) : base(context) { }
 
-        public Task<List<MGenre>> GetAllGenresAsync(string userId, CancellationToken ct = default)
+        public Task<List<MGenre>> GetAllGenresAsync(string userId, CancellationToken ct)
         {
             return _context.Set<MGenre>()
                 .Where(x => x.UserId == userId)
@@ -17,7 +17,7 @@ namespace PhrazorApp.Data.Repositories
                 .ToListAsync(ct);
         }
 
-        public Task<MGenre?> GetGenreByIdAsync(Guid genreId, string userId, CancellationToken ct = default)
+        public Task<MGenre?> GetGenreByIdAsync(Guid genreId, string userId, CancellationToken ct)
         {
             return _context.Set<MGenre>()
                 .Include(x => x.MSubGenres)
