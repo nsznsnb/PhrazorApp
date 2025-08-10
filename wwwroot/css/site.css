@@ -14,6 +14,11 @@
     word-break: break-word; /* または break-all や anywhere に調整可能 */
 }
 
+.mud-button-label {
+    white-space: nowrap;
+}
 
-
+.mud-card-header {
+    padding: 8px 16px;
+}
 
