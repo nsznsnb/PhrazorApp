@@ -66,7 +66,9 @@ namespace PhrazorApp
                     opt = opt.EnableSensitiveDataLogging().EnableDetailedErrors();
                 }
                 opt.UseSqlServer(
-                    builder.Configuration.GetConnectionString("EngDbContext"));
+                    builder.Configuration.GetConnectionString("EngDbContext"),
+                    sqlOptions => sqlOptions.CommandTimeout(120));
+
             });
 
             builder.Services.AddScoped<UnitOfWork>();
