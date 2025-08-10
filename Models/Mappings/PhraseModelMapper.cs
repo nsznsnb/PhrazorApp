@@ -13,12 +13,13 @@ namespace PhrazorApp.Models.Mappings
             ImageUrl = e.DPhraseImage?.Url ?? string.Empty,
         };
 
-        public static DPhrase ToEntity(this PhraseModel m) => new()
+        public static DPhrase ToEntity(this PhraseModel m, string userId) => new()
         {
             PhraseId = m.Id,  // UIで発番されたGuidが入る
             Phrase = m.Phrase,
             Meaning = m.Meaning,
-            Note = m.Note
+            Note = m.Note,
+            UserId = userId
         };
 
         public static DPhraseImage ToImageEntity(this PhraseModel m, DateTime uploadAtUtc) => new()
