@@ -19,44 +19,44 @@ namespace PhrazorApp.Services
             _userService = userService;
         }
 
-        public Task<List<GenreModel>> GetGenreViewModelListAsync()
+        public Task<List<GenreModel>> GetGenreViewModelListAsync(CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async (u, ct) =>
             {
-                var genres = await u.Genres.GetAllGenresAsync(userId);
+                var genres = await u.Genres.GetAllGenresAsync(userId, ct);
                 return genres.Select(x => x.ToModel()).ToList();
             });
         }
 
-        public Task<List<DropItemModel>> GetGenreDropItemModelListAsync()
+        public Task<List<DropItemModel>> GetGenreDropItemModelListAsync(CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async (u, ct) =>
             {
-                var genres = await u.Genres.GetAllGenresAsync(userId);
+                var genres = await u.Genres.GetAllGenresAsync(userId, ct);
                 return genres.ToDropItemModelList();
             });
         }
 
-        public Task<GenreModel> GetGenreViewModelAsync(Guid genreId)
+        public Task<GenreModel> GetGenreViewModelAsync(Guid genreId, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async (u, ct) =>
             {
-                var genre = await u.Genres.GetGenreByIdAsync(genreId, userId);
+                var genre = await u.Genres.GetGenreByIdAsync(genreId, userId, ct);
                 return genre != null ? genre.ToModel() : new GenreModel();
             });
         }
 
-        public async Task<IServiceResult> CreateGenreAsync(GenreModel model)
+        public async Task<IServiceResult> CreateGenreAsync(GenreModel model, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
             var entity = model.ToEntity(userId);
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
                     await u.Genres.AddAsync(entity);
                 });
@@ -70,16 +70,16 @@ namespace PhrazorApp.Services
             }
         }
 
-        public async Task<IServiceResult> UpdateGenreAsync(GenreModel model)
+        public async Task<IServiceResult> UpdateGenreAsync(GenreModel model, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
             var incoming = model.ToEntity(userId);
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
-                    var old = await u.Genres.GetGenreByIdAsync(incoming.GenreId, userId);
+                    var old = await u.Genres.GetGenreByIdAsync(incoming.GenreId, userId, ct);
                     if (old == null)
                         throw new InvalidOperationException("対象のジャンルが見つかりません。");
 
@@ -94,7 +94,7 @@ namespace PhrazorApp.Services
 
                     old.GenreName = incoming.GenreName;
                     await u.Genres.UpdateAsync(old);
-                });
+                }, ct);
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
@@ -105,15 +105,15 @@ namespace PhrazorApp.Services
             }
         }
 
-        public async Task<IServiceResult> DeleteGenreAsync(Guid genreId)
+        public async Task<IServiceResult> DeleteGenreAsync(Guid genreId, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
-                    var genre = await u.Genres.GetGenreByIdAsync(genreId, userId);
+                    var genre = await u.Genres.GetGenreByIdAsync(genreId, userId, ct);
                     if (genre == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, "指定されたジャンル"));
 

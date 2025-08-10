@@ -20,22 +20,22 @@ namespace PhrazorApp.Services
             _logger = logger;
         }
 
-        public Task<List<PhraseModel>> GetPhraseViewModelListAsync()
+        public Task<List<PhraseModel>> GetPhraseViewModelListAsync(CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async (u, ct) =>
             {
-                var phrases = await u.Phrases.GetAllPhrasesAsync(userId);
+                var phrases = await u.Phrases.GetAllPhrasesAsync(userId, ct);
                 return phrases.Select(p => p.ToModel()).ToList();
             });
         }
 
-        public Task<PhraseModel> GetPhraseViewModelAsync(Guid? phraseId)
+        public Task<PhraseModel> GetPhraseViewModelAsync(Guid? phraseId, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async (u, ct) =>
             {
-                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId);
+                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId, ct);
                 if (phraseId == null || phrase == null)
                     return new PhraseModel { Id = Guid.NewGuid(), Phrase = "", Meaning = "", Note = "", ImageUrl = "" };
 
@@ -51,13 +51,15 @@ namespace PhrazorApp.Services
             });
         }
 
-        public async Task<IServiceResult> CreatePhraseAsync(PhraseModel model)
+        public async Task<IServiceResult> CreatePhraseAsync(PhraseModel model, CancellationToken ct = default)
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
-                    await u.Phrases.AddAsync(model.ToEntity());
+                    var userId = _userService.GetUserId();
+
+                    await u.Phrases.AddAsync(model.ToEntity(userId));
 
                     if (!string.IsNullOrEmpty(model.ImageUrl))
                         await u.PhraseImages.AddAsync(model.ToImageEntity(DateTime.UtcNow));
@@ -75,16 +77,18 @@ namespace PhrazorApp.Services
             }
         }
 
-        public async Task<IServiceResult> CreatePhrasesAsync(IEnumerable<PhraseModel> models)
+        public async Task<IServiceResult> CreatePhrasesAsync(IEnumerable<PhraseModel> models, CancellationToken ct = default)
         {
             if (models == null) return ServiceResult.Failure("入力が null です。");
 
             var list = models.Where(m => m != null).ToList();
             if (list.Count == 0) return ServiceResult.Failure("登録対象がありません。");
 
+            var userId = _userService.GetUserId();
+
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
                     var nowUtc = DateTime.UtcNow;
 
@@ -99,7 +103,7 @@ namespace PhrazorApp.Services
                         // 新規はここで必ず発番（画面の値は無視）
                         model.Id = Guid.NewGuid();
 
-                        var phrase = model.ToEntity();
+                        var phrase = model.ToEntity(userId);
                         phraseEntities.Add(phrase);
 
                         if (!string.IsNullOrWhiteSpace(model.ImageUrl))
@@ -124,15 +128,15 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>フレーズ情報を更新します。</summary>
-        public async Task<IServiceResult> UpdatePhraseAsync(PhraseModel model)
+        public async Task<IServiceResult> UpdatePhraseAsync(PhraseModel model, CancellationToken ct = default)
         {
             try
             {
                 var userId = _userService.GetUserId();
 
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
-                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id, userId);
+                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id, userId, ct);
                     if (phraseEntity == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -181,15 +185,15 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>フレーズを削除します。</summary>
-        public async Task<IServiceResult> DeletePhraseAsync(Guid phraseId)
+        public async Task<IServiceResult> DeletePhraseAsync(Guid phraseId, CancellationToken ct = default)
         {
             try
             {
                 var userId = _userService.GetUserId();
 
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async (u, ct) =>
                 {
-                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId);
+                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId, ct);
                     if (phrase == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
