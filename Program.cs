@@ -117,7 +117,6 @@ namespace PhrazorApp
             builder.Services.AddScoped<SubGenreRepository>();
 
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<ICancellationTokenProvider, HttpCancellationTokenProvider>();
             builder.Services.AddScoped<UserService>();
 
             builder.Services.AddScoped<LoadingService>();
