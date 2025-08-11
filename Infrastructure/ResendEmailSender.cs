@@ -8,7 +8,7 @@ using Resend;
 using System.Net;
 using System.Text.RegularExpressions;
 
-namespace PhrazorApp.Services
+namespace PhrazorApp.Infrastructure
 {
     public class ResendEmailSender : IEmailSender<ApplicationUser>
     {

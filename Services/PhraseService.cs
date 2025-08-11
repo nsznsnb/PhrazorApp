@@ -213,5 +213,67 @@ namespace PhrazorApp.Services
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
+
+        /// <summary>フレーズを一括削除します。</summary>
+        public async Task<IServiceResult> DeletePhrasesAsync(IEnumerable<Guid> phraseIds, CancellationToken ct = default)
+        {
+            try
+            {
+                if (phraseIds is null || !phraseIds.Any())
+                    return ServiceResult.Failure(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
+
+                var userId = _userService.GetUserId();
+
+                // Guid重複除去
+                var idSet = phraseIds.Distinct().ToArray();
+
+                await _uow.ExecuteInTransactionAsync(async (u, ct2) =>
+                {
+                    const int chunkSize = 500; // 2100パラメータ上限対策
+                    var allPhrases = new List<DPhrase>(capacity: idSet.Length);
+
+                    // （画像・ジャンルの関連込み）
+                    foreach (var chunk in idSet.Chunk(chunkSize))
+                    {
+                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk, userId, ct2);
+                        allPhrases.AddRange(phrases);
+                    }
+
+                    // 存在チェック（1件でも見つからなければエラー）
+                    if (allPhrases.Count != idSet.Length)
+                    {
+                        var foundIds = allPhrases.Select(p => p.PhraseId).ToHashSet();
+                        var missing = idSet.Where(id => !foundIds.Contains(id)).ToArray();
+
+                        throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
+                    }
+
+                    // 子→親の順で削除
+                    var genres = allPhrases.Where(p => p.MPhraseGenres is { Count: > 0 })
+                                           .SelectMany(p => p.MPhraseGenres)
+                                           .ToList();
+
+                    var images = allPhrases.Where(p => p.DPhraseImage != null)
+                                           .Select(p => p.DPhraseImage!)
+                                           .ToList();
+
+                    if (genres.Count > 0)
+                        await u.PhraseGenres.DeleteRangeAsync(genres);
+
+                    if (images.Count > 0)
+                        await u.PhraseImages.DeleteRangeAsync(images);
+
+                    await u.Phrases.DeleteRangeAsync(allPhrases);
+                }, ct);
+
+                // 件数付きのメッセージを出したい場合は MSG_I_SUCCESS_DELETE_BULK 等の追加を検討
+                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "フレーズ一括削除で例外が発生しました。");
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+            }
+        }
     }
 }

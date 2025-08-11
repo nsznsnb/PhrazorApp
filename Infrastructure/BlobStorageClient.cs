@@ -5,7 +5,7 @@ using PhrazorApp.Commons;
 using PhrazorApp.Extensions;
 using System.Net.Http;
 
-namespace PhrazorApp.Services
+namespace PhrazorApp.Infrastructure
 {
 
     /// <summary>

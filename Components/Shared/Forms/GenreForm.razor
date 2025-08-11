@@ -1,7 +1,7 @@
 ﻿@inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject GenreService GenreService
-@inject LoadingService OverlayService
+@inject LoadingManager LoadingManager
 @inject NavigationManager NavigationManager
 
 <MudForm Model="@model" @ref="@form" Validation="@(genreValidator.ValidateValue)" ValidationDelay="0">

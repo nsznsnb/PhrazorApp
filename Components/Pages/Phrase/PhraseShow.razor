@@ -138,9 +138,7 @@
             $"選択中 {ids.Count} 件を削除します。よろしいですか？");
         if (!ok) return;
 
-        // Bulk API があれば置き換え
-        foreach (var id in ids.ToList())
-            await PhraseService.DeletePhraseAsync(id);
+        await PhraseService.DeletePhrasesAsync(ids);
 
         SelectedIds.Clear();
         Elements = await PhraseService.GetPhraseViewModelListAsync();

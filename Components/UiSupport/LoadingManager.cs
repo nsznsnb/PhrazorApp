@@ -1,9 +1,9 @@
-﻿namespace PhrazorApp.Services
+﻿namespace PhrazorApp.Components.UiSupport
 {
     /// <summary>
     /// ローディング状態サービス
     /// </summary>
-    public sealed class LoadingService
+    public sealed class LoadingManager
     {
         public event Action? VisibilityChanged;
 

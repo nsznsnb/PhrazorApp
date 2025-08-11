@@ -1,22 +1,22 @@
-﻿@inject LoadingService Loading
+﻿@inject LoadingManager LoadingManager
 
-<MudOverlay Visible="Loading.IsVisible" LightBackground="true" Absolute="true"
+<MudOverlay Visible="LoadingManager.IsVisible" LightBackground="true" Absolute="true"
             ZIndex="9999">
 
     <MudPaper Elevation="12" Class="loading-panel">
-        @if (Loading.ShowCancel)
+        @if (LoadingManager.ShowCancel)
         {
             <MudIconButton Icon="@Icons.Material.Filled.Close"
                            Size="Size.Small"
                            Color="Color.Default"
                            Class="loading-close-btn-inside"
-                           OnClick="() => Loading.RequestCancel()" />
+                           OnClick="() => LoadingManager.RequestCancel()" />
         }
 
         <MudStack Spacing="1" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.subtitle1">@Loading.Message</MudText>
+            <MudText Typo="Typo.subtitle1">@LoadingManager.Message</MudText>
 
-            @if (Loading.Indeterminate)
+            @if (LoadingManager.Indeterminate)
             {
                 <MudProgressLinear Striped="true" Rounded="true" Indeterminate="true"
                                    Class="mt-2" Style="width: 220px;" />
@@ -64,11 +64,11 @@
 
 
 @code {
-    private double SafeValue => Loading.Value ?? 0;
+    private double SafeValue => LoadingManager.Value ?? 0;
 
     protected override void OnInitialized()
-        => Loading.VisibilityChanged += StateHasChanged;
+        => LoadingManager.VisibilityChanged += StateHasChanged;
 
     public void Dispose()
-        => Loading.VisibilityChanged -= StateHasChanged;
+        => LoadingManager.VisibilityChanged -= StateHasChanged;
 }

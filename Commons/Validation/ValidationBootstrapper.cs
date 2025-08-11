@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace PhrazorApp.Commons.Settings
+namespace PhrazorApp.Commons.Validation
 {
     public static class ValidationBootstrapper
     {

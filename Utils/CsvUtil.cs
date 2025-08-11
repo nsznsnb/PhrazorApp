@@ -2,9 +2,9 @@
 using CsvHelper.Configuration;
 using System.Globalization;
 
-namespace PhrazorApp.Services
+namespace PhrazorApp.Utils
 {
-    public class CsvService
+    public static class CsvUtil
     {
         private static CsvConfiguration DefaultConfig => new(CultureInfo.InvariantCulture)
         {
@@ -14,7 +14,7 @@ namespace PhrazorApp.Services
             TrimOptions = TrimOptions.Trim
         };
 
-        public async IAsyncEnumerable<T> ReadAsync<T>(
+        public static async IAsyncEnumerable<T> ReadAsync<T>(
             Stream stream,
             CsvConfiguration? config = null,
             ClassMap<T>? classMap = null,
@@ -31,19 +31,19 @@ namespace PhrazorApp.Services
             }
         }
 
-        public async Task<List<T>> ReadToListAsync<T>(
+        public static async Task<List<T>> ReadToListAsync<T>(
             Stream stream,
             CsvConfiguration? config = null,
             ClassMap<T>? classMap = null,
             CancellationToken ct = default)
         {
             var list = new List<T>();
-            await foreach (var r in ReadAsync<T>(stream, config, classMap, ct))
+            await foreach (var r in ReadAsync(stream, config, classMap, ct))
                 list.Add(r);
             return list;
         }
 
-        public async Task<(List<T> Records, List<(int RowNumber, string Message)> Errors)> ReadWithValidateAsync<T>(
+        public static async Task<(List<T> Records, List<(int RowNumber, string Message)> Errors)> ReadWithValidateAsync<T>(
             Stream stream,
             Func<T, (bool IsValid, string? ErrorMessage)> validate,
             CsvConfiguration? config = null,
@@ -54,7 +54,7 @@ namespace PhrazorApp.Services
             var errors = new List<(int, string)>();
             var row = 0;
 
-            await foreach (var r in ReadAsync<T>(stream, config, classMap, ct))
+            await foreach (var r in ReadAsync(stream, config, classMap, ct))
             {
                 row++;
                 var (ok, msg) = validate(r);

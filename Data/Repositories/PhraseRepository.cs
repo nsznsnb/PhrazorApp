@@ -27,5 +27,20 @@ namespace PhrazorApp.Data.Repositories
                 .FirstOrDefaultAsync(p => p.PhraseId == phraseId, ct);
         }
 
+        public async Task<List<DPhrase>> GetByPhrasesIdsAsync(IEnumerable<Guid> ids, string userId, CancellationToken ct)
+        {
+            if (ids is null) throw new ArgumentNullException(nameof(ids));
+
+            var idArray = ids.Distinct().ToArray();
+            if (idArray.Length == 0) return new List<DPhrase>();
+
+            return await _context.Set<DPhrase>()
+                .Where(p => p.UserId == userId && idArray.Contains(p.PhraseId))
+                .Include(p => p.DPhraseImage)
+                .Include(p => p.MPhraseGenres)
+                .AsSplitQuery()
+                .ToListAsync(ct);
+        }
+
     }
 }

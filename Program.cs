@@ -4,12 +4,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
+using PhrazorApp.Commons.Validation;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
+using PhrazorApp.Components.UiSupport;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Data.UnitOfWork;
+using PhrazorApp.Infrastructure;
 using PhrazorApp.Services;
+using PhrazorApp.Utils;
 using Resend;
 
 namespace PhrazorApp
@@ -119,13 +123,12 @@ namespace PhrazorApp
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<UserService>();
 
-            builder.Services.AddScoped<LoadingService>();
-            builder.Services.AddScoped<ScriptService>();
-            // OpenAiClientとBlogClientをDIしているためDIの順序関係に注意
+            builder.Services.AddScoped<LoadingManager>();
+            builder.Services.AddScoped<JsInteropManager>();
+
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<GenreService>();
             builder.Services.AddScoped<PhraseService>();
-            builder.Services.AddScoped<CsvService>();
 
             // オプションパターン
             builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));

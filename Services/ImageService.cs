@@ -1,5 +1,6 @@
 ﻿using PhrazorApp.Commons;
 using PhrazorApp.Extensions;
+using PhrazorApp.Infrastructure;
 using System.Net.Http;
 
 namespace PhrazorApp.Services

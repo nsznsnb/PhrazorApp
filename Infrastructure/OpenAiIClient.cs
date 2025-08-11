@@ -2,10 +2,11 @@
 using Microsoft.Extensions.Options;
 using PhrazorApp.Commons;
 using PhrazorApp.Extensions;
+using PhrazorApp.Services;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace PhrazorApp.Services
+namespace PhrazorApp.Infrastructure
 {
 
     /// <summary>
@@ -44,9 +45,9 @@ namespace PhrazorApp.Services
 
             var requestBody = new
             {
-                prompt = prompt,
+                prompt,
                 n = 1,
-                size = size
+                size
             };
 
             // 画像生成エンドポイント
