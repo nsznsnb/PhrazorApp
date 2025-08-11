@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
+@inject ReviewSession ReviewSession
 
 <MudStack Spacing="2">
     <SectionTitle Title="フレーズ一覧" />
@@ -81,6 +82,14 @@
                            FullWidth="@(!tb.IsMdUp)"
                            OnClick="@(() => StartTest(tb.GetSelectedIdsInView?.Invoke() ?? new HashSet<Guid>()))">
                     テスト開始
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                           Disabled="@(SelectedIds.Count == 0)"
+                           FullWidth="@(!tb.IsMdUp)" Context="tb"
+                           OnClick="StartReviewSelected">
+                    選択して復習
                 </MudButton>
             </ToolbarContent>
 
@@ -206,6 +215,28 @@
         if (list is not null)
             Elements = list;
     }
+
+    // ▼ 選択して復習
+    private void StartReviewSelected()
+    {
+        if (SelectedIds.Count == 0)
+        {
+            Snackbar.Add("復習対象が選択されていません。", Severity.Warning);
+            return;
+        }
+
+        var selected = Elements.Where(x => SelectedIds.Contains(x.Id)).ToList();
+        if (selected.Count == 0)
+        {
+            Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
+            return;
+        }
+
+        // 表＝英語( Phrase )、裏＝日本語( Meaning )
+        ReviewSession.Set(selected, x => x.Phrase, x => x.Meaning);
+        NavigationManager.NavigateTo("/phrases/review?shuffle=true&loop=true");
+    }
+
     // ナビ
     private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
     private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");

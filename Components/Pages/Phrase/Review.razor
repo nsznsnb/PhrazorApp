@@ -1,0 +1,213 @@
+﻿@page "/phrases/review"
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using PhrazorApp.Components.State
+@attribute [Authorize]
+
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject ReviewSession ReviewSession
+@inject ProtectedSessionStorage PSS
+
+<MudStack Spacing="2">
+    <SectionTitle Title="フレーズ復習" />
+
+    <ActionCard>
+        <!-- ループは保存しつつ切替 -->
+        <MudSwitch T="bool"
+                   Checked="_loop"
+                   CheckedChanged="OnLoopChanged"
+                   Color="Color.Primary"
+                   Label="ループ" />
+
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Shuffle"
+                   Disabled="@(_count <= 1)" OnClick="Reshuffle">
+            シャッフル
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Default" StartIcon="@Icons.Material.TwoTone.RestartAlt"
+                   OnClick="ResetPosition">
+            先頭へ
+        </MudButton>
+
+        <MudSpacer />
+
+        <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                   Disabled="@(_count == 0)" OnClick="GoWritingTest">
+            英作文テストへ
+        </MudButton>
+    </ActionCard>
+
+    <BaseCard>
+        <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="py-4">
+
+            <!-- 進捗バー（0-100%） -->
+            <MudProgressLinear Value="@ProgressPercent" Rounded="true" />
+
+            <MudText Typo="Typo.subtitle2">
+                @(_count == 0 ? "（データなし）" : $"{_index + 1} / {_count}")
+            </MudText>
+
+            <!-- キー入力は子divで受ける（preventDefault もここで） -->
+            <MudCard Elevation="12" Class="p-8 text-center">
+                <div tabindex="0"
+                     @onkeydown="HandleKey"
+                     @onkeydown:preventDefault="true"
+                     style="outline:none">
+                    <MudCardContent @onclick="Flip">
+                        <MudText Typo="Typo.h5">@(_count == 0 ? "" : _display)</MudText>
+                        @if (_count > 0)
+                        {
+                            <MudText Typo="Typo.caption" Class="mt-2">
+                                @(_isBack ? "クリック / Space: 表へ" : "クリック / Space: 裏へ")
+                            </MudText>
+                        }
+                    </MudCardContent>
+                </div>
+            </MudCard>
+
+            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                           StartIcon="@Icons.Material.TwoTone.ChevronLeft"
+                           Disabled="@(!_canPrev)" OnClick="Prev">
+                    前へ
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                           StartIcon="@Icons.Material.TwoTone.Sync"
+                           OnClick="Flip">
+                    表/裏
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                           EndIcon="@Icons.Material.TwoTone.ChevronRight"
+                           Disabled="@(!_canNext)" OnClick="Next">
+                    次へ
+                </MudButton>
+            </MudStack>
+
+            <MudText Typo="Typo.caption" Class="mt-2">
+                ← / → : 前・次　/　↑ / ↓・Space・Enter : 表裏切替
+            </MudText>
+        </MudStack>
+    </BaseCard>
+</MudStack>
+
+@code {
+    [Parameter, SupplyParameterFromQuery] public bool? Shuffle { get; set; }
+    [Parameter, SupplyParameterFromQuery] public bool? Loop { get; set; }
+    [Parameter, SupplyParameterFromQuery] public int? Start { get; set; }
+
+    private List<ReviewSession.Card> _items = new();
+    private int _index;
+    private bool _isBack;
+    private bool _loop;
+    private int _count;
+
+    private string _display => _isBack ? _items[_index].Back : _items[_index].Front;
+    private bool _canPrev => _count > 0 && (_loop || _index > 0);
+    private bool _canNext => _count > 0 && (_loop || _index < _count - 1);
+    private double ProgressPercent => _count == 0 ? 0 : ((_index + 1) * 100.0 / _count);
+
+    protected override void OnParametersSet()
+    {
+        // Items を List に（System.Linq なしでもOK）
+        _items = new List<ReviewSession.Card>(ReviewSession.Items);
+        _count = _items.Count;
+
+        if (_count == 0)
+        {
+            Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
+            NavigationManager.NavigateTo("/phrases");
+            return;
+        }
+
+        _loop  = Loop ?? false;
+        _index = Math.Clamp(Start ?? 0, 0, _count - 1);
+
+        if ((Shuffle ?? false) && _count > 1)
+            ShuffleInPlace(_items, seed: null);
+
+        _isBack = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // ループ状態の復元（クエリ指定がなければ）
+        if (!Loop.HasValue)
+        {
+            var rLoop = await PSS.GetAsync<bool>("review.loop");
+            if (rLoop.Success) _loop = rLoop.Value;
+        }
+
+        // 直近シャッフルしたかの復元（クエリ指定がなければ）
+        if (!Shuffle.HasValue)
+        {
+            var rShuf = await PSS.GetAsync<bool>("review.shufflePref");
+            if (rShuf.Success && rShuf.Value && _count > 1)
+            {
+                ShuffleInPlace(_items, null);
+                _index = 0;
+                _isBack = false;
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnLoopChanged(bool value)
+    {
+        _loop = value;
+        await PSS.SetAsync("review.loop", _loop);
+    }
+
+    private async void Reshuffle()
+    {
+        if (_count <= 1) return;
+        ShuffleInPlace(_items, null);
+        _index = 0;
+        _isBack = false;
+        await PSS.SetAsync("review.shufflePref", true);
+    }
+
+    private async void ResetPosition()
+    {
+        _index = 0;
+        _isBack = false;
+        await PSS.SetAsync("review.shufflePref", false);
+    }
+
+    private void Prev() { if (_index == 0) _index = _loop ? _count - 1 : 0; else _index--; _isBack = false; }
+    private void Next() { if (_index == _count - 1) _index = _loop ? 0 : _count - 1; else _index++; _isBack = false; }
+    private void Flip() => _isBack = !_isBack;
+    private void GoWritingTest() => NavigationManager.NavigateTo("/phrases/writing?loop=true");
+
+    private static void ShuffleInPlace<T>(IList<T> list, int? seed)
+    {
+        var rnd = seed.HasValue ? new Random(seed.Value) : new Random();
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = rnd.Next(i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+    }
+
+    private void HandleKey(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowLeft": Prev(); break;
+            case "ArrowRight": Next(); break;
+            // ▼ ここを追加：上下で表裏切替
+            case "ArrowUp":
+            case "ArrowDown":
+            case " ":
+            case "Enter":
+                Flip(); break;
+        }
+    }
+}

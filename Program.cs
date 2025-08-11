@@ -7,6 +7,7 @@ using MudBlazor.Services;
 using PhrazorApp.Commons.Validation;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
+using PhrazorApp.Components.State;
 using PhrazorApp.Components.UiSupport;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
@@ -123,6 +124,7 @@ namespace PhrazorApp
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<UserService>();
 
+            builder.Services.AddScoped<ReviewSession>();
             builder.Services.AddScoped<LoadingManager>();
             builder.Services.AddScoped<JsInteropManager>();
             builder.Services.AddScoped<UiOperationRunner>();
