@@ -102,8 +102,8 @@
 
     private void OnAddButtonClicked()
     {
-        var nextSortOrder = model.SubGenres.Count > 0 ? model.SubGenres.Max(x => x.SortOrder) + 1 : 0;
-        model.SubGenres.Add(new SubGenreModel { Id = Guid.NewGuid(), Name = "", SortOrder = nextSortOrder });
+        var nextSortOrder = model.SubGenres.Count > 0 ? model.SubGenres.Max(x => x.OrderNo) + 1 : 0;
+        model.SubGenres.Add(new SubGenreModel { Id = Guid.NewGuid(), Name = "", OrderNo = nextSortOrder });
     }
 
     private void OnDeleteButtonClicked(SubGenreModel item)
@@ -115,7 +115,7 @@
     private void ReorderSortOrder()
     {
         for (int i = 0; i < model.SubGenres.Count; i++)
-            model.SubGenres[i].SortOrder = i;
+            model.SubGenres[i].OrderNo = i;
     }
 
     private void MoveUp(SubGenreModel item)

@@ -24,10 +24,9 @@ namespace PhrazorApp.Services
         /// <summary>ジャンル一覧</summary>
         public Task<ServiceResult<List<GenreModel>>> GetGenreViewModelListAsync(CancellationToken ct = default)
         {
-            var userId = _userService.GetUserId();
             return _uow.ReadAsync(async (u, token) =>
             {
-                var genres = await u.Genres.GetAllGenresAsync(userId, token);
+                var genres = await u.Genres.GetAllGenresAsync(token);
                 var list = genres.Select(x => x.ToModel()).ToList();
                 return ServiceResult.Success(list, message: ""); 
             }, ct);
@@ -36,10 +35,9 @@ namespace PhrazorApp.Services
         /// <summary>ドロップダウン用一覧</summary>
         public Task<ServiceResult<List<DropItemModel>>> GetGenreDropItemModelListAsync(CancellationToken ct = default)
         {
-            var userId = _userService.GetUserId();
             return _uow.ReadAsync(async (u, token) =>
             {
-                var genres = await u.Genres.GetAllGenresAsync(userId, token);
+                var genres = await u.Genres.GetAllGenresAsync(token);
                 var list = genres.ToDropItemModelList();
                 return ServiceResult.Success(list, message: "");
             }, ct);
@@ -48,10 +46,9 @@ namespace PhrazorApp.Services
         /// <summary>ジャンル詳細</summary>
         public Task<ServiceResult<GenreModel>> GetGenreViewModelAsync(Guid genreId, CancellationToken ct = default)
         {
-            var userId = _userService.GetUserId();
             return _uow.ReadAsync(async (u, token) =>
             {
-                var genre = await u.Genres.GetGenreByIdAsync(genreId, userId, token); 
+                var genre = await u.Genres.GetGenreByIdAsync(genreId, token); 
                 var model = genre != null ? genre.ToModel() : new GenreModel();
                 return ServiceResult.Success(model, message: "");
             }, ct);
@@ -90,7 +87,7 @@ namespace PhrazorApp.Services
                 await _uow.ExecuteInTransactionAsync(async (u, token) =>
                 {
                     // ※ Repo: GetGenreByIdAsync は MSubGenres を Include しておく
-                    var old = await u.Genres.GetGenreByIdAsync(incoming.GenreId, userId, token);
+                    var old = await u.Genres.GetGenreByIdAsync(incoming.GenreId, token);
                     if (old == null)
                         throw new InvalidOperationException("対象のジャンルが見つかりません。");
 
@@ -127,7 +124,7 @@ namespace PhrazorApp.Services
             {
                 await _uow.ExecuteInTransactionAsync(async (u, token) =>
                 {
-                    var genre = await u.Genres.GetGenreByIdAsync(genreId, userId, token);
+                    var genre = await u.Genres.GetGenreByIdAsync(genreId, token);
                     if (genre == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, "指定されたジャンル"));
 

@@ -62,7 +62,8 @@ namespace PhrazorApp
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<UserService>();
             builder.Services.AddDbContextFactory<EngDbContext>(opt =>
             {
                 if (builder.Environment.IsDevelopment())
@@ -121,8 +122,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<ReviewTypeRepository>();
             builder.Services.AddScoped<SubGenreRepository>();
 
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<UserService>();
+
 
             builder.Services.AddScoped<ReviewSession>();
             builder.Services.AddScoped<LoadingManager>();

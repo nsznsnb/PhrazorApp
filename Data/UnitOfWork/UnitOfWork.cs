@@ -33,6 +33,9 @@ namespace PhrazorApp.Data.UnitOfWork
             public SubGenreRepository SubGenres { get; }
             public TestResultDetailRepository TestResultDetails { get; }
             public TestResultRepository TestResults { get; }
+            public PhraseBookRepository PhraseBooks { get; }
+            public PhraseBookItemRepository PhraseBookItems { get; }    
+
 
             public Repos(EngDbContext ctx)
             {
@@ -51,6 +54,8 @@ namespace PhrazorApp.Data.UnitOfWork
                 SubGenres = new SubGenreRepository(ctx);
                 TestResultDetails = new TestResultDetailRepository(ctx);
                 TestResults = new TestResultRepository(ctx);
+                PhraseBooks = new PhraseBookRepository(ctx);
+                PhraseBookItems = new PhraseBookItemRepository(ctx);
             }
         }
 

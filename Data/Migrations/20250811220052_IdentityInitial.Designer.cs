@@ -9,10 +9,10 @@ using PhrazorApp.Data;
 
 #nullable disable
 
-namespace PhrazorApp.Migrations
+namespace PhrazorApp.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250728002522_IdentityInitial")]
+    [Migration("20250811220052_IdentityInitial")]
     partial class IdentityInitial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace PhrazorApp.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);

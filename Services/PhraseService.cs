@@ -25,11 +25,10 @@ namespace PhrazorApp.Services
         /// <summary>一覧</summary>
         public Task<ServiceResult<List<PhraseModel>>> GetPhraseViewModelListAsync(CancellationToken ct = default)
         {
-            var userId = _userService.GetUserId();
 
             return _uow.ReadAsync(async (u, token) =>
             {
-                var phrases = await u.Phrases.GetAllPhrasesAsync(userId, token);
+                var phrases = await u.Phrases.GetAllPhrasesAsync(token);
                 var list = phrases.Select(p => p.ToModel()).ToList();
                 return ServiceResult<List<PhraseModel>>.Success(list, message: "");
             }, ct);
@@ -38,11 +37,10 @@ namespace PhrazorApp.Services
         /// <summary>詳細</summary>
         public Task<ServiceResult<PhraseModel>> GetPhraseViewModelAsync(Guid? phraseId, CancellationToken ct = default)
         {
-            var userId = _userService.GetUserId();
 
             return _uow.ReadAsync(async (u, token) =>
             {
-                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId, token);
+                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, token);
                 var model = (phraseId == null || phrase == null)
                     ? new PhraseModel { Id = Guid.NewGuid(), Phrase = "", Meaning = "", Note = "", ImageUrl = "" }
                     : new PhraseModel
@@ -144,7 +142,7 @@ namespace PhrazorApp.Services
 
                 await _uow.ExecuteInTransactionAsync(async (u, token) =>
                 {
-                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id, userId, token);
+                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id, token);
                     if (phraseEntity == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -201,7 +199,7 @@ namespace PhrazorApp.Services
 
                 await _uow.ExecuteInTransactionAsync(async (u, token) =>
                 {
-                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, userId, token);
+                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, token);
                     if (phrase == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -241,7 +239,7 @@ namespace PhrazorApp.Services
 
                     foreach (var chunk in idSet.Chunk(chunkSize))
                     {
-                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk, userId, token); // 画像・ジャンル込み取得
+                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk, token); // 画像・ジャンル込み取得
                         allPhrases.AddRange(phrases);
                     }
 

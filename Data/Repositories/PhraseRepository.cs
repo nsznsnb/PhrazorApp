@@ -8,26 +8,24 @@ namespace PhrazorApp.Data.Repositories
     {
         public PhraseRepository(EngDbContext context) : base(context) { }
 
-        public Task<List<DPhrase>> GetAllPhrasesAsync(string userId, CancellationToken ct)
+        public Task<List<DPhrase>> GetAllPhrasesAsync(CancellationToken ct)
         {
             return _context.Set<DPhrase>()
-                .Where(x => x.UserId == userId)
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .Include(p => p.DReviewLogs)
                 .ToListAsync(ct);
         }
 
-        public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId, string userId, CancellationToken ct)
+        public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId, CancellationToken ct)
         {
             return _context.Set<DPhrase>()
-                .Where(x => x.UserId == userId)
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .FirstOrDefaultAsync(p => p.PhraseId == phraseId, ct);
         }
 
-        public async Task<List<DPhrase>> GetByPhrasesIdsAsync(IEnumerable<Guid> ids, string userId, CancellationToken ct)
+        public async Task<List<DPhrase>> GetByPhrasesIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
         {
             if (ids is null) throw new ArgumentNullException(nameof(ids));
 
@@ -35,7 +33,7 @@ namespace PhrazorApp.Data.Repositories
             if (idArray.Length == 0) return new List<DPhrase>();
 
             return await _context.Set<DPhrase>()
-                .Where(p => p.UserId == userId && idArray.Contains(p.PhraseId))
+                .Where(p => idArray.Contains(p.PhraseId))
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .AsSplitQuery()

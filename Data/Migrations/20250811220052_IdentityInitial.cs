@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PhrazorApp.Migrations
+namespace PhrazorApp.Data.Migrations
 {
     /// <inheritdoc />
     public partial class IdentityInitial : Migration

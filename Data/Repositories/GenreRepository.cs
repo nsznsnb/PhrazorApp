@@ -8,20 +8,19 @@ namespace PhrazorApp.Data.Repositories
     {
         public GenreRepository(EngDbContext context) : base(context) { }
 
-        public Task<List<MGenre>> GetAllGenresAsync(string userId, CancellationToken ct)
+        public Task<List<MGenre>> GetAllGenresAsync(CancellationToken ct)
         {
             return _context.Set<MGenre>()
-                .Where(x => x.UserId == userId)
                 .Include(x => x.MSubGenres)
                 .OrderBy(x => x.CreatedAt)
                 .ToListAsync(ct);
         }
 
-        public Task<MGenre?> GetGenreByIdAsync(Guid genreId, string userId, CancellationToken ct)
+        public Task<MGenre?> GetGenreByIdAsync(Guid genreId,CancellationToken ct)
         {
             return _context.Set<MGenre>()
                 .Include(x => x.MSubGenres)
-                .FirstOrDefaultAsync(x => x.GenreId == genreId && x.UserId == userId, ct);
+                .FirstOrDefaultAsync(x => x.GenreId == genreId, ct);
         }
 
     }

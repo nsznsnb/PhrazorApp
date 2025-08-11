@@ -13,9 +13,9 @@ namespace PhrazorApp.Models.Mappings
                 {
                     Id = s.SubGenreId,
                     Name = s.SubGenreName,
-                    SortOrder = s.SortOrder
+                    OrderNo = s.OrderNo
                 })
-                .OrderBy(x => x.SortOrder)
+                .OrderBy(x => x.OrderNo)
                 .ToList() ?? new()
         };
 
@@ -36,7 +36,7 @@ namespace PhrazorApp.Models.Mappings
                     SubGenreId = x.Id,
                     GenreId = m.Id,
                     SubGenreName = x.Name,
-                    SortOrder = x.SortOrder,
+                    OrderNo = x.OrderNo,
                     UserId = userId
                 }).ToList();
             }

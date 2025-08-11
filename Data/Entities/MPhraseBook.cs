@@ -4,22 +4,27 @@ using System.Collections.Generic;
 namespace PhrazorApp.Data.Entities;
 
 /// <summary>
-/// 日記タグ
+/// フレーズ帳マスタ
 /// </summary>
-public partial class MDiaryTag
+public partial class MPhraseBook
 {
     /// <summary>
-    /// 日記タグID
+    /// フレーズ帳Id
     /// </summary>
-    public int TagId { get; set; }
+    public Guid PhraseBookId { get; set; }
 
     /// <summary>
-    /// タグ名
+    /// フレーズ帳名
     /// </summary>
-    public string? TagName { get; set; }
+    public string PhraseBookName { get; set; } = null!;
 
     /// <summary>
-    /// ユーザーID
+    /// 説明
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// ユーザーId
     /// </summary>
     public string? UserId { get; set; }
 
@@ -33,5 +38,5 @@ public partial class MDiaryTag
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<DEnglishDiaryTag> DEnglishDiaryTags { get; set; } = new List<DEnglishDiaryTag>();
+    public virtual ICollection<MPhraseBookItem> MPhraseBookItems { get; set; } = new List<MPhraseBookItem>();
 }

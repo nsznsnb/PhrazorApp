@@ -31,7 +31,7 @@ public partial class DReviewLog
     /// <summary>
     /// テスト結果ID
     /// </summary>
-    public int TestId { get; set; }
+    public Guid TestId { get; set; }
 
     /// <summary>
     /// テスト結果明細連番

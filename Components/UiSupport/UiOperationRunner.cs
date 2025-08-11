@@ -63,8 +63,9 @@ namespace PhrazorApp.Components.UiSupport
                 _snackbar.Add("キャンセルしました。", Severity.Info);
                 return ServiceResult.Warning("キャンセルしました。");
             }
-            catch
+            catch (Exception ex)
             {
+                Console.Error.WriteLine(ex);
                 _snackbar.Add("処理に失敗しました。", Severity.Error);
                 return ServiceResult.Failure("処理に失敗しました。");
             }
@@ -117,8 +118,9 @@ namespace PhrazorApp.Components.UiSupport
                 _snackbar.Add("キャンセルしました。", Severity.Info);
                 return ServiceResult.Warning<T>(default!, "キャンセルしました。");
             }
-            catch
+            catch(Exception ex)
             {
+                Console.Error.WriteLine(ex);
                 _snackbar.Add("処理に失敗しました。", Severity.Error);
                 return ServiceResult.Failure<T>("処理に失敗しました。");
             }

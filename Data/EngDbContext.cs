@@ -36,6 +36,10 @@ public partial class EngDbContext : DbContext
 
     public virtual DbSet<MOperationType> MOperationTypes { get; set; }
 
+    public virtual DbSet<MPhraseBook> MPhraseBooks { get; set; }
+
+    public virtual DbSet<MPhraseBookItem> MPhraseBookItems { get; set; }
+
     public virtual DbSet<MPhraseGenre> MPhraseGenres { get; set; }
 
     public virtual DbSet<MProverb> MProverbs { get; set; }
@@ -79,6 +83,10 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("D_ENGLISH_DIARYS", tb => tb.HasComment("英語日記"));
 
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt }, "D_ENGLISH_DIARYS_IX1");
+
+            entity.HasIndex(e => new { e.UserId, e.Title }, "D_ENGLISH_DIARYS_IX2");
+
             entity.HasIndex(e => e.DiaryId, "D_ENGLISH_DIARYS_PKI").IsUnique();
 
             entity.Property(e => e.DiaryId)
@@ -116,7 +124,6 @@ public partial class EngDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId)
-                .HasMaxLength(450)
                 .HasComment("ユーザーId")
                 .HasColumnName("user_id");
         });
@@ -126,6 +133,10 @@ public partial class EngDbContext : DbContext
             entity.HasKey(e => new { e.DiaryId, e.DiaryTagId }).HasName("D_ENGLISH_DIARY_TAGS_PKC");
 
             entity.ToTable("D_ENGLISH_DIARY_TAGS", tb => tb.HasComment("英語日記タグ"));
+
+            entity.HasIndex(e => e.DiaryId, "D_ENGLISH_DIARY_TAGS_IX1");
+
+            entity.HasIndex(e => e.DiaryTagId, "D_ENGLISH_DIARY_TAGS_IX2");
 
             entity.HasIndex(e => new { e.DiaryId, e.DiaryTagId }, "D_ENGLISH_DIARY_TAGS_PKI").IsUnique();
 
@@ -163,6 +174,10 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("D_PHRASES", tb => tb.HasComment("ユーザーフレーズ"));
 
+            entity.HasIndex(e => e.UserId, "D_PHRASES_IX1");
+
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt }, "D_PHRASES_IX2").IsDescending(false, true);
+
             entity.HasIndex(e => e.PhraseId, "D_PHRASES_PKI").IsUnique();
 
             entity.Property(e => e.PhraseId)
@@ -193,7 +208,6 @@ public partial class EngDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId)
-                .HasMaxLength(450)
                 .HasComment("ユーザーID")
                 .HasColumnName("user_id");
         });
@@ -245,6 +259,10 @@ public partial class EngDbContext : DbContext
             entity.HasKey(e => e.ReviewId).HasName("D_REVIEW_LOGS_PKC");
 
             entity.ToTable("D_REVIEW_LOGS", tb => tb.HasComment("復習履歴"));
+
+            entity.HasIndex(e => new { e.PhraseId, e.ReviewDate }, "D_REVIEW_LOGS_IX1");
+
+            entity.HasIndex(e => new { e.TestId, e.TestResultDetailNo }, "D_REVIEW_LOGS_IX2");
 
             entity.HasIndex(e => e.ReviewId, "D_REVIEW_LOGS_PKI").IsUnique();
 
@@ -301,6 +319,10 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("D_TEST_RESULTS", tb => tb.HasComment("テスト結果"));
 
+            entity.HasIndex(e => new { e.UserId, e.TestDatetime }, "D_TEST_RESULTS_IX1");
+
+            entity.HasIndex(e => e.GradeId, "D_TEST_RESULTS_IX2");
+
             entity.HasIndex(e => e.TestId, "D_TEST_RESULTS_PKI").IsUnique();
 
             entity.Property(e => e.TestId)
@@ -327,6 +349,9 @@ public partial class EngDbContext : DbContext
                 .HasComment("更新日時")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.UserId)
+                .HasComment("ユーザーID")
+                .HasColumnName("user_id");
 
             entity.HasOne(d => d.Grade).WithMany(p => p.DTestResults)
                 .HasForeignKey(d => d.GradeId)
@@ -338,6 +363,8 @@ public partial class EngDbContext : DbContext
             entity.HasKey(e => new { e.TestId, e.TestResultDetailNo }).HasName("D_TEST_RESULT_DETAILS_PKC");
 
             entity.ToTable("D_TEST_RESULT_DETAILS", tb => tb.HasComment("テスト結果明細"));
+
+            entity.HasIndex(e => e.PhraseId, "D_TEST_RESULT_DETAILS_IX1");
 
             entity.HasIndex(e => new { e.TestId, e.TestResultDetailNo }, "D_TEST_RESULT_DETAILS_PKI").IsUnique();
 
@@ -382,6 +409,8 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("M_DIARY_TAGS", tb => tb.HasComment("日記タグ"));
 
+            entity.HasIndex(e => new { e.UserId, e.TagName }, "M_DIARY_TAGS_IX1").IsUnique();
+
             entity.HasIndex(e => e.TagId, "M_DIARY_TAGS_PKI").IsUnique();
 
             entity.Property(e => e.TagId)
@@ -402,6 +431,9 @@ public partial class EngDbContext : DbContext
                 .HasComment("更新日時")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.UserId)
+                .HasComment("ユーザーID")
+                .HasColumnName("user_id");
         });
 
         modelBuilder.Entity<MGenre>(entity =>
@@ -410,7 +442,7 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("M_GENRES", tb => tb.HasComment("ジャンルマスタ"));
 
-            entity.HasIndex(e => e.GenreName, "M_GENRES_IX1").IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.GenreName }, "M_GENRES_IX1").IsUnique();
 
             entity.HasIndex(e => e.GenreId, "M_GENRES_PKI").IsUnique();
 
@@ -433,7 +465,6 @@ public partial class EngDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId)
-                .HasMaxLength(450)
                 .HasComment("ユーザーId")
                 .HasColumnName("user_id");
         });
@@ -505,11 +536,97 @@ public partial class EngDbContext : DbContext
                 .HasColumnName("updated_at");
         });
 
+        modelBuilder.Entity<MPhraseBook>(entity =>
+        {
+            entity.HasKey(e => e.PhraseBookId).HasName("M_PHRASE_BOOKS_PKC");
+
+            entity.ToTable("M_PHRASE_BOOKS", tb => tb.HasComment("フレーズ帳マスタ"));
+
+            entity.HasIndex(e => new { e.UserId, e.PhraseBookName }, "M_PHRASE_BOOKS_IX1").IsUnique();
+
+            entity.HasIndex(e => e.PhraseBookId, "M_PHRASE_BOOKS_PKI").IsUnique();
+
+            entity.Property(e => e.PhraseBookId)
+                .ValueGeneratedNever()
+                .HasComment("フレーズ帳Id")
+                .HasColumnName("phrase_book_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("作成日時")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description)
+                .HasMaxLength(100)
+                .HasComment("説明")
+                .HasColumnName("description");
+            entity.Property(e => e.PhraseBookName)
+                .HasMaxLength(50)
+                .HasComment("フレーズ帳名")
+                .HasColumnName("phrase_book_name");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("更新日時")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UserId)
+                .HasComment("ユーザーId")
+                .HasColumnName("user_id");
+        });
+
+        modelBuilder.Entity<MPhraseBookItem>(entity =>
+        {
+            entity.HasKey(e => new { e.PhraseBookId, e.PhraseId }).HasName("M_PHRASE_BOOK_ITEMS_PKC");
+
+            entity.ToTable("M_PHRASE_BOOK_ITEMS", tb => tb.HasComment("フレーズ帳アイテム"));
+
+            entity.HasIndex(e => new { e.PhraseBookId, e.OrderNo }, "M_PHRASE_BOOK_ITEMS_IX1");
+
+            entity.HasIndex(e => new { e.PhraseBookId, e.PhraseId }, "M_PHRASE_BOOK_ITEMS_PKI").IsUnique();
+
+            entity.Property(e => e.PhraseBookId)
+                .HasComment("フレーズ帳Id")
+                .HasColumnName("phrase_book_id");
+            entity.Property(e => e.PhraseId)
+                .HasComment("フレーズId")
+                .HasColumnName("phrase_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("作成日時")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Note)
+                .HasMaxLength(100)
+                .HasComment("メモ")
+                .HasColumnName("note");
+            entity.Property(e => e.OrderNo)
+                .HasComment("ソート順")
+                .HasColumnName("order_no");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("更新日時")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.PhraseBook).WithMany(p => p.MPhraseBookItems)
+                .HasForeignKey(d => d.PhraseBookId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("M_PHRASE_BOOK_ITEMS_FK1");
+
+            entity.HasOne(d => d.Phrase).WithMany(p => p.MPhraseBookItems)
+                .HasForeignKey(d => d.PhraseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("M_PHRASE_BOOK_ITEMS_FK2");
+        });
+
         modelBuilder.Entity<MPhraseGenre>(entity =>
         {
             entity.HasKey(e => new { e.PhraseId, e.SubGenreId, e.GenreId }).HasName("M_PHRASE_GENRES_PKC");
 
             entity.ToTable("M_PHRASE_GENRES", tb => tb.HasComment("フレーズジャンル"));
+
+            entity.HasIndex(e => e.PhraseId, "M_PHRASE_GENRES_IX1");
+
+            entity.HasIndex(e => new { e.GenreId, e.SubGenreId }, "M_PHRASE_GENRES_IX2");
 
             entity.HasIndex(e => new { e.PhraseId, e.SubGenreId, e.GenreId }, "M_PHRASE_GENRES_PKI").IsUnique();
 
@@ -616,7 +733,11 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("M_SUB_GENRES", tb => tb.HasComment("サブジャンルマスタ"));
 
-            entity.HasIndex(e => e.SubGenreName, "M_SUB_GENRES_IX1").IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.GenreId, e.SubGenreName }, "M_SUB_GENRES_IX1").IsUnique();
+
+            entity.HasIndex(e => new { e.UserId, e.GenreId }, "M_SUB_GENRES_IX_DEFAULT")
+                .IsUnique()
+                .HasFilter("([default_flg]=(1))");
 
             entity.HasIndex(e => new { e.GenreId, e.SubGenreId }, "M_SUB_GENRES_PKI").IsUnique();
 
@@ -631,9 +752,12 @@ public partial class EngDbContext : DbContext
                 .HasComment("作成日時")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-            entity.Property(e => e.SortOrder)
+            entity.Property(e => e.DefaultFlg)
+                .HasComment("デフォルトフラグ")
+                .HasColumnName("default_flg");
+            entity.Property(e => e.OrderNo)
                 .HasComment("ソート順")
-                .HasColumnName("sort_order");
+                .HasColumnName("order_no");
             entity.Property(e => e.SubGenreName)
                 .HasMaxLength(30)
                 .HasComment("サブジャンル名")
@@ -644,7 +768,6 @@ public partial class EngDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId)
-                .HasMaxLength(450)
                 .HasComment("ユーザーId")
                 .HasColumnName("user_id");
 

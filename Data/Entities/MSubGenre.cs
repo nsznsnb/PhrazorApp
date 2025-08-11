@@ -26,7 +26,12 @@ public partial class MSubGenre
     /// <summary>
     /// ソート順
     /// </summary>
-    public int SortOrder { get; set; }
+    public int OrderNo { get; set; }
+
+    /// <summary>
+    /// デフォルトフラグ
+    /// </summary>
+    public bool DefaultFlg { get; set; }
 
     /// <summary>
     /// ユーザーId

@@ -32,7 +32,7 @@ namespace PhrazorApp.Models
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "ソート順")]
-        public int SortOrder { get; set; }
+        public int OrderNo { get; set; }
 
 
     }

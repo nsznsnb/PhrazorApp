@@ -4,29 +4,29 @@ using System.Collections.Generic;
 namespace PhrazorApp.Data.Entities;
 
 /// <summary>
-/// テスト結果明細
+/// フレーズ帳アイテム
 /// </summary>
-public partial class DTestResultDetail
+public partial class MPhraseBookItem
 {
     /// <summary>
-    /// テスト結果ID
+    /// フレーズ帳Id
     /// </summary>
-    public Guid TestId { get; set; }
+    public Guid PhraseBookId { get; set; }
 
     /// <summary>
-    /// テスト結果明細連番
-    /// </summary>
-    public int TestResultDetailNo { get; set; }
-
-    /// <summary>
-    /// フレーズID
+    /// フレーズId
     /// </summary>
     public Guid PhraseId { get; set; }
 
     /// <summary>
-    /// 正解フラグ
+    /// ソート順
     /// </summary>
-    public bool? IsCorrect { get; set; }
+    public int? OrderNo { get; set; }
+
+    /// <summary>
+    /// メモ
+    /// </summary>
+    public string? Note { get; set; }
 
     /// <summary>
     /// 作成日時
@@ -38,9 +38,7 @@ public partial class DTestResultDetail
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<DReviewLog> DReviewLogs { get; set; } = new List<DReviewLog>();
-
     public virtual DPhrase Phrase { get; set; } = null!;
 
-    public virtual DTestResult Test { get; set; } = null!;
+    public virtual MPhraseBook PhraseBook { get; set; } = null!;
 }

@@ -11,7 +11,7 @@ public partial class DTestResult
     /// <summary>
     /// テスト結果ID
     /// </summary>
-    public int TestId { get; set; }
+    public Guid TestId { get; set; }
 
     /// <summary>
     /// テスト日時
@@ -27,6 +27,11 @@ public partial class DTestResult
     /// 完了フラグ
     /// </summary>
     public bool CompleteFlg { get; set; }
+
+    /// <summary>
+    /// ユーザーID
+    /// </summary>
+    public string? UserId { get; set; }
 
     /// <summary>
     /// 作成日時
