@@ -7,7 +7,7 @@
 @inject IDialogService DialogService
 @inject GenreService GenreService
 @inject PhraseService PhraseService
-@inject LoadingManager LoadingManager
+@inject UiOperationRunner UiOperationRunner
 
 <BackLink Href="/phrases" />
 
@@ -55,67 +55,65 @@
 </MudForm>
 
 @code {
-    [Parameter]
-    public Guid? Id { get; set; }
+    [Parameter] public Guid? Id { get; set; }
 
-    MudForm form;
-
-    private bool isEdit = false;
-    private PhraseModel model = new PhraseModel();
+    private MudForm? form;
+    private bool isEdit;
+    private PhraseModel model = new();
 
     protected override async Task OnInitializedAsync()
     {
-        isEdit = Id != null;
-
+        isEdit = Id.HasValue;
         await ClearAsync();
     }
 
     private async Task ClearAsync()
     {
-        model = await PhraseService.GetPhraseViewModelAsync(Id ?? null);
+        // 初期読込：<>不要、キャンセル/例外はRunnerで一元処理
+        var loaded = await UiOperationRunner.RunLoadOnlyAsync(
+            ct => PhraseService.GetPhraseViewModelAsync(Id, ct),
+            runningMessage: "読込中...",
+            showCancel: false
+        );
 
-        if (form != null)
-        {
-            // form.ResetValidation();
-        }
+        model = loaded ?? new PhraseModel { Id = Id ?? Guid.NewGuid() };
+
+        form?.ResetValidation();
     }
 
     private async Task SubmitAsync()
     {
-        await form.Validate();
+        await form!.Validate();
         if (!form.IsValid) return;
 
-        // 確認ダイアログ（OKなら続行）
-        if (!await DialogService.ShowConfirmAsync(
-                DialogConfirmType.RegisterConfirm,
-                string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase)))
-        {
-            return;
-        }
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.RegisterConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase));
+        if (!ok) return;
 
-        var serviceResult = isEdit
-            ? await PhraseService.UpdatePhraseAsync(model)
-            : await PhraseService.CreatePhraseAsync(model);
+        // 作成 or 更新をRunnerで実行（SnackbarはサービスのMessageをそのまま表示）
+        var op = await UiOperationRunner.RunAsync(
+            ct => isEdit
+                ? PhraseService.UpdatePhraseAsync(model, ct)
+                : PhraseService.CreatePhraseAsync(model, ct),
+            runningMessage: isEdit ? "更新中..." : "登録中...",
+            showCancel: true
+        );
 
-        Snackbar.AddServiceResult(serviceResult);
-
-        if (!serviceResult.IsSuccess) return;
+        if (!op.IsSuccess) return;
 
         NavigationManager.NavigateTo("/phrases");
     }
 
-    private Task OnSelectedChanged(HashSet<Guid> updated)
-    {
-        return Task.CompletedTask;
-    }
+    private Task OnSelectedChanged(HashSet<Guid> _)
+        => Task.CompletedTask;
 
     private async Task OpenGenreDialog()
     {
         var parameters = new DialogParameters
-    {
-        { "GenreId", (Guid?)null } // 編集時は ID を渡す
-    };
-
+        {
+            { "GenreId", (Guid?)null } // 編集時は ID を渡す
+        };
         var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
         var dialog = DialogService.Show<DialogGenreForm>("ジャンル登録", parameters, options);
@@ -124,7 +122,7 @@
         if (!result.Canceled)
         {
             var genre = (GenreModel)result.Data;
-            // 登録後の処理
+            // TODO: 登録後の model 反映など必要ならここで
         }
     }
 }

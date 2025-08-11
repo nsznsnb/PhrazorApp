@@ -3,8 +3,8 @@
 
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
-@inject ISnackbar Snackbar
 @inject GenreService GenreService
+@inject UiOperationRunner UiOperationRunner
 
 <MudStack Spacing="2">
     <SectionTitle HeadingLevel="2" Title="フレーズジャンル一覧" />
@@ -51,42 +51,37 @@
 
 
 @code {
-
-
-    private GenreModel model = new GenreModel();
-
+    private GenreModel model = new();
     private List<GenreModel> Elements = new();
-
 
     protected override async Task OnInitializedAsync()
     {
-        // 一覧取得
-        Elements = await GenreService.GetGenreViewModelListAsync();
-
+        // 初期一覧取得（<>不要・Snackbarは空メッセージで出ない）
+        var list = await UiOperationRunner.RunLoadOnlyAsync(
+            ct => GenreService.GetGenreViewModelListAsync(ct),
+            runningMessage: "読込中...",
+            showCancel: false
+        );
+        if (list is not null)
+            Elements = list;
     }
 
     private async Task OnDeleteButtonClickedAsync(GenreModel item)
     {
-        // 確認ダイアログ（OKなら続行）
-        if (!await DialogService.ShowConfirmAsync(
-                DialogConfirmType.DeleteConfirm,
-                string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name)))
-        {
-            return;
-        }
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DeleteConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name));
+        if (!ok) return;
 
-        // ジャンル削除
-        var result = await GenreService.DeleteGenreAsync(item.Id);
-        Snackbar.AddServiceResult(result);
-        if (!result.IsSuccess)
-        {
-            return;
-        }
+        // 削除 → 成功したら一覧再読込（<>不要）
+        var list = await UiOperationRunner.RunThenLoadAsync(
+            doOperation: ct => GenreService.DeleteGenreAsync(item.Id, ct),     // 非ジェネリック
+            loadData: ct => GenreService.GetGenreViewModelListAsync(ct),     // ジェネリック（型はここから推論）
+            runningMessage: "削除中...",
+            showCancel: true
+        );
 
-        // 一覧取得
-        Elements = await GenreService.GetGenreViewModelListAsync();
+        if (list is not null)
+            Elements = list;
     }
-
-
-
 }

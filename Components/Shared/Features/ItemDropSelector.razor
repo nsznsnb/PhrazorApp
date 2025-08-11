@@ -1,5 +1,6 @@
 ﻿@inject GenreService GenreService
 @inject ISnackbar Snackbar
+@inject UiOperationRunner UiOperationRunner
 
 <MudPaper Class="pa-2" Outlined="true" Style="width: 100%;">
     <MudDropContainer T="DropItemModel"
@@ -82,19 +83,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var allItems = await GenreService.GetGenreDropItemModelListAsync();
+        // 一覧取得（Snackbarは空メッセージなので出ない）
+        var allItems = await UiOperationRunner.RunLoadOnlyAsync(
+            ct => GenreService.GetGenreDropItemModelListAsync(ct),
+            runningMessage: "読込中...",
+            showCancel: false
+        );
+        if (allItems is null) return;
+
+        var selected = SelectedItems ?? new List<DropItemModel>();
 
         foreach (var item in allItems)
         {
-            item.DropTarget = SelectedItems.Any(sel => sel.Key1 == item.Key1 && sel.Key2 == item.Key2)
-                ? DropItemType.Target
-                : DropItemType.UnAssigned;
+            var isSelected = selected.Any(sel => sel.Key1 == item.Key1 && sel.Key2 == item.Key2);
+            item.DropTarget = isSelected ? DropItemType.Target : DropItemType.UnAssigned;
         }
 
         _items = allItems;
 
-        await Task.Delay(10);
-        _dropContainer?.Refresh();
+        await InvokeAsync(() => _dropContainer?.Refresh());
     }
 
     private async Task HandleItemDropped(MudItemDropInfo<DropItemModel> dropInfo)

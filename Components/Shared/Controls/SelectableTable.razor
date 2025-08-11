@@ -5,7 +5,7 @@
 <MudCardContent Class="p-0">
     <MudStack Row="@IsMdUp" Spacing="@(IsMdUp ? 3 : 2)" AlignItems="AlignItems.Center" Justify="Justify.FlexStart">
         <!-- バッジは“表示中に含まれる選択数”を表示 -->
-        <MudBadge Content="@SelectedCountInView" MaxValue="999" Color="Color.Error" Style="@(!IsMdUp ? "width:100%" : null)">
+        <MudBadge Content="@SelectedCountInView" Max="@(99999)" Color="Color.Error" Style="@(!IsMdUp ? "width:100%" : null)" Overlap="true" Bordered="true">
             <MudButton Variant="Variant.Outlined" Size="@ButtonSize" Color="Color.Error"
                        StartIcon="@Icons.Material.TwoTone.Delete"
                        Disabled="@(SelectedCountInView == 0)"
@@ -69,7 +69,7 @@
               Outlined="Outlined" Hover="Hover" Dense="Dense" Bordered="Bordered"
               Height="Height" FixedHeader="FixedHeader" FixedFooter="FixedFooter"
               Elevation="Elevation" Class="Class"
-              Page="@Page" PageChanged="OnTablePageChanged"
+              CurrentPage="@Page" RowsPerPageChanged="OnTablePageChanged"
               RowsPerPage="RowsPerPage"
               @attributes="AdditionalAttributes">
 

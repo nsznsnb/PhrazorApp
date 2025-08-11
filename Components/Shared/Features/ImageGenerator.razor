@@ -1,4 +1,5 @@
 ﻿@inject ImageService ImageService
+@inject UiOperationRunner UiOperationRunner
 
 <MudPaper Class="pa-2" Outlined="true" Style="width: 100%; max-width: 286px;">
     <MudStack Spacing="2" AlignItems="AlignItems.Start" Class="pa-1">
@@ -53,25 +54,31 @@
         if (string.IsNullOrWhiteSpace(Prompt))
             return;
 
+        // 局所UIの無効化用（必要なければ削除OK）
         IsLoading = true;
         ErrorMessage = null;
         ImageUrlInternal = null;
+        StateHasChanged();
 
-        try
-        {
-            var imageUrl = await ImageService.GenerateImageAsync(Prompt);
-            ImageUrlInternal = imageUrl;
+        var r = await UiOperationRunner.RunAsync(
+            ct => ImageService.GenerateImageAsync(Prompt, ct),
+            runningMessage: "画像生成中...",
+            showCancel: true,
+            showAfter: TimeSpan.FromMilliseconds(150) // 150ms 以上かかった場合のみカード表示（ちらつき防止）
+        );
 
-            await ImageUrlChanged.InvokeAsync(imageUrl);
-        }
-        catch (Exception ex)
+        // グローバル Snackbar や例外/キャンセル表示は Runner が処理済み
+        if (r.IsSuccess && !string.IsNullOrWhiteSpace(r.Data))
         {
-            ErrorMessage = "画像生成に失敗しました。もう一度お試しください。";
-            Console.Error.WriteLine($"[ImageGenerator] 画像生成エラー: {ex.Message}");
+            ImageUrlInternal = r.Data!;
+            await ImageUrlChanged.InvokeAsync(ImageUrlInternal);
         }
-        finally
+        else if (r.IsError) // Warning（キャンセルなど）はメッセージ済。必要なら分岐可能
         {
-            IsLoading = false;
+            ErrorMessage = r.Message ?? "画像生成に失敗しました。もう一度お試しください。";
         }
+
+        IsLoading = false;
+        StateHasChanged();
     }
 }

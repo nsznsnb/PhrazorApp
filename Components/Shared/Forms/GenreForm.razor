@@ -3,6 +3,7 @@
 @inject GenreService GenreService
 @inject LoadingManager LoadingManager
 @inject NavigationManager NavigationManager
+@inject UiOperationRunner UiOperationRunner
 
 <MudForm Model="@model" @ref="@form" Validation="@(genreValidator.ValidateValue)" ValidationDelay="0">
     <MudStack Spacing="2">
@@ -68,8 +69,7 @@
     [Parameter] public bool IsDialog { get; set; } = false;
     [CascadingParameter] IMudDialogInstance? DialogInstance { get; set; }
 
-    private bool IsEdit => Id != null;
-
+    private bool IsEdit => Id is Guid;
 
     public GenreModel GetModel() => model;
     private GenreModel model = new();
@@ -81,9 +81,20 @@
 
     private async Task ClearAsync()
     {
-        model = IsEdit && Id.HasValue
-            ? await GenreService.GetGenreViewModelAsync(Id.Value)
-            : new GenreModel { Id = Guid.NewGuid() };
+        if (IsEdit && Id.HasValue)
+        {
+            // 読み取りは Message="" 運用 → Snackbar は出ない
+            var loaded = await UiOperationRunner.RunLoadOnlyAsync(
+                ct => GenreService.GetGenreViewModelAsync(Id.Value, ct),
+                runningMessage: "読込中...",
+                showCancel: false
+            );
+            model = loaded ?? new GenreModel { Id = Id.Value };
+        }
+        else
+        {
+            model = new GenreModel { Id = Guid.NewGuid() };
+        }
 
         if (form is not null)
             form.ResetValidation();
@@ -127,8 +138,8 @@
         }
     }
 
-    private bool isFirst(SubGenreModel item) => model.SubGenres.First() == item;
-    private bool isLast(SubGenreModel item) => model.SubGenres.Last() == item;
+    private bool isFirst(SubGenreModel item) => model.SubGenres.Any() && model.SubGenres.First() == item;
+    private bool isLast(SubGenreModel item)  => model.SubGenres.Any() && model.SubGenres.Last()  == item;
 
     public async Task SubmitAsync()
     {
@@ -136,28 +147,25 @@
         if (!form.IsValid) return;
 
         // 確認ダイアログ（OKなら続行）
-        if (!await DialogService.ShowConfirmAsync(
-                DialogConfirmType.RegisterConfirm,
-                string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Name)))
-        {
-            return;
-        }
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.RegisterConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Name));
+        if (!ok) return;
 
-        var result = IsEdit
-            ? await GenreService.UpdateGenreAsync(model)
-            : await GenreService.CreateGenreAsync(model);
+        // 作成 or 更新（非ジェネリック）。メッセージ表示は Runner におまかせ。
+        var op = await UiOperationRunner.RunAsync(
+            ct => IsEdit
+                ? GenreService.UpdateGenreAsync(model, ct)
+                : GenreService.CreateGenreAsync(model, ct),
+            runningMessage: IsEdit ? "更新中..." : "登録中...",
+            showCancel: true
+        );
 
-        Snackbar.AddServiceResult(result);
+        if (!op.IsSuccess) return;
 
-        if (!result.IsSuccess) return;
-
-        if (IsDialog && DialogInstance != null)
-        {
+        if (IsDialog && DialogInstance is not null)
             DialogInstance.Close(DialogResult.Ok(model));
-        }
         else
-        {
             NavigationManager.NavigateTo("/genres");
-        }
     }
 }

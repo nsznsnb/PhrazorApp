@@ -5,6 +5,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject PhraseService PhraseService
+@inject UiOperationRunner UiOperationRunner
 
 <MudStack Spacing="2">
     <SectionTitle Title="フレーズ一覧" />
@@ -105,9 +106,16 @@
     // 選択されたID（SelectableTable と双方向バインド）
     private HashSet<Guid> SelectedIds = new();
 
+    // 初期表示：読み取りは空メッセージ運用（Snackbarなし）
     protected override async Task OnInitializedAsync()
     {
-        Elements = await PhraseService.GetPhraseViewModelListAsync();
+        var r = await UiOperationRunner.RunAsync(
+            ct => PhraseService.GetPhraseViewModelListAsync(ct),
+            runningMessage: "読込中...",
+            showCancel: false
+        );
+        if (r.IsSuccess && r.Data is not null)
+            Elements = r.Data;
     }
 
     private async Task StartTest(HashSet<Guid> idsInView)
@@ -123,7 +131,6 @@
         Snackbar.Add($"テスト開始: {idsInView.Count} 件", Severity.Info);
     }
 
-
     // 一括削除（SelectableTable からコールバック）
     private async Task OnBulkDeleteRequested(HashSet<Guid> ids)
     {
@@ -138,13 +145,19 @@
             $"選択中 {ids.Count} 件を削除します。よろしいですか？");
         if (!ok) return;
 
-        await PhraseService.DeletePhrasesAsync(ids);
+        var list = await UiOperationRunner.RunThenLoadAsync(
+            doOperation: ct => PhraseService.DeletePhrasesAsync(ids, ct),           // 非ジェネリック
+            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),        // ジェネリック（型はここから推論）
+            runningMessage: "削除中...",
+            showCancel: true
+        );
 
-        SelectedIds.Clear();
-        Elements = await PhraseService.GetPhraseViewModelListAsync();
-        Snackbar.Add($"{ids.Count} 件を削除しました。", Severity.Success);
+        if (list is not null)
+        {
+            SelectedIds.Clear();
+            Elements = list;
+        }
     }
-
     // 個別削除
     private async Task OnDeleteButtonClickedAsync(PhraseModel item)
     {
@@ -156,11 +169,16 @@
             string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
         if (!ok) return;
 
-        var result = await PhraseService.DeletePhraseAsync(item.Id);
-        Snackbar.AddServiceResult(result);
-        if (!result.IsSuccess) return;
+        // 削除 → 一覧再読込（<>不要）
+        var list = await UiOperationRunner.RunThenLoadAsync(
+            doOperation: ct => PhraseService.DeletePhraseAsync(item.Id, ct),    
+            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),   
+            runningMessage: "削除中...",
+            showCancel: true
+        );
 
-        Elements = await PhraseService.GetPhraseViewModelListAsync();
+        if (list is not null)
+            Elements = list;
     }
 
     // CSV 読み込み
@@ -174,15 +192,20 @@
 
     private async Task OnCsvUploadCompleted(List<PhraseModel> importedPhrases)
     {
-        if (importedPhrases is null || !importedPhrases.Any()) return;
+        if (importedPhrases is null || importedPhrases.Count == 0) return;
 
-        foreach (var phrase in importedPhrases)
-            await PhraseService.CreatePhraseAsync(phrase);
+        // 取込 → 一覧再読込（<>不要）
+        var list = await UiOperationRunner.RunThenLoadAsync(
+            doOperation: ct => PhraseService.CreatePhrasesAsync(importedPhrases, ct),
+            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
+            runningMessage: "取込中...",
+            timeout: TimeSpan.FromMinutes(2),
+            showCancel: true
+        );
 
-        Elements = await PhraseService.GetPhraseViewModelListAsync();
-        Snackbar.Add("CSVからフレーズを読み込みました。", Severity.Success);
+        if (list is not null)
+            Elements = list;
     }
-
     // ナビ
     private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
     private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");

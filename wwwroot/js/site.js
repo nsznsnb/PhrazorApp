@@ -41,3 +41,42 @@
 
     });
 });
+
+window.busyGuard = (function () {
+    let enabled = false;
+
+    function isAllowed(target) {
+        // data-allow-while-busy が付いている祖先要素があれば許可
+        return !!target?.closest?.('[data-allow-while-busy]');
+    }
+
+    function onClick(e) {
+        if (!enabled) return;
+        if (isAllowed(e.target)) return;
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function onKeydown(e) {
+        if (!enabled) return;
+        // ボタン/リンクのキーボード起動もブロック
+        if (e.key === 'Enter' || e.key === ' ') {
+            if (isAllowed(e.target)) return;
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    return {
+        init() {
+            // キャプチャ段階で先取りブロック
+            document.addEventListener('click', onClick, true);
+            document.addEventListener('keydown', onKeydown, true);
+        },
+        setEnabled(v) {
+            enabled = !!v;
+            // 視覚的なヒント（任意）：マウスカーソル
+            document.documentElement.classList.toggle('busy-cursor', enabled);
+        }
+    };
+})();

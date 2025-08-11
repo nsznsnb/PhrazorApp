@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using MudBlazor;
+using System.Buffers;
 
 namespace PhrazorApp.Commons.Results
 {
@@ -18,133 +19,40 @@ namespace PhrazorApp.Commons.Results
         Error
     }
 
-
-    public interface IServiceResult {
-        /// <summary>
-        /// サービス結果ステータス
-        /// </summary>
+    public class ServiceResult
+    {
         public ServiceStatus Status { get; set; }
-        /// <summary>
-        /// 処理結果メッセージ
-        /// </summary>
-        public string? Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
-
-        /// <summary>
-        /// 成功状態か
-        /// </summary>
         public bool IsSuccess => Status == ServiceStatus.Success;
-        /// <summary>
-        /// 警告状態か
-        /// </summary>
         public bool IsWarning => Status == ServiceStatus.Warning;
-        /// <summary>
-        /// エラー状態か
-        /// </summary>
         public bool IsError => Status == ServiceStatus.Error;
+
+        // ===== 非ジェネリック版 =====
+        public static ServiceResult Success(string? message = null)
+            => new ServiceResult { Status = ServiceStatus.Success, Message = message };
+
+        public static ServiceResult Warning(string? message = null)
+            => new ServiceResult { Status = ServiceStatus.Warning, Message = message };
+
+        public static ServiceResult Failure(string message)
+            => new ServiceResult { Status = ServiceStatus.Error, Message = message };
+
+        // ===== ジェネリック返却版 =====
+        public static ServiceResult<T> Success<T>(T data, string? message = null)
+            => new ServiceResult<T> { Status = ServiceStatus.Success, Data = data, Message = message };
+
+        public static ServiceResult<T> Warning<T>(T data, string? message = null)
+            => new ServiceResult<T> { Status = ServiceStatus.Warning, Data = data, Message = message };
+
+        public static ServiceResult<T> Failure<T>(string message)
+            => new ServiceResult<T> { Status = ServiceStatus.Error, Data = default, Message = message };
     }
 
-    /// <summary>
-    /// サービス結果クラス(ジェネリック版)
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class ServiceResult<T> : IServiceResult
+    public class ServiceResult<T> : ServiceResult
     {
-        /// <summary>
-        /// サービス結果ステータス
-        /// </summary>
-        public ServiceStatus Status { get; set; }
-        /// <summary>
-        /// 処理結果メッセージ
-        /// </summary>
-        public string? Message { get; set; }
-        /// <summary>
-        /// サービス処理データ
-        /// </summary>
         public T? Data { get; set; }
 
-
-        /// <summary>
-        /// 処理成功
-        /// </summary>
-        /// <param name="data">結果データ</param>
-        /// <param name="message">処理結果メッセージ</param>
-        /// <returns></returns>
-        public static ServiceResult<T> Success(T data, string? message = null)
-        {
-            return new ServiceResult<T> { Status = ServiceStatus.Success, Data  = data, Message = message };
-        }
-
-
-        /// <summary>
-        /// 警告あり
-        /// </summary>
-        /// <param name="data">結果データ</param>
-        /// <param name="message">処理結果メッセージ</param>
-        /// <returns></returns>
-        public static ServiceResult<T> Warning(T data, string? message = null)
-        {
-            return new ServiceResult<T> { Status = ServiceStatus.Success, Data = data, Message = message };
-        }
-
-
-        /// <summary>
-        /// 処理失敗
-        /// </summary>
-        /// <param name="message">処理結果メッセージ</param>
-        /// <returns></returns>
-        public static ServiceResult<T> Failure(string message)
-        {
-            return new ServiceResult<T> { Status = ServiceStatus.Error , Message = message };
-        }
     }
 
-    /// <summary>
-    /// サービス結果クラス(非ジェネリック版)
-    /// </summary>
-    public class ServiceResult : IServiceResult
-    {
-        /// <summary>
-        /// サービス結果ステータス
-        /// </summary>
-        public ServiceStatus Status { get; set; }
-        /// <summary>
-        /// 処理結果メッセージ
-        /// </summary>
-        public string? Message { get; set; }
-
-
-
-        /// <summary>
-        /// 処理成功
-        /// </summary>
-        /// <param name="message">処理結果メッセージ</param>
-        /// <returns></returns>
-        public static ServiceResult Success(string? message = null)
-        {
-            return new ServiceResult { Status = ServiceStatus.Success, Message = message };
-        }
-
-
-        /// <summary>
-        /// 警告あり
-        /// </summary>
-        /// <param name="message">処理結果メッセージ</param>
-        /// <returns></returns>
-        public static ServiceResult Warning(string? message = null)
-        {
-            return new ServiceResult { Status = ServiceStatus.Success, Message = message };
-        }
-
-
-        /// <summary>
-        /// 処理失敗
-        /// </summary>
-        /// <param name="message">処理結果メッセージ</param>
-        /// <returns></returns>
-        public static ServiceResult Failure(string message)
-        {
-            return new ServiceResult { Status = ServiceStatus.Error, Message = message };
-        }
-    }
 }

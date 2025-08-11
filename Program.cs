@@ -125,6 +125,7 @@ namespace PhrazorApp
 
             builder.Services.AddScoped<LoadingManager>();
             builder.Services.AddScoped<JsInteropManager>();
+            builder.Services.AddScoped<UiOperationRunner>();
 
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<GenreService>();
