@@ -52,7 +52,7 @@ namespace PhrazorApp.Commons.Constants
         public const string PREFIX_ACCOUNT_INFO_MESSAGE = "info:";
 
         // ボタンのデフォルトのサイズ値
-        public const Size SIZE_BUTTON = Size.Small;
+        public const Size SIZE_BUTTON = Size.Medium;
         // カードのデフォルトのElevation値
         public const int DEFAULT_ELEVATION = 0;
 

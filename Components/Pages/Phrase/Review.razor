@@ -44,9 +44,17 @@
 
     <BaseCard>
         <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="py-4">
-
-            <!-- 進捗バー（0-100%） -->
-            <MudProgressLinear Value="@ProgressPercent" Rounded="true" />
+            <!-- 進捗スライダー：1 ～ _count -->
+            <MudSlider T="int"
+                       Min="1"
+                       Max="_count"
+                       Step="1"
+                       Value="_sliderValue"
+                       ValueChanged="OnSliderChanged"
+                       ValueLabel="true"
+                       Disabled="@(_count <= 1)"
+                       Color="Color.Primary"
+                       Style="width: min(92vw, 800px);" />
 
             <MudText Typo="Typo.subtitle2">
                 @(_count == 0 ? "（データなし）" : $"{_index + 1} / {_count}")
@@ -109,28 +117,34 @@
     private string _display => _isBack ? _items[_index].Back : _items[_index].Front;
     private bool _canPrev => _count > 0 && (_loop || _index > 0);
     private bool _canNext => _count > 0 && (_loop || _index < _count - 1);
-    private double ProgressPercent => _count == 0 ? 0 : ((_index + 1) * 100.0 / _count);
+    private int _sliderValue; // 1-based 表示用
 
     protected override void OnParametersSet()
     {
-        // Items を List に（System.Linq なしでもOK）
         _items = new List<ReviewSession.Card>(ReviewSession.Items);
         _count = _items.Count;
+        if (_count == 0) { Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning); NavigationManager.NavigateTo("/phrases"); return; }
 
-        if (_count == 0)
-        {
-            Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
-            NavigationManager.NavigateTo("/phrases");
-            return;
-        }
-
-        _loop  = Loop ?? false;
+        _loop = Loop ?? false;
         _index = Math.Clamp(Start ?? 0, 0, _count - 1);
 
-        if ((Shuffle ?? false) && _count > 1)
-            ShuffleInPlace(_items, seed: null);
+        if ((Shuffle ?? false) && _count > 1) ShuffleInPlace(_items, null);
 
         _isBack = false;
+        UpdateSlider(); // ← 追加
+    }
+
+    // スライダー変更時：カードを切替
+    private void OnSliderChanged(int value)
+    {
+        if (_count == 0) return;
+        var newIndex = Math.Clamp(value - 1, 0, _count - 1); // 1-based → 0-based
+        if (newIndex != _index)
+        {
+            _index = newIndex;
+            _isBack = false;
+        }
+        _sliderValue = value;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -165,12 +179,29 @@
         await PSS.SetAsync("review.loop", _loop);
     }
 
+    private void Prev()
+    {
+        if (_index == 0) _index = _loop ? _count - 1 : 0;
+        else _index--;
+        _isBack = false;
+        UpdateSlider(); // ← 追加
+    }
+
+    private void Next()
+    {
+        if (_index == _count - 1) _index = _loop ? 0 : _count - 1;
+        else _index++;
+        _isBack = false;
+        UpdateSlider(); // ← 追加
+    }
+
     private async void Reshuffle()
     {
         if (_count <= 1) return;
         ShuffleInPlace(_items, null);
         _index = 0;
         _isBack = false;
+        UpdateSlider(); // ← 追加
         await PSS.SetAsync("review.shufflePref", true);
     }
 
@@ -178,13 +209,14 @@
     {
         _index = 0;
         _isBack = false;
+        UpdateSlider(); // ← 追加
         await PSS.SetAsync("review.shufflePref", false);
     }
 
-    private void Prev() { if (_index == 0) _index = _loop ? _count - 1 : 0; else _index--; _isBack = false; }
-    private void Next() { if (_index == _count - 1) _index = _loop ? 0 : _count - 1; else _index++; _isBack = false; }
+    // ユーティリティ
+    private void UpdateSlider() => _sliderValue = _index + 1;
     private void Flip() => _isBack = !_isBack;
-    private void GoWritingTest() => NavigationManager.NavigateTo("/phrases/writing?loop=true");
+    private void GoWritingTest() => NavigationManager.NavigateTo("/phrases/writing");
 
     private static void ShuffleInPlace<T>(IList<T> list, int? seed)
     {
