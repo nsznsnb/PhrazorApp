@@ -7,18 +7,36 @@
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.TwoTone.Menu"  Edge="Edge.Start" />
+        <MudIconButton Icon="@Icons.Material.TwoTone.Menu"
+                       Edge="Edge.Start"
+                       OnClick="@Toggle" />
         <MudLink Href="/" Class="ml-3" Style="text-decoration: none; color: inherit;">
             <AppLogo />
         </MudLink>
         <MudSpacer />
         <UserMenu />
     </MudAppBar>
-    <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Class="full-height-drawer" >
+
+    <!-- 単一の Drawer（Responsive + Docked）-->
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md"
+               ClipMode="DrawerClipMode.Docked"
+               Elevation="2"
+               Overlay="true"
+               OverlayAutoClose="true">
+        <!-- 小画面：AppBarに重なる分のクローズバー -->
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudDrawerHeader Dense Style="background-color: var(--mud-palette-appbar-background)">
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.TwoTone.Close" Variant="Variant.Text" OnClick="@Close" Size="Size.Small" />
+            </MudDrawerHeader>
+        </MudHidden>
         <NavMenu />
     </MudDrawer>
-    <MudMainContent Class="px-4 pt-2" Style="margin-top: var(--mud-appbar-height);">
-        <MudContainer>
+
+    <MudMainContent Class="pa-4">
+        <MudContainer Class="pt-16">
             <MudBreakpointProvider OnBreakpointChanged="OnBpChanged" />
             <CascadingValue Value="CurrentBreakpoint">
                 @Body
@@ -40,7 +58,9 @@
 
 
 @code {
-    private bool _drawerOpen = true;
+    bool _drawerOpen = true;     // Md以上では押し出し表示、Md未満ではオーバーレイ表示
+    void Toggle() => _drawerOpen = !_drawerOpen;
+    void Close() => _drawerOpen = false;
 
     // 初期値はデスクトップ想定（初回レンダー後に実値へ更新されます）
     private Breakpoint CurrentBreakpoint = Breakpoint.Xl;

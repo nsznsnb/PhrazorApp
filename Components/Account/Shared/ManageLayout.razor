@@ -11,12 +11,15 @@
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Class="full-height-drawer" >
         <ManageNavMenu />
     </MudDrawer>
-    <MudMainContent Class="px-4 pt-2" Style="margin-top: var(--mud-appbar-height);">
-        <MudContainer MaxWidth="MaxWidth.Small">
-            @Body
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            <MudGrid Justify="Justify.FlexStart">
+                <MudItem xs="12" sm="11" md="9" lg="8" xl="7">
+                    @Body
+                </MudItem>
+            </MudGrid>
         </MudContainer>
     </MudMainContent>
-
 </MudLayout>
 
 

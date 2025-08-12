@@ -3,8 +3,9 @@
 
 @inject SignInManager<ApplicationUser> SignInManager
 
-<MudNavMenu>
+<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home" IconColor="Color.Secondary">Home</MudNavLink>
+    <MudDivider Class="mb-2"/>
     <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Person" IconColor="Color.Secondary">プロフィール</MudNavLink>
     <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.TwoTone.Email" IconColor="Color.Secondary">メールアドレス変更</MudNavLink>
     <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.TwoTone.Lock" IconColor="Color.Secondary">パスワード変更</MudNavLink>
