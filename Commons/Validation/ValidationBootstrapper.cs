@@ -8,6 +8,7 @@ namespace PhrazorApp.Commons.Validation
     {
         public static void Configure()
         {
+            ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
             ValidatorOptions.Global.DisplayNameResolver = (type, member, expression) =>
             {
                 if (member != null)
