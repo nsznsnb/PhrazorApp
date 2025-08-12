@@ -1,0 +1,18 @@
+/* ラッパーに外観を付ける（スコープ属性がここに付くので確実に当たる） */
+.backlink {
+    display: inline-flex;
+    align-items: center;
+    padding: .25rem .5rem;
+    border-radius: 9999px;
+    transition: background .15s ease;
+}
+
+    .backlink:hover {
+        background: rgba(var(--mud-palette-primary-rgb),.06);
+    }
+
+    .backlink:focus-within {
+        outline: 2px solid var(--mud-palette-primary);
+        outline-offset: 2px;
+    }
+

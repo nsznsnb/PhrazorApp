@@ -1,11 +1,37 @@
-﻿<MudLink Href="@Href" Color="Color.Tertiary" Typo="Typo.h6" Underline="Underline.None">
-    <MudText Class="my-2">
-        ←@AppConstants.LABEL_BUTTON_RETURN_INDEX
-    </MudText>
-</MudLink>
+﻿<span class="backlink">
+    <MudLink Href="#"
+             Color="@Color"
+             Underline="Underline.None"
+             OnClick="NavigateAsync"
+             Class="mb-1 backlink__a">
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Spacing="1">
+            <MudIcon Icon="@Icon" Size="Size.Medium" />
+            <MudText Typo="@Typo">@Text</MudText>
+        </MudStack>
+    </MudLink>
+</span>
 
 @code {
-    [EditorRequired]
-    [Parameter]
-    public string Href { get; set; } = string.Empty;
+    [EditorRequired, Parameter] public string Href { get; set; } = "/";
+    [Parameter] public string Text { get; set; } = AppConstants.LABEL_BUTTON_RETURN_INDEX;
+    [Parameter] public string Icon { get; set; } = Icons.Material.TwoTone.ChevronLeft;
+    [Parameter] public Color Color { get; set; } = Color.Default;  // Tertiary等に変更可
+    [Parameter] public Typo Typo { get; set; } = Typo.body1;
+
+    // 未保存ガード。null なら無条件遷移
+    [Parameter] public Func<Task<bool>>? BeforeNavigateAsync { get; set; }
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private async Task NavigateAsync(MouseEventArgs _)
+    {
+        if (BeforeNavigateAsync is not null)
+        {
+            var ok = await BeforeNavigateAsync();
+            if (!ok) return;
+        }
+        Nav.NavigateTo(Href);
+    }
 }
