@@ -1,6 +1,7 @@
+using PhrazorApp.Data.Entities;
+using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Mappings;
-using PhrazorApp.Data.UnitOfWork;
 
 namespace PhrazorApp.Services
 {
@@ -13,6 +14,9 @@ namespace PhrazorApp.Services
         private readonly UserService _userService;
         private readonly ILogger<GenreService> _logger;
         private const string MSG_PREFIX = "ジャンル";
+
+        // 既定サブジャンル名
+        private const string DEFAULT_SUBGENRE_NAME = "未分類";
 
         public GenreService(UnitOfWork uow, ILogger<GenreService> logger, UserService userService)
         {
@@ -28,7 +32,7 @@ namespace PhrazorApp.Services
             {
                 var genres = await u.Genres.GetAllGenresAsync(token);
                 var list = genres.Select(x => x.ToModel()).ToList();
-                return ServiceResult.Success(list, message: ""); 
+                return ServiceResult.Success(list, message: "");
             }, ct);
         }
 
@@ -48,23 +52,26 @@ namespace PhrazorApp.Services
         {
             return _uow.ReadAsync(async (u, token) =>
             {
-                var genre = await u.Genres.GetGenreByIdAsync(genreId, token); 
+                var genre = await u.Genres.GetGenreByIdAsync(genreId, token);
                 var model = genre != null ? genre.ToModel() : new GenreModel();
                 return ServiceResult.Success(model, message: "");
             }, ct);
         }
 
-        /// <summary>ジャンルの新規作成</summary>
+        /// <summary>ジャンルの新規作成（サブジャンル未指定なら既定を1件付与）</summary>
         public async Task<ServiceResult> CreateGenreAsync(GenreModel model, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
             var entity = model.ToEntity(userId);
 
+            // サブジャンルが無ければ既定を付与
+            EnsureOneDefaultSubGenre(entity, userId);
+
             try
             {
                 await _uow.ExecuteInTransactionAsync(async (u, token) =>
                 {
-                    await u.Genres.AddAsync(entity);
+                    await u.Genres.AddAsync(entity);   // MSubGenres がセットされていれば一括で追加される
                 }, ct);
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
@@ -76,11 +83,14 @@ namespace PhrazorApp.Services
             }
         }
 
-        /// <summary>ジャンルの更新（子サブジャンルは全入れ替え）</summary>
+        /// <summary>ジャンルの更新（子サブジャンルは全入れ替え、Default を必ず1件維持）</summary>
         public async Task<ServiceResult> UpdateGenreAsync(GenreModel model, CancellationToken ct = default)
         {
             var userId = _userService.GetUserId();
             var incoming = model.ToEntity(userId);
+
+            // 受け取ったサブジャンルの整形（ID補完・SortOrder正規化・Defaultを1件に）
+            EnsureOneDefaultSubGenre(incoming, userId);
 
             try
             {
@@ -142,5 +152,61 @@ namespace PhrazorApp.Services
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
+
+        /// <summary>
+        /// サブジャンルを整形し、必ず DefaultFlg=true が1件になるように補正。
+        /// 無い場合は既定のサブジャンル（未分類）を自動作成。
+        /// </summary>
+
+        private static void EnsureOneDefaultSubGenre(MGenre genre, string userId, string defaultName = "未分類")
+        {
+            // null → 空コレクション化
+            genre.MSubGenres ??= new List<MSubGenre>();
+
+            // 空なら既定を1件作成
+            if (genre.MSubGenres.Count == 0)
+            {
+                genre.MSubGenres.Add(new MSubGenre
+                {
+                    SubGenreId = Guid.NewGuid(),
+                    GenreId = genre.GenreId,
+                    SubGenreName = defaultName,
+                    OrderNo = 0,
+                    IsDefault = true,
+                    UserId = userId
+                });
+                return;
+            }
+
+            // ID未設定の補完・GenreId/UserId の付与・名称の穴埋め
+            foreach (var sg in genre.MSubGenres)
+            {
+                if (sg.SubGenreId == Guid.Empty) sg.SubGenreId = Guid.NewGuid();
+                sg.GenreId = genre.GenreId;
+                sg.UserId = userId;
+                if (string.IsNullOrWhiteSpace(sg.SubGenreName))
+                    sg.SubGenreName = defaultName;
+            }
+
+            // 既定をちょうど1件に（0件→先頭を既定、2件以上→先頭以外を解除）
+            var defaults = genre.MSubGenres.Where(x => x.IsDefault).ToList();
+            if (defaults.Count == 0)
+                genre.MSubGenres.First().IsDefault = true;
+            else if (defaults.Count > 1)
+                foreach (var d in defaults.Skip(1)) d.IsDefault = false;
+
+            // OrderNo を 0..N-1 に詰め直し（現在の順序→名前で安定化）
+            var normalized = genre.MSubGenres
+                .OrderBy(x => x.OrderNo)
+                .ThenBy(x => x.SubGenreName)
+                .ToList();
+
+            for (int i = 0; i < normalized.Count; i++)
+                normalized[i].OrderNo = i;
+
+            genre.MSubGenres = normalized;
+        }
+
     }
+
 }

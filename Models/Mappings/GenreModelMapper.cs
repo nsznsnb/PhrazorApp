@@ -13,7 +13,8 @@ namespace PhrazorApp.Models.Mappings
                 {
                     Id = s.SubGenreId,
                     Name = s.SubGenreName,
-                    OrderNo = s.OrderNo
+                    OrderNo = s.OrderNo,
+                    IsDefault = s.IsDefault   // 追加
                 })
                 .OrderBy(x => x.OrderNo)
                 .ToList() ?? new()
@@ -37,11 +38,11 @@ namespace PhrazorApp.Models.Mappings
                     GenreId = m.Id,
                     SubGenreName = x.Name,
                     OrderNo = x.OrderNo,
+                    IsDefault = x.IsDefault, // 追加
                     UserId = userId
                 }).ToList();
             }
             return g;
         }
     }
-
 }

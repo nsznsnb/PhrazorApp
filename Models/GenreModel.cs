@@ -34,7 +34,7 @@ namespace PhrazorApp.Models
         [Display(Name = "ソート順")]
         public int OrderNo { get; set; }
 
-
+        public bool IsDefault { get; set; } 
     }
 
 

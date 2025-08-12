@@ -737,7 +737,7 @@ public partial class EngDbContext : DbContext
 
             entity.HasIndex(e => new { e.UserId, e.GenreId }, "M_SUB_GENRES_IX_DEFAULT")
                 .IsUnique()
-                .HasFilter("([default_flg]=(1))");
+                .HasFilter("([is_default]=(1))");
 
             entity.HasIndex(e => new { e.GenreId, e.SubGenreId }, "M_SUB_GENRES_PKI").IsUnique();
 
@@ -752,9 +752,9 @@ public partial class EngDbContext : DbContext
                 .HasComment("作成日時")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-            entity.Property(e => e.DefaultFlg)
+            entity.Property(e => e.IsDefault)
                 .HasComment("デフォルトフラグ")
-                .HasColumnName("default_flg");
+                .HasColumnName("is_default");
             entity.Property(e => e.OrderNo)
                 .HasComment("ソート順")
                 .HasColumnName("order_no");

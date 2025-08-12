@@ -31,7 +31,7 @@ public partial class MSubGenre
     /// <summary>
     /// デフォルトフラグ
     /// </summary>
-    public bool DefaultFlg { get; set; }
+    public bool IsDefault { get; set; }
 
     /// <summary>
     /// ユーザーId
