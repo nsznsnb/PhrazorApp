@@ -10,46 +10,51 @@
 
 <PageTitle>プロフィール</PageTitle>
 
-<MudText Typo="Typo.h6" GutterBottom="true">プロフィール</MudText>
 
-<StatusMessage />
 
-<EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
-    <DataAnnotationsValidator />
+<SectionTitle Title="プロフィール" />
+<BaseCard Class="pa-4" Style="min-height: 400px;">
+    <StatusMessage />
 
-    <MudGrid Spacing="2" Class="mt-2">
-        <MudItem xs="12">
-            <MudStaticTextField Value="@username" Label="ユーザーID" Disabled="true" 
-                Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Placeholder="Please choose your username." />
-        </MudItem>
-        <MudItem xs="12">
-            <MudStaticTextField Value="@email" Disabled="true" 
-                                Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="メールアドレス" ShrinkLabel　Placeholder="name@example.com"
-                                UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
-        </MudItem>
-        <MudItem xs="12">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" sm="6">
-                    <MudStaticTextField @bind-Value="@Input.LastName" For="() => Input.LastName"
-                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="姓" ShrinkLabel　
-                                        HelperText="@string.Format(AppMessages.MSG_I_HELPER_ARBITRAY_DETAIL, "姓")"
-                                        UserAttributes="@(new() { { "autocomplete", "name" } })" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudStaticTextField @bind-Value="@Input.FirstName" For="() => Input.FirstName"
-                                        Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="名" ShrinkLabel　
-                                        HelperText="@string.Format(AppMessages.MSG_I_HELPER_ARBITRAY_DETAIL, "名")"
-                                        UserAttributes="@(new() { { "autocomplete", "name" } })" />
-                </MudItem>
-            </MudGrid>
-        </MudItem>
-        
+    <EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
 
-        <MudItem xs="12">
-            <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">保存</MudStaticButton>
-        </MudItem>
-    </MudGrid>
-</EditForm>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12">
+                <MudStaticTextField Value="@username" Label="ユーザーID" Disabled="true"
+                                    Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Placeholder="Please choose your username." />
+            </MudItem>
+            <MudItem xs="12">
+                <MudStaticTextField Value="@email" Disabled="true"
+                                    Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="メールアドレス" ShrinkLabel　Placeholder="name@example.com"
+                                    UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudStaticTextField @bind-Value="@Input.LastName" For="() => Input.LastName"
+                                            Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="姓" ShrinkLabel　
+                                            HelperText="@string.Format(AppMessages.MSG_I_HELPER_ARBITRAY_DETAIL, "姓")"
+                                            UserAttributes="@(new() { { "autocomplete", "name" } })" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudStaticTextField @bind-Value="@Input.FirstName" For="() => Input.FirstName"
+                                            Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="名" ShrinkLabel　
+                                            HelperText="@string.Format(AppMessages.MSG_I_HELPER_ARBITRAY_DETAIL, "名")"
+                                            UserAttributes="@(new() { { "autocomplete", "name" } })" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+
+            <MudItem xs="12">
+                <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" FullWidth="true" FormAction="FormAction.Submit">保存</MudStaticButton>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+
+</BaseCard>
+
 
 @code {
 

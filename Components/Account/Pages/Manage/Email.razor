@@ -13,56 +13,59 @@
 
 <PageTitle>メールアドレス変更</PageTitle>
 
-<MudText Typo="Typo.h6" GutterBottom="true">メールアドレス変更</MudText>
+<SectionTitle Title="メールアドレス変更" />
+<BaseCard Class="pa-4" Style="min-height: 400px;">
+    <StatusMessage Message="@message" />
 
-<StatusMessage Message="@message" />
+    @if (message != null && message.StartsWith(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE))
+    {
+        // 完了メッセージ表示時はフォームを表示しない
+    }
+    else
+    {
 
-@if (message != null && message.StartsWith(AppConstants.PREFIX_ACCOUNT_INFO_MESSAGE))
-{
-    // 完了メッセージ表示時はフォームを表示しない
-}
-else
-{
+        <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+            <AntiforgeryToken />
+        </form>
+        <EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
+            <DataAnnotationsValidator />
 
-    <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
-        <AntiforgeryToken />
-    </form>
-    <EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
-        <DataAnnotationsValidator />
+            <MudGrid Spacing="2" Class="mt-2">
 
-        <MudGrid Spacing="2" Class="mt-2">
+                @if (isEmailConfirmed)
+                {
+                    <MudItem xs="12">
+                        <MudStaticTextField @bind-Value="@email" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="現在のメールアドレス"
+                                            ShrinkLabel Disabled="true" AdornmentIcon="Icons.Material.TwoTone.Check" AdornmentColor="Color.Success" />
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12">
+                        <MudStaticTextField @bind-Value="@email" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="仮登録のメールアドレス"
+                                            ShrinkLabel Disabled="true" AdornmentIcon="Icons.Material.TwoTone.Check" AdornmentColor="Color.Success" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">本登録用メール送信</MudStaticButton>
+                    </MudItem>
+                }
 
-            @if (isEmailConfirmed)
-            {
                 <MudItem xs="12">
-                    <MudStaticTextField @bind-Value="@email" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="現在のメールアドレス"
-                                        ShrinkLabel Disabled="true" AdornmentIcon="Icons.Material.TwoTone.Check" AdornmentColor="Color.Success" />
+                    <MudStaticTextField @bind-Value="@Input.NewEmail" For="@(() => Input.NewEmail)" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="新しいメールアドレス"
+                                        ShrinkLabel
+                                        HelperText="@string.Format(AppMessages.MSG_I_HELPER_REQUIRED_DETAIL, "新しいメールアドレス")"
+                                        UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
                 </MudItem>
-            }
-            else
-            {
-                <MudItem xs="12">
-                    <MudStaticTextField @bind-Value="@email" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="仮登録のメールアドレス"
-                                        ShrinkLabel Disabled="true" AdornmentIcon="Icons.Material.TwoTone.Check" AdornmentColor="Color.Success" />
-                </MudItem>
-                <MudItem xs="12">
-                    <MudStaticButton Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">本登録用メール送信</MudStaticButton>
-                </MudItem>
-            }
 
-            <MudItem xs="12">
-                <MudStaticTextField @bind-Value="@Input.NewEmail" For="@(() => Input.NewEmail)" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="新しいメールアドレス"
-                                    ShrinkLabel
-                                    HelperText="@string.Format(AppMessages.MSG_I_HELPER_REQUIRED_DETAIL, "新しいメールアドレス")"
-                                    UserAttributes="@(new() { { "autocomplete", "email" }, { "aria-required", "true" } })" />
-            </MudItem>
+                <MudItem xs="12">
+                    <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">@AppConstants.LABEL_BUTTON_CHANGE</MudStaticButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    }
 
-            <MudItem xs="12">
-                <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">@AppConstants.LABEL_BUTTON_CHANGE</MudStaticButton>
-            </MudItem>
-        </MudGrid>
-    </EditForm>
-}
+</BaseCard>
+
 
 
 

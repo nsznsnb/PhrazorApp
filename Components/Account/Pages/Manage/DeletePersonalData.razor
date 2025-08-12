@@ -10,33 +10,37 @@
 
 <PageTitle>アカウント削除</PageTitle>
 
-<MudText Typo="Typo.h6" GutterBottom="true">アカウント削除</MudText>
+<SectionTitle Title="アカウント削除" />
+<BaseCard Class="pa-4" Style="min-height: 400px;">
+    <StatusMessage Message="@message" />
 
-<StatusMessage Message="@message" />
+    <MudAlert Severity="Severity.Error" Variant="Variant.Text" Class="mt-2">
+        アカウントを削除します。
+    </MudAlert>
 
-<MudAlert Severity="Severity.Error" Variant="Variant.Text" Class="mt-2">
-    アカウントを削除します。
-</MudAlert>
+    <EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
 
-<EditForm id="@AppConstants.ID_FORM" Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
-    <DataAnnotationsValidator />
-
-    <MudGrid Spacing="2" Class="mt-2">
-        @if (requirePassword)
-        {
+        <MudGrid Spacing="2" Class="mt-2">
+            @if (requirePassword)
+            {
+                <MudItem xs="12">
+                    <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
+                                        Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
+                                        AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
+                                        HelperText="@string.Format(AppMessages.MSG_I_HELPER_REQUIRED_DETAIL, "アカウントを削除するにはパスワード")"
+                                        UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })" />
+                </MudItem>
+            }
             <MudItem xs="12">
-                <MudStaticTextField @bind-Value="@Input.Password" For="() => Input.Password" Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined" Label="パスワード"
-                                    Adornment="Adornment.End" AdornmentIcon="@Icons.Material.TwoTone.Visibility" AdornmentToggledIcon="@Icons.Material.TwoTone.VisibilityOff"
-                                    AdornmentClickFunction="showPassword" InputType="InputType.Password" ShrinkLabel　
-                                    HelperText="@string.Format(AppMessages.MSG_I_HELPER_REQUIRED_DETAIL, "アカウントを削除するにはパスワード")"
-                                    UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })" />
+                <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">アカウント削除</MudStaticButton>
             </MudItem>
-        }
-        <MudItem xs="12">
-            <MudStaticButton id="@AppConstants.ID_BUTTON_SUBMIT" Variant="Variant.Filled" Color="Color.Primary" Size="@AppConstants.SIZE_BUTTON" FullWidth="true" FormAction="FormAction.Submit">アカウント削除</MudStaticButton>
-        </MudItem>
-    </MudGrid>
-</EditForm>
+        </MudGrid>
+    </EditForm>
+
+</BaseCard>
+
+
 
 @code {
     private string? message;
