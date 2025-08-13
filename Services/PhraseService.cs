@@ -123,6 +123,77 @@ namespace PhrazorApp.Services
             }
         }
 
+        public async Task<ServiceResult> SetGenresBulkAsync(IEnumerable<Guid> phraseIds,
+                                                    List<DropItemModel> selected,
+                                                    BulkGenreMode mode)
+        {
+            if (phraseIds is null || !phraseIds.Any())
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "対象"));
+
+            selected ??= new();
+
+            try
+            {
+                await _uow.ExecuteInTransactionAsync(async u =>
+                {
+                    var idSet = phraseIds.Distinct().ToArray();
+                    const int chunkSize = 500;
+
+                    // まとめて追加/削除するためのバッファ
+                    var toDelete = new List<MPhraseGenre>();
+                    var toAdd = new List<MPhraseGenre>();
+
+                    foreach (var chunk in idSet.Chunk(chunkSize))
+                    {
+                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk); // MPhraseGenres 含む
+
+                        foreach (var p in phrases)
+                        {
+                            var current = p.MPhraseGenres ?? new List<MPhraseGenre>();
+
+                            if (mode is BulkGenreMode.ReplaceAll or BulkGenreMode.ClearAll)
+                            {
+                                if (current.Count > 0) toDelete.AddRange(current);
+                            }
+
+                            if (mode != BulkGenreMode.ClearAll)
+                            {
+                                // UIはMaxSelection=3だが、念のためDistinct＆Key2必須
+                                var want = selected
+                                    .Where(x => x.Key2.HasValue)
+                                    .DistinctBy(x => (x.Key1, x.Key2!.Value))
+                                    .Select(x => new { x.Key1, Sub = x.Key2!.Value })
+                                    .ToList();
+
+                                if (mode == BulkGenreMode.AddMerge)
+                                {
+                                    var have = current.Select(c => (c.GenreId, c.SubGenreId)).ToHashSet();
+                                    foreach (var w in want)
+                                        if (!have.Contains((w.Key1, w.Sub)))
+                                            toAdd.Add(new MPhraseGenre { PhraseId = p.PhraseId, GenreId = w.Key1, SubGenreId = w.Sub });
+                                }
+                                else if (mode == BulkGenreMode.ReplaceAll)
+                                {
+                                    foreach (var w in want)
+                                        toAdd.Add(new MPhraseGenre { PhraseId = p.PhraseId, GenreId = w.Key1, SubGenreId = w.Sub });
+                                }
+                            }
+                        }
+                    }
+
+                    if (toDelete.Count > 0) await u.PhraseGenres.DeleteRangeAsync(toDelete);
+                    if (toAdd.Count > 0) await u.PhraseGenres.AddRangeAsync(toAdd);
+                });
+
+                return ServiceResult.Success("カテゴリを一括設定しました。");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "カテゴリ一括設定で例外が発生しました。");
+                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "カテゴリ一括設定"));
+            }
+        }
+
         /// <summary>更新（画像はUpsert、ジャンルは全差し替え）</summary>
         public async Task<ServiceResult> UpdatePhraseAsync(PhraseEditModel model)
         {
