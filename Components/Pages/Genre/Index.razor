@@ -14,24 +14,12 @@
     </ActionCard>
     <BaseCard>
         <TableWithToolbar TItem="GenreModel"
-                          Title="フレーズジャンル一覧"
                           Items="@Elements"
-                          Search="true"
+                          Search="false"
                           SearchBy="@(g => new[] { g.Name ?? string.Empty }.Concat(g.SubGenres?.Select(s => s.Name ?? "") ?? Array.Empty<string>()))"
                           Pager="TablePagerMode.Auto"
                           RowsPerPage="10"
                           Height="500px">
-
-            <ToolbarContent Context="ctx">
-                <MudButton Variant="Variant.Outlined"
-                           Size="@AppConstants.SIZE_BUTTON"
-                           Color="Color.Info"
-                           StartIcon="@Icons.Material.TwoTone.Add"
-                           FullWidth="@(!ctx.IsMdUp)"
-                           OnClick="@(() => NavigationManager.NavigateTo("/genres/create"))">
-                    新規追加
-                </MudButton>
-            </ToolbarContent>
 
             <HeaderContent>
                 <MudTh>ジャンル</MudTh>
@@ -52,7 +40,7 @@
                         </MudStack>
                     </MudStack>
                 </MudTd>
-                <MudTd Align="Right" style="min-width:200px;">
+                <MudTd  style="min-width:200px;">
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
                                    StartIcon="@Icons.Material.TwoTone.Edit"
