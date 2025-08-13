@@ -27,30 +27,27 @@
     </ActionCard>
 
     <BaseCard>
-        <!-- 汎用テーブル（ツールバー＋表本体を内包） -->
+        <!-- シンプル版 SelectableTable -->
         <SelectableTable TItem="PhraseModel"
                          Items="Elements"
                          IdSelector="@(x => x.Id)"
-                         @bind-SearchText="searchString"
-                         Filter="@( (PhraseModel e, string s) =>
-                                             string.IsNullOrWhiteSpace(s)
-                                             || e.Phrase.Contains(s, StringComparison.OrdinalIgnoreCase)
-                                             || e.Meaning.Contains(s, StringComparison.OrdinalIgnoreCase) )"
-                         @bind-Page="Page"
+                         Title="フレーズ一覧"
+                         Search="true"
+                         SearchPlaceholder="検索"
+                         SearchBy="@(x => new[] { x.Phrase ?? string.Empty, x.Meaning ?? string.Empty })"
+                         Pager="TablePagerMode.Auto"
                          RowsPerPage="@_rowsPerPage"
-                         SelectedIds="SelectedIds"
-                         SelectedIdsChanged="@(ids => SelectedIds = ids)"
+                         Height="500px"
                          OnBulkDelete="OnBulkDeleteRequested"
                          BulkDeleteLabel="@AppConstants.LABEL_BUTTON_BULK_DELETE"
-                         MobileSelectAllLabel="全選択（検索結果）"
-                         Height="500px">
+                         MobileSelectAllLabel="全選択（検索結果）">
 
-            <HeaderCells>
+            <HeaderContent>
                 <MudTh>フレーズ</MudTh>
                 <MudTh style="min-width:200px;">操作</MudTh>
-            </HeaderCells>
+            </HeaderContent>
 
-            <RowCells Context="x">
+            <RowTemplate Context="x">
                 <MudTd>
                     <MudStack Spacing="1">
                         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@x.Phrase</MudText>
@@ -71,33 +68,33 @@
                         </MudButton>
                     </MudStack>
                 </MudTd>
-            </RowCells>
+            </RowTemplate>
 
-            <!-- ★ ツールバーに“テスト開始”を追加 -->
-            <ToolbarContent Context="tb">
+            <!-- ツールバー拡張（テスト開始/選択して復習） -->
+            <ExtraToolbar Context="tb">
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.TwoTone.PlayArrow"
                            Disabled="@(tb.SelectedCountInView == 0)"
                            FullWidth="@(!tb.IsMdUp)"
-                           OnClick="@(() => StartTest(tb.GetSelectedIdsInView?.Invoke() ?? new HashSet<Guid>()))">
+                           OnClick="@(() => StartTest(tb.GetSelectedIdsInView().ToHashSet()))">
                     テスト開始
                 </MudButton>
+
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.TwoTone.PlayArrow"
-                           Disabled="@(SelectedIds.Count == 0)"
-                           FullWidth="@(!tb.IsMdUp)" Context="tb"
-                           OnClick="StartReviewSelected">
+                           Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                           FullWidth="@(!tb.IsMdUp)"
+                           OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                     選択して復習
                 </MudButton>
-            </ToolbarContent>
+            </ExtraToolbar>
 
-            <PagerContent>
-                <MudTablePager />
-            </PagerContent>
+            <NoRecordsContent>
+                <MudText Class="p-4">データがありません。</MudText>
+            </NoRecordsContent>
         </SelectableTable>
-
     </BaseCard>
 </MudStack>
 
@@ -105,17 +102,10 @@
     // データ
     private List<PhraseModel> Elements = new();
 
-    // 検索（SelectableTable から @bind で更新される）
-    private string searchString = "";
-
-    // ページング
-    private int Page;
+    // 1ページ表示件数
     private int _rowsPerPage = 10;
 
-    // 選択されたID（SelectableTable と双方向バインド）
-    private HashSet<Guid> SelectedIds = new();
-
-    // 初期表示：読み取りは空メッセージ運用（Snackbarなし）
+    // 初期表示：一覧読込
     protected override async Task OnInitializedAsync()
     {
         var r = await UiOperationRunner.RunAsync(
@@ -134,13 +124,11 @@
             Snackbar.Add("テスト対象が選択されていません。", Severity.Warning);
             return;
         }
-
-        // ここでテスト用の画面へ遷移／ダイアログ起動など
-        // 例: NavigationManager.NavigateTo($"/phrases/test?ids={string.Join(',', idsInView)}");
         Snackbar.Add($"テスト開始: {idsInView.Count} 件", Severity.Info);
+        // 例：NavigationManager.NavigateTo($"/phrases/test?ids={string.Join(',', idsInView)}");
     }
 
-    // 一括削除（SelectableTable からコールバック）
+    // 一括削除（SelectableTable から受け取る）
     private async Task OnBulkDeleteRequested(HashSet<Guid> ids)
     {
         if (ids is null || ids.Count == 0)
@@ -155,18 +143,16 @@
         if (!ok) return;
 
         var list = await UiOperationRunner.RunThenLoadAsync(
-            doOperation: ct => PhraseService.DeletePhrasesAsync(ids, ct),           // 非ジェネリック
-            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),        // ジェネリック（型はここから推論）
+            doOperation: ct => PhraseService.DeletePhrasesAsync(ids, ct),
+            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
             runningMessage: "削除中...",
             showCancel: true
         );
 
         if (list is not null)
-        {
-            SelectedIds.Clear();
             Elements = list;
-        }
     }
+
     // 個別削除
     private async Task OnDeleteButtonClickedAsync(PhraseModel item)
     {
@@ -178,10 +164,9 @@
             string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
         if (!ok) return;
 
-        // 削除 → 一覧再読込（<>不要）
         var list = await UiOperationRunner.RunThenLoadAsync(
-            doOperation: ct => PhraseService.DeletePhraseAsync(item.Id, ct),    
-            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),   
+            doOperation: ct => PhraseService.DeletePhraseAsync(item.Id, ct),
+            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
             runningMessage: "削除中...",
             showCancel: true
         );
@@ -203,7 +188,6 @@
     {
         if (importedPhrases is null || importedPhrases.Count == 0) return;
 
-        // 取込 → 一覧再読込（<>不要）
         var list = await UiOperationRunner.RunThenLoadAsync(
             doOperation: ct => PhraseService.CreatePhrasesAsync(importedPhrases, ct),
             loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
@@ -216,16 +200,16 @@
             Elements = list;
     }
 
-    // ▼ 選択して復習
-    private void StartReviewSelected()
+    // ▼ 選択して復習（全選択セットを受け取る）
+    private void StartReviewSelected(HashSet<Guid> selectedIds)
     {
-        if (SelectedIds.Count == 0)
+        if (selectedIds.Count == 0)
         {
             Snackbar.Add("復習対象が選択されていません。", Severity.Warning);
             return;
         }
 
-        var selected = Elements.Where(x => SelectedIds.Contains(x.Id)).ToList();
+        var selected = Elements.Where(x => selectedIds.Contains(x.Id)).ToList();
         if (selected.Count == 0)
         {
             Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);

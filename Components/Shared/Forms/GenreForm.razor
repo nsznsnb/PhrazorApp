@@ -45,9 +45,8 @@
                               Title="サブジャンル一覧入力"
                               Items="@model.SubGenres"
                               Height="400px"
-                              RowsPerPage="10"
-                              ShowSearch="true"
-                              Filter="@( (SubGenreModel x, string q) => string.IsNullOrWhiteSpace(q) || (x.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) )">
+                              Search="false"
+                              Pager="TablePagerMode.Off">
 
                 <!-- ツールバー：小画面ではFullWidthに -->
                 <ToolbarContent Context="ctx">
@@ -60,19 +59,19 @@
                 </ToolbarContent>
 
                 <!-- テーブルヘッダ -->
-                <HeaderCells>
+                <HeaderContent>
                     <MudTh style="width:80px;">既定</MudTh>
                     <MudTh>サブジャンル名</MudTh>
                     <MudTh style="width:320px;">操作</MudTh>
-                </HeaderCells>
+                </HeaderContent>
 
                 <!-- 行 -->
-                <RowCells Context="context">
+                <RowTemplate Context="context">
                     <MudTd>
                         <MudTooltip Text="既定にする">
                             <MudIconButton Size="Size.Medium"
                                            Icon="@(context.IsDefault ? Icons.Material.Filled.RadioButtonChecked
-                                                                                                    : Icons.Material.Filled.RadioButtonUnchecked)"
+                                                                                                                       : Icons.Material.Filled.RadioButtonUnchecked)"
                                            Color="@(context.IsDefault ? Color.Primary : Color.Default)"
                                            OnClick="@(() => SetDefaultById(context.Id))" />
                         </MudTooltip>
@@ -110,7 +109,7 @@
                             </MudButton>
                         </MudStack>
                     </MudTd>
-                </RowCells>
+                </RowTemplate>
 
                 <NoRecordsContent>
                     <MudText Class="p-4">サブジャンルがありません。「行追加」で追加してください。</MudText>

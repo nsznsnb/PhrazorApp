@@ -51,6 +51,20 @@ public enum DropItemType
     Target
 }
 
+/// <summary>
+/// カスタムテーブルページャ表示モード
+/// </summary>
+public enum TablePagerMode { 
+    /// <summary>
+    /// 表示
+    /// </summary>
+    Auto,
+    /// <summary>
+    /// 非表示
+    /// </summary>
+    Off 
+}
+
 public enum PhraseGenreType
 {
     /// <summary>
