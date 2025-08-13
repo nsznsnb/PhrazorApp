@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
 @inject LoadingManager LoadingManager
 
 <MudThemeProvider Theme="AppTheme.MyCustomTheme" />
@@ -35,20 +36,25 @@
         <NavMenu />
     </MudDrawer>
 
-    <MudMainContent Class="pa-4">
+    <MudMainContent Class="pa-4 main-host">
+        <!-- Bodyだけ覆う -->
+        <LoadingOverlay Mode="OverlayScope.BodyOnly" />
+
         <MudContainer Class="pt-16">
             <MudBreakpointProvider OnBreakpointChanged="OnBpChanged" />
             <CascadingValue Value="CurrentBreakpoint">
                 @Body
             </CascadingValue>
         </MudContainer>
+
         <MudScrollToTop>
             <MudFab Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" />
         </MudScrollToTop>
     </MudMainContent>
 
 </MudLayout>
-<ProgressingOverlay />
+<!-- 全画面用（ダイアログ時など） -->
+<LoadingOverlay Mode="OverlayScope.Global" />
 
 <div id="blazor-error-ui" data-nosnippet>
     未処理例外が発生しました。アプリケーションをリロードしてください。
@@ -56,8 +62,17 @@
     <span class="dismiss">🗙</span>
 </div>
 
+<style>
+    .main-host {
+        position: relative; /* ★ これで子の MudOverlay(Absolute) がこの領域だけを覆う */
+        min-height: 100%; /* 任意：背が低いページでも覆えるように */
+    }
+</style>
+
 
 @code {
+    private IDisposable? _navReg;
+
     bool _drawerOpen = true;     // Md以上では押し出し表示、Md未満ではオーバーレイ表示
     void Toggle() => _drawerOpen = !_drawerOpen;
     void Close() => _drawerOpen = false;
@@ -65,11 +80,24 @@
     // 初期値はデスクトップ想定（初回レンダー後に実値へ更新されます）
     private Breakpoint CurrentBreakpoint = Breakpoint.Xl;
 
+    protected override void OnInitialized()
+    {
+        // ページ遷移「開始」時にローディングを必ず閉じる
+        _navReg = NavigationManager.RegisterLocationChangingHandler(ctx =>
+        {
+            LoadingManager.Hide();             
+            return ValueTask.CompletedTask;
+        });
+    }
+
     private void OnBpChanged(Breakpoint bp)
     {
         CurrentBreakpoint = bp;
         StateHasChanged();
     }
+
+
+    public void Dispose() => _navReg?.Dispose();
 }
 
 

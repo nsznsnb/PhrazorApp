@@ -6,7 +6,7 @@ using PhrazorApp.Models.Mappings;
 namespace PhrazorApp.Services
 {
     /// <summary>
-    /// フレーズのユースケース。
+    /// フレーズのユースケース（CancellationToken不使用版）
     /// </summary>
     public sealed class PhraseService
     {
@@ -23,24 +23,22 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>一覧</summary>
-        public Task<ServiceResult<List<PhraseModel>>> GetPhraseViewModelListAsync(CancellationToken ct = default)
+        public Task<ServiceResult<List<PhraseModel>>> GetPhraseViewModelListAsync()
         {
-
-            return _uow.ReadAsync(async (u, token) =>
+            return _uow.ReadAsync(async u =>
             {
-                var phrases = await u.Phrases.GetAllPhrasesAsync(token);
+                var phrases = await u.Phrases.GetAllPhrasesAsync();
                 var list = phrases.Select(p => p.ToModel()).ToList();
-                return ServiceResult<List<PhraseModel>>.Success(list, message: "");
-            }, ct);
+                return ServiceResult.Success(list);
+            });
         }
 
         /// <summary>詳細</summary>
-        public Task<ServiceResult<PhraseModel>> GetPhraseViewModelAsync(Guid? phraseId, CancellationToken ct = default)
+        public Task<ServiceResult<PhraseModel>> GetPhraseViewModelAsync(Guid? phraseId)
         {
-
-            return _uow.ReadAsync(async (u, token) =>
+            return _uow.ReadAsync(async u =>
             {
-                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, token);
+                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId);
                 var model = (phraseId == null || phrase == null)
                     ? new PhraseModel { Id = Guid.NewGuid(), Phrase = "", Meaning = "", Note = "", ImageUrl = "" }
                     : new PhraseModel
@@ -53,16 +51,16 @@ namespace PhrazorApp.Services
                         SelectedDropItems = phrase.MPhraseGenres.ToDropItemModels()
                     };
 
-                return ServiceResult<PhraseModel>.Success(model, message: "");
-            }, ct);
+                return ServiceResult.Success(model);
+            });
         }
 
         /// <summary>作成</summary>
-        public async Task<ServiceResult> CreatePhraseAsync(PhraseModel model, CancellationToken ct = default)
+        public async Task<ServiceResult> CreatePhraseAsync(PhraseModel model)
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async (u, token) =>
+                await _uow.ExecuteInTransactionAsync(async u =>
                 {
                     var userId = _userService.GetUserId();
 
@@ -73,11 +71,11 @@ namespace PhrazorApp.Services
 
                     if (model.SelectedDropItems?.Count > 0)
                         await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
-                }, ct);
+                });
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ登録で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
@@ -85,7 +83,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>一括作成</summary>
-        public async Task<ServiceResult> CreatePhrasesAsync(IEnumerable<PhraseModel> models, CancellationToken ct = default)
+        public async Task<ServiceResult> CreatePhrasesAsync(IEnumerable<PhraseModel> models)
         {
             if (models == null) return ServiceResult.Failure("入力が null です。");
 
@@ -96,7 +94,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async (u, token) =>
+                await _uow.ExecuteInTransactionAsync(async u =>
                 {
                     var nowUtc = DateTime.UtcNow;
 
@@ -122,11 +120,11 @@ namespace PhrazorApp.Services
                     await u.Phrases.AddRangeAsync(phraseEntities);
                     if (imageEntities.Count > 0) await u.PhraseImages.AddRangeAsync(imageEntities);
                     if (phraseGenreEntities.Count > 0) await u.PhraseGenres.AddRangeAsync(phraseGenreEntities);
-                }, ct);
+                });
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ一括登録で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
@@ -134,15 +132,15 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>更新（画像はUpsert、ジャンルは全差し替え）</summary>
-        public async Task<ServiceResult> UpdatePhraseAsync(PhraseModel model, CancellationToken ct = default)
+        public async Task<ServiceResult> UpdatePhraseAsync(PhraseModel model)
         {
             try
             {
                 var userId = _userService.GetUserId();
 
-                await _uow.ExecuteInTransactionAsync(async (u, token) =>
+                await _uow.ExecuteInTransactionAsync(async u =>
                 {
-                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id, token);
+                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id);
                     if (phraseEntity == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -179,11 +177,11 @@ namespace PhrazorApp.Services
 
                     if (model.SelectedDropItems is { Count: > 0 })
                         await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
-                }, ct);
+                });
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ更新で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
@@ -191,15 +189,15 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>削除</summary>
-        public async Task<ServiceResult> DeletePhraseAsync(Guid phraseId, CancellationToken ct = default)
+        public async Task<ServiceResult> DeletePhraseAsync(Guid phraseId)
         {
             try
             {
                 var userId = _userService.GetUserId();
 
-                await _uow.ExecuteInTransactionAsync(async (u, token) =>
+                await _uow.ExecuteInTransactionAsync(async u =>
                 {
-                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId, token);
+                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId);
                     if (phrase == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -210,11 +208,11 @@ namespace PhrazorApp.Services
                         await u.PhraseGenres.DeleteRangeAsync(phrase.MPhraseGenres);
 
                     await u.Phrases.DeleteAsync(phrase);
-                }, ct);
+                });
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ削除で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
@@ -222,7 +220,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>一括削除</summary>
-        public async Task<ServiceResult> DeletePhrasesAsync(IEnumerable<Guid> phraseIds, CancellationToken ct = default)
+        public async Task<ServiceResult> DeletePhrasesAsync(IEnumerable<Guid> phraseIds)
         {
             try
             {
@@ -232,14 +230,14 @@ namespace PhrazorApp.Services
                 var userId = _userService.GetUserId();
                 var idSet = phraseIds.Distinct().ToArray(); // Guid 重複除去
 
-                await _uow.ExecuteInTransactionAsync(async (u, token) =>
+                await _uow.ExecuteInTransactionAsync(async u =>
                 {
                     const int chunkSize = 500; // SQL パラメータ上限対策
                     var allPhrases = new List<DPhrase>(capacity: idSet.Length);
 
                     foreach (var chunk in idSet.Chunk(chunkSize))
                     {
-                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk, token); // 画像・ジャンル込み取得
+                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk); // 画像・ジャンル込み取得
                         allPhrases.AddRange(phrases);
                     }
 
@@ -263,11 +261,11 @@ namespace PhrazorApp.Services
                         await u.PhraseImages.DeleteRangeAsync(images);
 
                     await u.Phrases.DeleteRangeAsync(allPhrases);
-                }, ct);
+                });
 
                 return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ一括削除で例外が発生しました。");
                 return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));

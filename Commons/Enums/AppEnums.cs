@@ -65,6 +65,20 @@ public enum TablePagerMode {
     Off 
 }
 
+/// <summary>
+/// オーバーレイの囲う範囲
+/// </summary>
+public enum OverlayScope { 
+    /// <summary>
+    /// ボディ部のみ
+    /// </summary>
+    BodyOnly,
+    /// <summary>
+    /// 全体
+    /// </summary>
+    Global
+}
+
 public enum PhraseGenreType
 {
     /// <summary>

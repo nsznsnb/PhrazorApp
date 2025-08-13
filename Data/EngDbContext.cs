@@ -442,7 +442,7 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("M_GENRES", tb => tb.HasComment("ジャンルマスタ"));
 
-            entity.HasIndex(e => new { e.UserId, e.GenreName }, "M_GENRES_IX1").IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.GenreName }, "M_GENRES_IX1");
 
             entity.HasIndex(e => e.GenreId, "M_GENRES_PKI").IsUnique();
 
@@ -733,7 +733,7 @@ public partial class EngDbContext : DbContext
 
             entity.ToTable("M_SUB_GENRES", tb => tb.HasComment("サブジャンルマスタ"));
 
-            entity.HasIndex(e => new { e.UserId, e.GenreId, e.SubGenreName }, "M_SUB_GENRES_IX1").IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.GenreId, e.SubGenreName }, "M_SUB_GENRES_IX1");
 
             entity.HasIndex(e => new { e.UserId, e.GenreId }, "M_SUB_GENRES_IX_DEFAULT")
                 .IsUnique()

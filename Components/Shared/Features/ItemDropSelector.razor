@@ -54,40 +54,21 @@
     private List<DropItemModel> _items = new();
     private MudDropContainer<DropItemModel>? _dropContainer;
 
-    [Parameter]
-    public List<DropItemModel> SelectedItems { get; set; } = new();
-
-    [Parameter]
-    public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
-
-    [Parameter]
-    public EventCallback OnAddGenreClicked { get; set; }
-
-    [Parameter]
-    public int MaxSelection { get; set; } = 3;
-
-    [Parameter]
-    public string UnassignedLabel { get; set; } = "未分類";
-
-    [Parameter]
-    public string TargetLabel { get; set; } = "選択中";
-
-    [Parameter]
-    public RenderFragment<DropItemModel>? ItemTemplate { get; set; }
-
-    [Parameter]
-    public string? Width { get; set; } = "100%";
-
-    [Parameter]
-    public string? Height { get; set; }
+    [Parameter] public List<DropItemModel> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
+    [Parameter] public EventCallback OnAddGenreClicked { get; set; }
+    [Parameter] public int MaxSelection { get; set; } = 3;
+    [Parameter] public string UnassignedLabel { get; set; } = "未分類";
+    [Parameter] public string TargetLabel { get; set; } = "選択中";
+    [Parameter] public RenderFragment<DropItemModel>? ItemTemplate { get; set; }
+    [Parameter] public string? Width { get; set; } = "100%";
+    [Parameter] public string? Height { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         // 一覧取得（Snackbarは空メッセージなので出ない）
-        var allItems = await UiOperationRunner.RunLoadOnlyAsync(
-            ct => GenreService.GetGenreDropItemModelListAsync(ct),
-            runningMessage: "読込中...",
-            showCancel: false
+        var allItems = await UiOperationRunner.ReadNoOverlayAsync(
+            () => GenreService.GetGenreDropItemModelListAsync()   
         );
         if (allItems is null) return;
 
@@ -127,11 +108,9 @@
     }
 
     private static DropItemType ParseDropItemType(string zone)
-    {
-        return Enum.TryParse<DropItemType>(zone, out var result)
+        => Enum.TryParse<DropItemType>(zone, out var result)
             ? result
             : DropItemType.UnAssigned;
-    }
 
     private string GetZoneStyle(DropItemType zone)
     {
@@ -148,6 +127,5 @@
         if (OnAddGenreClicked.HasDelegate)
             await OnAddGenreClicked.InvokeAsync();
         StateHasChanged();
-
     }
 }

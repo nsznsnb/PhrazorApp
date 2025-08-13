@@ -5,9 +5,14 @@
     /// </summary>
     public class AppMessages
     {
+        public const string MSG_I_PROGRESS_READ = "読込中です...";
+        public const string MSG_I_PROGRESS_TAKE_IN = "取込中です...";
+        public const string MSG_I_PROGRESS_SAVE = "保存中です...";
+        public const string MSG_I_PROGRESS_DELETE = "削除中です...";
         public const string MSG_I_SUCCESS_CREATE_DETAIL = "{0}を作成しました。";
         public const string MSG_I_SUCCESS_UPDATE_DETAIL = "{0}を更新しました。";
         public const string MSG_I_SUCCESS_DELETE_DETAIL = "{0}を削除しました。";
+        public const string MSG_I_SUCCESS_CSV_TAKE_IN = "CSV取込が完了しました。";
         public const string MSG_I_SUCCESS_UPLOAD_DETAIL = "{0}をアップロードしました。";
         public const string MSG_I_SUCCESS_DOWNLOAD_DETAIL = "{0}をダウンロードしました。";
         public const string MSG_I_CONFIRM_REGIST = "{0}を登録します。よろしいですか?";

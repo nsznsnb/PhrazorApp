@@ -29,7 +29,6 @@
     </MudStack>
 </MudPaper>
 
-
 @code {
     private bool IsLoading = false;
     private string? ImageUrlInternal;
@@ -54,29 +53,27 @@
         if (string.IsNullOrWhiteSpace(Prompt))
             return;
 
-        // 局所UIの無効化用（必要なければ削除OK）
+        // 局所UIの無効化用
         IsLoading = true;
         ErrorMessage = null;
         ImageUrlInternal = null;
         StateHasChanged();
 
-        var r = await UiOperationRunner.RunAsync(
-            ct => ImageService.GenerateImageAsync(Prompt, ct),
-            runningMessage: "画像生成中...",
-            showCancel: true,
-            showAfter: TimeSpan.FromMilliseconds(150) // 150ms 以上かかった場合のみカード表示（ちらつき防止）
+        var url = await UiOperationRunner.ReadWithOverlayAsync(
+            () => ImageService.GenerateImageAsync(Prompt),   // ★ CTなし版
+            message: "画像生成中..."
         );
-
-        // グローバル Snackbar や例外/キャンセル表示は Runner が処理済み
-        if (r.IsSuccess && !string.IsNullOrWhiteSpace(r.Data))
+        if (!string.IsNullOrWhiteSpace(url))
         {
-            ImageUrlInternal = r.Data!;
+            ImageUrlInternal = url;
             await ImageUrlChanged.InvokeAsync(ImageUrlInternal);
         }
-        else if (r.IsError) // Warning（キャンセルなど）はメッセージ済。必要なら分岐可能
+        else
         {
-            ErrorMessage = r.Message ?? "画像生成に失敗しました。もう一度お試しください。";
+            // 失敗時は Service 側のメッセージが Snackbar に出ています
+            // 追加のUI処理が必要ならここで
         }
+
 
         IsLoading = false;
         StateHasChanged();

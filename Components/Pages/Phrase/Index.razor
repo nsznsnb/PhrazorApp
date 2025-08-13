@@ -108,13 +108,15 @@
     // 初期表示：一覧読込
     protected override async Task OnInitializedAsync()
     {
-        var r = await UiOperationRunner.RunAsync(
-            ct => PhraseService.GetPhraseViewModelListAsync(ct),
-            runningMessage: "読込中...",
-            showCancel: false
+        var data = await UiOperationRunner.ReadWithOverlayAsync(
+            () => PhraseService.GetPhraseViewModelListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_READ
         );
-        if (r.IsSuccess && r.Data is not null)
-            Elements = r.Data;
+
+        if (data is not null)
+        {
+            Elements = data;
+        }
     }
 
     private async Task StartTest(HashSet<Guid> idsInView)
@@ -142,11 +144,10 @@
             $"選択中 {ids.Count} 件を削除します。よろしいですか？");
         if (!ok) return;
 
-        var list = await UiOperationRunner.RunThenLoadAsync(
-            doOperation: ct => PhraseService.DeletePhrasesAsync(ids, ct),
-            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
-            runningMessage: "削除中...",
-            showCancel: true
+        var list = await UiOperationRunner.WriteThenReloadAsync(
+            operation: () => PhraseService.DeletePhrasesAsync(ids),          
+            reloadData: () => PhraseService.GetPhraseViewModelListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
         if (list is not null)
@@ -164,11 +165,10 @@
             string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
         if (!ok) return;
 
-        var list = await UiOperationRunner.RunThenLoadAsync(
-            doOperation: ct => PhraseService.DeletePhraseAsync(item.Id, ct),
-            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
-            runningMessage: "削除中...",
-            showCancel: true
+        var list = await UiOperationRunner.WriteThenReloadAsync(
+            operation: () => PhraseService.DeletePhraseAsync(item.Id),       
+            reloadData: () => PhraseService.GetPhraseViewModelListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
         if (list is not null)
@@ -187,17 +187,7 @@
     private async Task OnCsvUploadCompleted(List<PhraseModel> importedPhrases)
     {
         if (importedPhrases is null || importedPhrases.Count == 0) return;
-
-        var list = await UiOperationRunner.RunThenLoadAsync(
-            doOperation: ct => PhraseService.CreatePhrasesAsync(importedPhrases, ct),
-            loadData: ct => PhraseService.GetPhraseViewModelListAsync(ct),
-            runningMessage: "取込中...",
-            timeout: TimeSpan.FromMinutes(2),
-            showCancel: true
-        );
-
-        if (list is not null)
-            Elements = list;
+        Elements = importedPhrases;
     }
 
     // ▼ 選択して復習（全選択セットを受け取る）

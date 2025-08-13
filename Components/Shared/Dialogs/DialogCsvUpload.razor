@@ -3,7 +3,7 @@
 @using CsvHelper.Configuration
 @using Microsoft.AspNetCore.Components.Forms
 @using PhrazorApp.Utils
-@inherits DialogCsvUploadBase<PhraseModel>        
+@inherits DialogCsvUploadBase<PhraseModel>
 @inject ISnackbar Snackbar
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
@@ -14,52 +14,46 @@
                    CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                    ContentClass="py-5 my-1"
                    OnExecuteAsync="SubmitAsync">
-<MudForm Model="@model" @ref="@form" Validation="@(ValidationRules.ValidateValue)" ValidationDelay="0">
-  <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
+    <MudForm Model="@model" @ref="@form" Validation="@(ValidationRules.ValidateValue)" ValidationDelay="0">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
 
-  <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
-    <MudFileUpload T="IBrowserFile"
-                    @ref="_file"
-                    For="@(() => model.File)"
-                    @bind-Files="model.File"
-                   Accept=".csv"
-                   MaximumFileCount="1"
-                   OnFilesChanged="OnFilesChanged"
-                   SuppressOnChangeWhenInvalid="true"
-                   Class="my-2">
-      <ActivatorContent>
-        <MudButton Variant="Variant.Filled"
-                   Size="@AppConstants.SIZE_BUTTON"
-                   StartIcon="@Icons.Material.TwoTone.AttachFile">
-          @AppConstants.LABEL_BUTTON_CHOICE_FILE
-        </MudButton>
-      </ActivatorContent>
-    </MudFileUpload>
+        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+            <MudFileUpload T="IBrowserFile"
+                           @ref="_file"
+                           For="@(() => model.File)"
+                           @bind-Files="model.File"
+                           Accept=".csv"
+                           MaximumFileCount="1"
+                           OnFilesChanged="OnFilesChanged"
+                           SuppressOnChangeWhenInvalid="true"
+                           Class="my-2">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                               Size="@AppConstants.SIZE_BUTTON"
+                               StartIcon="@Icons.Material.TwoTone.AttachFile">
+                        @AppConstants.LABEL_BUTTON_CHOICE_FILE
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
 
-    <MudList T="string">
-        <MudListItem >@(model.File?.Name ?? string.Empty)</MudListItem>
+            <MudList T="string">
+                <MudListItem>@(model.File?.Name ?? string.Empty)</MudListItem>
+            </MudList>
+        </MudStack>
 
-    </MudList>
-  </MudStack>
-
-  @* ← ここが「ボタン直下」のエラー表示 *@
-  @if (_fvFileErrors?.Any() == true)
-  {
-    @foreach (var msg in _fvFileErrors)
-    {
-      <MudText Color="Color.Error" Class="mt-1">@msg</MudText>
-    }
-  }
-</MudForm>
-
-
+        @* ← ここが「ボタン直下」のエラー表示 *@
+        @if (_fvFileErrors?.Any() == true)
+        {
+            @foreach (var msg in _fvFileErrors)
+            {
+                <MudText Color="Color.Error" Class="mt-1">@msg</MudText>
+            }
+        }
+    </MudForm>
 </DialogBaseWrapper>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-
-    // ★↓↓ ここを削除（Base 側で宣言済み）↓↓
-    // [Parameter] public EventCallback<List<PhraseModel>> OnUploadCompleted { get; set; }
 
     private MudForm form = default!;
     private FileModel model = new();
@@ -83,31 +77,30 @@
         await form.Validate();
         if (!form.IsValid) return false;
 
-        var r = await UiOperationRunner.RunAsync(
-        async ct =>
-        {
-            using var stream = model.File.OpenReadStream(10 * 1024 * 1024);
+        var r = await UiOperationRunner.WriteAsync(
+            async () =>
+            {
+                using var stream = model.File.OpenReadStream(10 * 1024 * 1024);
 
-            // 読み込み（ct対応版があれば差し替え）
-            var dtos = await CsvUtil.ReadToListAsync<PhraseImportDto>(stream);
+                // 読み込み
+                var dtos = await CsvUtil.ReadToListAsync<PhraseImportDto>(stream);
+                var phraseModels = dtos.Select(x => x.ToPhraseModel()).ToList();
 
-            var phraseModels = dtos.Select(x => x.ToPhraseModel()).ToList();
+                // まとめて登録
+                var created = await PhraseService.CreatePhrasesAsync(phraseModels);
+                if (!created.IsSuccess)
+                    return ServiceResult.Failure<bool>(created.Message);
 
-            // まとめて登録
-            var created = await PhraseService.CreatePhrasesAsync(phraseModels, ct);
-            if (!created.IsSuccess)
-                return ServiceResult.Failure<bool>(created.Message);
+                // 呼び出し元へ通知
+                await RaiseCompletedAsync(phraseModels);
 
-            // 呼び出し元へ通知（必要なら ct 版に拡張）
-            await RaiseCompletedAsync(phraseModels);
-
-            // 成功: Runner がメッセージを表示（空でなければ）
-            return ServiceResult.Success(true, "CSV読込が完了しました。");
-        },
-        runningMessage: "CSVを取り込み中..."
-    );
+                // 成功
+                return ServiceResult.Success(true, AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);
+            },
+            message: AppMessages.MSG_I_PROGRESS_TAKE_IN
+        );
 
         // 成功時のみ閉じる想定
-        return r.IsSuccess && r.Data == true;
+        return r.IsSuccess;
     }
 }

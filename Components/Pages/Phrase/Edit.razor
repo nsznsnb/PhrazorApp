@@ -12,7 +12,6 @@
 <BackLink Href="/phrases" />
 
 <MudForm Model="@model" @ref="@form" ValidationDelay="0">
-
     <MudStack Spacing="2">
         <SectionTitle Title="@(isEdit ? "フレーズ編集" : "フレーズ新規作成")" />
         <ActionCard>
@@ -45,6 +44,7 @@
                 </MudGrid>
             </MudCardContent>
         </BaseCard>
+
         <ActionCard>
             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
@@ -68,11 +68,9 @@
 
     private async Task ClearAsync()
     {
-        // 初期読込：<>不要、キャンセル/例外はRunnerで一元処理
-        var loaded = await UiOperationRunner.RunLoadOnlyAsync(
-            ct => PhraseService.GetPhraseViewModelAsync(Id, ct),
-            runningMessage: "読込中...",
-            showCancel: false
+        // 初期読込
+        var loaded = await UiOperationRunner.ReadNoOverlayAsync(
+            () => PhraseService.GetPhraseViewModelAsync(Id)
         );
 
         model = loaded ?? new PhraseModel { Id = Id ?? Guid.NewGuid() };
@@ -90,13 +88,12 @@
             string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase));
         if (!ok) return;
 
-        // 作成 or 更新をRunnerで実行（SnackbarはサービスのMessageをそのまま表示）
-        var op = await UiOperationRunner.RunAsync(
-            ct => isEdit
-                ? PhraseService.UpdatePhraseAsync(model, ct)
-                : PhraseService.CreatePhraseAsync(model, ct),
-            runningMessage: isEdit ? "更新中..." : "登録中...",
-            showCancel: true
+        // 作成 or 更新（CTなし）
+        var op = await UiOperationRunner.WriteAsync(
+            () => isEdit
+                ? PhraseService.UpdatePhraseAsync(model)
+                : PhraseService.CreatePhraseAsync(model),
+            message: AppMessages.MSG_I_PROGRESS_SAVE
         );
 
         if (!op.IsSuccess) return;
@@ -104,14 +101,13 @@
         NavigationManager.NavigateTo("/phrases");
     }
 
-    private Task OnSelectedChanged(HashSet<Guid> _)
-        => Task.CompletedTask;
+    private Task OnSelectedChanged(HashSet<Guid> _) => Task.CompletedTask;
 
     private async Task OpenGenreDialog()
     {
         var parameters = new DialogParameters
         {
-            { "GenreId", (Guid?)null } // 編集時は ID を渡す
+            { "GenreId", (Guid?)null }
         };
         var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
 

@@ -36,6 +36,14 @@ namespace PhrazorApp.Commons.Themes
                 DrawerText = Colors.Gray.Darken3,
                 DrawerIcon = Colors.Cyan.Accent4,
             },
+            ZIndex = new ZIndex() {
+                Drawer = AppZIndex.Drawer,
+                Popover = AppZIndex.Popover,
+                AppBar = AppZIndex.AppBar,
+                Dialog = AppZIndex.Dialog,
+                Snackbar = AppZIndex.Snackbar,
+                Tooltip = AppZIndex.Tooltip
+            },
             LayoutProperties = new LayoutProperties()
             {
             },

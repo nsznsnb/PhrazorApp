@@ -3,13 +3,11 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
 using PhrazorApp.Commons;
 using PhrazorApp.Extensions;
-using System.Net.Http;
 
 namespace PhrazorApp.Infrastructure
 {
-
     /// <summary>
-    /// Azure Blob ストレージ クライアント（画像アップロード用）
+    /// Azure Blob ストレージ クライアント（画像アップロード用）— CT 不使用
     /// </summary>
     public sealed class BlobStorageClient
     {
@@ -32,11 +30,7 @@ namespace PhrazorApp.Infrastructure
         /// </summary>
         /// <param name="prompt">保存名のプレフィックスに使うテキスト（サニタイズされます）</param>
         /// <param name="imageBytes">画像バイト列（PNG想定）</param>
-        /// <param name="ct">キャンセルトークン</param>
-        public async Task<ServiceResult<string>> UploadImageAsync(
-            string prompt,
-            byte[] imageBytes,
-            CancellationToken ct = default)
+        public async Task<ServiceResult<string>> UploadImageAsync(string prompt, byte[] imageBytes)
         {
             if (imageBytes is null || imageBytes.Length == 0)
                 return ServiceResult.Failure<string>("画像データが空です。");
@@ -48,7 +42,7 @@ namespace PhrazorApp.Infrastructure
                 var container = _blobServiceClient.GetBlobContainerClient(_options.ContainerName);
 
                 // コンテナがなければ作成（一般公開: Blob 単位）
-                await container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
+                await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
 
                 var blob = container.GetBlobClient(fileName);
 
@@ -59,31 +53,25 @@ namespace PhrazorApp.Infrastructure
                     HttpHeaders = new BlobHttpHeaders
                     {
                         ContentType = "image/png",
-                        CacheControl = "public,max-age=31536000" // 任意：CDN/ブラウザキャッシュ
+                        CacheControl = "public,max-age=31536000" // 任意：長期キャッシュ
                     }
                 };
 
-                await blob.UploadAsync(stream, uploadOptions, ct);
+                await blob.UploadAsync(stream, uploadOptions);
 
-
-                // 成功時メッセージは UI でそのまま表示されます（空にすれば表示なし）
+                // 成功
                 return ServiceResult.Success(blob.Uri.ToString(), $"画像を保存しました。（{fileName}）");
-            }
-            catch (OperationCanceledException)
-            {
-                // キャンセルは UI 側（UiOperationRunner）で一元処理
-                throw;
             }
             catch (Exception ex)
             {
-
-
+                _logger.LogError(ex, "画像の保存に失敗しました。FileName={FileName}, Container={Container}",
+                                 fileName, _options.ContainerName);
                 return ServiceResult.Failure<string>("画像の保存に失敗しました。");
             }
         }
 
         /// <summary>
-        /// ファイル名をサニタイズします（無効文字を '_'、空白を '_' に置換）。
+        /// ファイル名をサニタイズします（無効文字/空白を '_' に置換）。
         /// </summary>
         private static string SanitizeFileName(string fileName)
         {

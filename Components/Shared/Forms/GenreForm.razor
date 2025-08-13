@@ -1,7 +1,6 @@
 ﻿@inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject GenreService GenreService
-@inject LoadingManager LoadingManager
 @inject NavigationManager NavigationManager
 @inject UiOperationRunner UiOperationRunner
 
@@ -48,7 +47,6 @@
                               Search="false"
                               Pager="TablePagerMode.Off">
 
-                <!-- ツールバー：小画面ではFullWidthに -->
                 <ToolbarContent Context="ctx">
                     <MudButton Variant="Variant.Outlined" Color="Color.Tertiary"
                                StartIcon="@Icons.Material.TwoTone.Add"
@@ -58,20 +56,18 @@
                     </MudButton>
                 </ToolbarContent>
 
-                <!-- テーブルヘッダ -->
                 <HeaderContent>
                     <MudTh style="width:80px;">既定</MudTh>
                     <MudTh>サブジャンル名</MudTh>
                     <MudTh style="width:320px;">操作</MudTh>
                 </HeaderContent>
 
-                <!-- 行 -->
                 <RowTemplate Context="context">
                     <MudTd>
                         <MudTooltip Text="既定にする">
                             <MudIconButton Size="Size.Medium"
                                            Icon="@(context.IsDefault ? Icons.Material.Filled.RadioButtonChecked
-                                                                                                                       : Icons.Material.Filled.RadioButtonUnchecked)"
+                                                                                                                                                                  : Icons.Material.Filled.RadioButtonUnchecked)"
                                            Color="@(context.IsDefault ? Color.Primary : Color.Default)"
                                            OnClick="@(() => SetDefaultById(context.Id))" />
                         </MudTooltip>
@@ -133,7 +129,6 @@
     private readonly GenreModelValidator genreValidator = new();
     private readonly SubGenreModelValidator subGenreValidator = new();
 
-    // 既定（IsDefault）同期用の選択状態
     private Guid? _defaultSubGenreId;
 
     protected override async Task OnInitializedAsync() => await ClearAsync();
@@ -143,10 +138,8 @@
         if (IsEdit && Id.HasValue)
         {
             // 読み取り（Snackbarは出さない運用）
-            var loaded = await UiOperationRunner.RunLoadOnlyAsync(
-                ct => GenreService.GetGenreViewModelAsync(Id.Value, ct),
-                runningMessage: "読込中...",
-                showCancel: false
+            var loaded = await UiOperationRunner.ReadNoOverlayAsync(
+                () => GenreService.GetGenreViewModelAsync(Id.Value)   
             );
             model = loaded ?? new GenreModel { Id = Id.Value };
         }
@@ -155,7 +148,6 @@
             model = new GenreModel { Id = Guid.NewGuid() };
         }
 
-        // 既定IDを同期（無ければ先頭を既定に）
         SyncDefaultStateAfterLoad();
 
         if (form is not null)
@@ -182,7 +174,6 @@
             OrderNo = nextOrder
         };
 
-        // 最初の1件は既定にしておくとUX◎
         if (model.SubGenres.Count == 0)
         {
             item.IsDefault = true;
@@ -198,7 +189,6 @@
         model.SubGenres.Remove(item);
         ReorderSortOrder();
 
-        // 既定だった行を消した場合：残っていれば先頭を既定に、空なら未選択
         if (wasDefault)
         {
             if (model.SubGenres.Count > 0)
@@ -247,25 +237,22 @@
         await form.Validate();
         if (!form.IsValid) return;
 
-        // 既定が未選択のまま（= サブジャンルがあるが IsDefault が無い）を念のため補正
         if (model.SubGenres.Count > 0 && !model.SubGenres.Any(x => x.IsDefault))
         {
             SetDefaultById(model.SubGenres[0].Id);
         }
 
-        // 確認ダイアログ（OKなら続行）
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.RegisterConfirm,
             string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Name));
         if (!ok) return;
 
-        // 作成 or 更新
-        var op = await UiOperationRunner.RunAsync(
-            ct => IsEdit
-                ? GenreService.UpdateGenreAsync(model, ct)
-                : GenreService.CreateGenreAsync(model, ct),
-            runningMessage: IsEdit ? "更新中..." : "登録中...",
-            showCancel: true
+        // ★ CT なし版に差し替え
+        var op = await UiOperationRunner.WriteAsync(
+            () => IsEdit
+                ? GenreService.UpdateGenreAsync(model)
+                : GenreService.CreateGenreAsync(model)
+            , message: AppMessages.MSG_I_PROGRESS_SAVE
         );
 
         if (!op.IsSuccess) return;

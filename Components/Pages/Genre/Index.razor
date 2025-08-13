@@ -40,7 +40,7 @@
                         </MudStack>
                     </MudStack>
                 </MudTd>
-                <MudTd  style="min-width:200px;">
+                <MudTd style="min-width:200px;">
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
                                    StartIcon="@Icons.Material.TwoTone.Edit"
@@ -69,10 +69,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var list = await UiOperationRunner.RunLoadOnlyAsync(
-            ct => GenreService.GetGenreViewModelListAsync(ct),
-            runningMessage: "読込中...",
-            showCancel: false
+        var list = await UiOperationRunner.ReadWithOverlayAsync(
+            () => GenreService.GetGenreViewModelListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_READ
         );
         if (list is not null)
             Elements = list;
@@ -92,18 +91,16 @@
             string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name));
         if (!ok) return;
 
-        var list = await UiOperationRunner.RunThenLoadAsync(
-            doOperation: ct => GenreService.DeleteGenreAsync(item.Id, ct),
-            loadData: ct => GenreService.GetGenreViewModelListAsync(ct),
-            runningMessage: "削除中...",
-            showCancel: true
+        var list = await UiOperationRunner.WriteThenReloadAsync(
+            operation: () => GenreService.DeleteGenreAsync(item.Id),      
+            reloadData: () => GenreService.GetGenreViewModelListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
         if (list is not null)
         {
             Elements = list;
-            // 件数が減った時のために先頭ページへ
-            if (tablePage != 0) tablePage = 0;
+            if (tablePage != 0) tablePage = 0; // 件数減少時は先頭へ
         }
     }
 }

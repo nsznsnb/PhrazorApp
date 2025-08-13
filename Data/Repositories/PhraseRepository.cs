@@ -8,24 +8,24 @@ namespace PhrazorApp.Data.Repositories
     {
         public PhraseRepository(EngDbContext context) : base(context) { }
 
-        public Task<List<DPhrase>> GetAllPhrasesAsync(CancellationToken ct)
+        public Task<List<DPhrase>> GetAllPhrasesAsync()
         {
             return _context.Set<DPhrase>()
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .Include(p => p.DReviewLogs)
-                .ToListAsync(ct);
+                .ToListAsync();
         }
 
-        public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId, CancellationToken ct)
+        public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId)
         {
             return _context.Set<DPhrase>()
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
-                .FirstOrDefaultAsync(p => p.PhraseId == phraseId, ct);
+                .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
         }
 
-        public async Task<List<DPhrase>> GetByPhrasesIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+        public async Task<List<DPhrase>> GetByPhrasesIdsAsync(IEnumerable<Guid> ids)
         {
             if (ids is null) throw new ArgumentNullException(nameof(ids));
 
@@ -37,7 +37,7 @@ namespace PhrazorApp.Data.Repositories
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .AsSplitQuery()
-                .ToListAsync(ct);
+                .ToListAsync();
         }
 
     }
