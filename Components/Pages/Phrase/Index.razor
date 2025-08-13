@@ -36,7 +36,7 @@
                          Title=""
                          Search="true"
                          SearchPlaceholder="検索"
-                         SearchBy="@(x => new[] { x.Phrase ?? string.Empty, x.Meaning ?? string.Empty })"
+                         SearchBy="BuildSearchTerms"
                          Pager="TablePagerMode.Auto"
                          RowsPerPage="@_rowsPerPage"
                          Height="500px">
@@ -357,5 +357,37 @@
         );
 
         if (list is not null) Elements = list;
+    }
+
+    private IEnumerable<string> BuildSearchTerms(PhraseListItemModel x)
+    {
+        // 基本
+        var terms = new List<string>
+    {
+        x.Phrase ?? string.Empty,
+        x.Meaning ?? string.Empty
+    };
+
+        // カテゴリ名（サブジャンル名）
+        if (x.SelectedDropItems is not null && x.SelectedDropItems.Count > 0)
+            terms.AddRange(x.SelectedDropItems.Select(c => c.Name ?? string.Empty));
+
+        // 復習回数（数字検索対応）
+        terms.Add(x.ReviewCount.ToString());
+
+        // 作成日：いくつかの書式を用意（半角/区切り違いでもヒットさせる）
+        if (x.CreatedAt.HasValue)
+        {
+            var d = x.CreatedAt.Value;
+            terms.Add(DateUtil.Format(d));          // 既定の表示フォーマット
+            terms.Add(d.ToString("yyyy/MM/dd"));
+            terms.Add(d.ToString("yyyy-MM-dd"));
+            terms.Add(d.ToString("yyyyMMdd"));
+            terms.Add(d.ToString("yyyy/MM"));
+            terms.Add(d.ToString("yyyy-MM"));
+            terms.Add(d.Year.ToString());           // 年だけ検索も可
+        }
+
+        return terms;
     }
 }
