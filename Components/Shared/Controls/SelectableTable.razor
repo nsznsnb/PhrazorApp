@@ -1,4 +1,5 @@
 ﻿@typeparam TItem
+@using MudBlazor
 
 <TableWithToolbar TItem="TItem"
                   Title="@Title"
@@ -10,18 +11,16 @@
                   RowsPerPage="@RowsPerPage"
                   Height="@Height">
 
-    @* -------- Toolbar（TableWithToolbar のスロット名は ToolbarContent） -------- *@
+    <!-- Toolbar -->
     <ToolbarContent Context="tb">
         @{
             var txt = tb.SearchText ?? string.Empty;
-            _lastSearchText = txt;                  // 検索語を同期
+            _lastSearchText = txt;
             var cnt = GetSelectedCountInView(txt);
             var hasRows = HasRows(txt);
-            var disabled = cnt == 0 || !hasRows;
-            var badgeColor = disabled ? Color.Default : Color.Error;
         }
 
-        @* モバイル：検索結果に対する全選択/解除（FullWidth） *@
+        <!-- モバイル：検索結果に対する全選択/解除 -->
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <div style="width:100%">
                 <MudCheckBox T="bool"
@@ -29,11 +28,11 @@
                              ValueChanged="@( (bool v) => OnSelectAllChanged(v, txt) )"
                              Dense="true"
                              Disabled="@(!hasRows)"
-                             Label="@MobileSelectAllLabel" />
+                             Label="@("全選択(検索結果)")" />
             </div>
         </MudHidden>
 
-        @* 追加ツールバー（必要なときだけ描画） *@
+        <!-- 追加ツールバー（ページから差し込む） -->
         @if (ExtraToolbar is not null)
         {
             var ctx = new SelectableTableToolbarContext(
@@ -41,7 +40,7 @@
             IsMdUp: tb.IsMdUp,
             SearchText: txt,
             GetSelectedIdsInView: () => GetSelectedIdsInView(txt),
-            GetSelectedIdsAll: () => GetSelectedIdsAll()   // NEW: 現在のItemsと交差した全選択
+            GetSelectedIdsAll: () => GetSelectedIdsAll()
             );
 
             if (tb.IsMdUp)
@@ -57,26 +56,9 @@
                 </MudStack>
             }
         }
-
-        @* “表示中に含まれる選択数”バッジ（小画面はFullWidth） *@
-        <MudBadge Content="@cnt"
-                  Max="99999"
-                  Color="@badgeColor"
-                  Style="@(!tb.IsMdUp ? "width:100%" : null)"
-                  Overlap
-                  Bordered>
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Error"
-                       StartIcon="@Icons.Material.TwoTone.Delete"
-                       Disabled="@disabled"
-                       FullWidth="@(!tb.IsMdUp)"
-                       OnClick="@(() => TriggerBulkDeleteAsync(txt))">
-                @BulkDeleteLabel
-            </MudButton>
-        </MudBadge>
     </ToolbarContent>
 
-    @* -------- Header（左端：選択チェック。デスクトップのみ） -------- *@
+    <!-- Header（左端：選択チェック。デスクトップのみ） -->
     <HeaderContent>
         <MudTh style="width:48px;text-align:center;">
             <MudHidden Breakpoint="Breakpoint.SmAndDown">
@@ -89,7 +71,7 @@
         @HeaderContent
     </HeaderContent>
 
-    @* -------- Rows（左端チェック：モバイルはタップ領域拡大） -------- *@
+    <!-- Rows（左端チェック） -->
     <RowTemplate Context="row">
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <MudTd style="width:64px;">
@@ -125,32 +107,26 @@
 </TableWithToolbar>
 
 @code {
-    // -------- 公開パラメータ（最小） --------
+    // -------- 公開パラメータ --------
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
     [Parameter] public Func<TItem, Guid> IdSelector { get; set; } = default!;
     [Parameter] public RenderFragment? HeaderContent { get; set; }
     [Parameter] public RenderFragment<TItem>? RowTemplate { get; set; }
     [Parameter] public RenderFragment? NoRecordsContent { get; set; }
 
-    // オプション：見出し・高さ・ページャ
+    // 表示オプション
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? Height { get; set; } = "500px";
     [Parameter] public TablePagerMode Pager { get; set; } = TablePagerMode.Auto;
     [Parameter] public int RowsPerPage { get; set; } = 10;
 
-    // オプション：検索
+    // 検索
     [Parameter] public bool Search { get; set; } = true;
     [Parameter] public string SearchPlaceholder { get; set; } = "検索";
-    /// 検索対象の文字列群を返す（未指定なら ToString()）
     [Parameter] public Func<TItem, IEnumerable<string>>? SearchBy { get; set; }
 
-    // ツールバー拡張（呼び出し側は <ExtraToolbar> を使ってください）
+    // 外部ツールバー差し込み
     [Parameter] public RenderFragment<SelectableTableToolbarContext>? ExtraToolbar { get; set; }
-
-    // 一括削除
-    [Parameter] public EventCallback<HashSet<Guid>> OnBulkDelete { get; set; }
-    [Parameter] public string BulkDeleteLabel { get; set; } = "一括削除";
-    [Parameter] public string MobileSelectAllLabel { get; set; } = "全選択（検索結果）";
 
     // -------- 内部状態 --------
     private HashSet<Guid> _selected = new();
@@ -158,23 +134,27 @@
     private string _lastSearchText = "";
 
     [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
-    private bool IsMdUp => CurrentBreakpoint >= Breakpoint.Md;
 
-    // Itemsが変わるたびに “存在しない選択” を除去して再計算
+    // Public: 呼び出し側から選択解除したい時に呼ぶ
+    public void ClearSelection()
+    {
+        _selected.Clear();
+        _selectAll = false;
+        RecalcSelectAll(_lastSearchText);
+    }
+
     protected override void OnParametersSet()
     {
         PruneSelectionToExistingItems();
         RecalcSelectAll(_lastSearchText);
     }
 
-    // 選択系
+    // 基本ユーティリティ
     private Guid GetId(TItem item) => IdSelector(item);
     private bool IsSelected(Guid id) => _selected.Contains(id);
+    private IEnumerable<TItem> ItemsView(string text)
+        => (Items ?? Enumerable.Empty<TItem>()).Where(x => Matches(x, text));
 
-    // 現在の検索で表示行があるか
-    private bool HasRows(string text) => ItemsView(text).Any();
-
-    // 検索適合
     private bool Matches(TItem item, string text)
     {
         if (!Search || string.IsNullOrWhiteSpace(text)) return true;
@@ -188,8 +168,7 @@
         return false;
     }
 
-    private IEnumerable<TItem> ItemsView(string text)
-        => (Items ?? Enumerable.Empty<TItem>()).Where(x => Matches(x, text));
+    private bool HasRows(string text) => ItemsView(text).Any();
 
     private void ToggleRow(Guid id, bool isChecked)
     {
@@ -197,14 +176,12 @@
         RecalcSelectAll(_lastSearchText);
     }
 
-    // 現在のItemsに存在しないIDを _selected から外す
     private void PruneSelectionToExistingItems()
     {
         var ids = (Items ?? Enumerable.Empty<TItem>()).Select(GetId).ToHashSet();
         _selected.RemoveWhere(id => !ids.Contains(id));
     }
 
-    // 全選択フラグの再計算（0件なら必ず false）
     private void RecalcSelectAll(string text)
     {
         var all = ItemsView(text).Select(GetId).ToList();
@@ -212,7 +189,6 @@
         StateHasChanged();
     }
 
-    // “0件なら反応しない” ガードを追加
     private Task OnSelectAllChanged(bool v, string text)
     {
         if (!HasRows(text))
@@ -235,28 +211,13 @@
     private HashSet<Guid> GetSelectedIdsInView(string text)
         => ItemsView(text).Select(GetId).Where(_selected.Contains).ToHashSet();
 
-    // NEW: 現在のItemsに存在する “全選択ID”
     private HashSet<Guid> GetSelectedIdsAll()
         => (Items ?? Enumerable.Empty<TItem>())
            .Select(GetId)
            .Where(_selected.Contains)
            .ToHashSet();
 
-    private async Task TriggerBulkDeleteAsync(string text)
-    {
-        var ids = GetSelectedIdsInView(text);
-        if (ids.Count == 0) return;
-
-        if (OnBulkDelete.HasDelegate)
-            await OnBulkDelete.InvokeAsync(ids);
-
-        // NEW: 親側の Items 更新を待たずに、即座に選択をクリアしてUIを安全側に
-        _selected.Clear();
-        _selectAll = false;
-        RecalcSelectAll(text);
-    }
-
-    // ツールバー用コンテキスト（名前は大文字で！）
+    // ツールバーに渡すコンテキスト
     public readonly record struct SelectableTableToolbarContext(
         int SelectedCountInView,
         bool IsMdUp,
