@@ -1,5 +1,4 @@
-﻿@using MudBlazor
-@typeparam TItem
+﻿@typeparam TItem
 
 <TableWithToolbar TItem="TItem"
                   Title="@Title"
@@ -13,9 +12,9 @@
 
     @* -------- Toolbar（TableWithToolbar のスロット名は ToolbarContent） -------- *@
     <ToolbarContent Context="tb">
-        @* TableWithToolbar が持つ現在の検索文字列を同期（再描画要求はしない） *@
         @{
             var txt = tb.SearchText ?? string.Empty;
+            _lastSearchText = txt;                  // 検索語を同期
             var cnt = GetSelectedCountInView(txt);
             var hasRows = HasRows(txt);
             var disabled = cnt == 0 || !hasRows;
@@ -33,6 +32,7 @@
                              Label="@MobileSelectAllLabel" />
             </div>
         </MudHidden>
+
         @* 追加ツールバー（必要なときだけ描画） *@
         @if (ExtraToolbar is not null)
         {
@@ -41,7 +41,7 @@
             IsMdUp: tb.IsMdUp,
             SearchText: txt,
             GetSelectedIdsInView: () => GetSelectedIdsInView(txt),
-            GetSelectedIdsAll: () => new HashSet<Guid>(_selected)
+            GetSelectedIdsAll: () => GetSelectedIdsAll()   // NEW: 現在のItemsと交差した全選択
             );
 
             if (tb.IsMdUp)
@@ -57,6 +57,7 @@
                 </MudStack>
             }
         }
+
         @* “表示中に含まれる選択数”バッジ（小画面はFullWidth） *@
         <MudBadge Content="@cnt"
                   Max="99999"
@@ -75,7 +76,6 @@
         </MudBadge>
     </ToolbarContent>
 
-
     @* -------- Header（左端：選択チェック。デスクトップのみ） -------- *@
     <HeaderContent>
         <MudTh style="width:48px;text-align:center;">
@@ -88,7 +88,6 @@
         </MudTh>
         @HeaderContent
     </HeaderContent>
-
 
     @* -------- Rows（左端チェック：モバイルはタップ領域拡大） -------- *@
     <RowTemplate Context="row">
@@ -198,7 +197,6 @@
         RecalcSelectAll(_lastSearchText);
     }
 
-
     // 現在のItemsに存在しないIDを _selected から外す
     private void PruneSelectionToExistingItems()
     {
@@ -230,18 +228,32 @@
         RecalcSelectAll(text);
         return Task.CompletedTask;
     }
+
     private int GetSelectedCountInView(string text)
         => ItemsView(text).Select(GetId).Count(_selected.Contains);
 
     private HashSet<Guid> GetSelectedIdsInView(string text)
         => ItemsView(text).Select(GetId).Where(_selected.Contains).ToHashSet();
 
+    // NEW: 現在のItemsに存在する “全選択ID”
+    private HashSet<Guid> GetSelectedIdsAll()
+        => (Items ?? Enumerable.Empty<TItem>())
+           .Select(GetId)
+           .Where(_selected.Contains)
+           .ToHashSet();
+
     private async Task TriggerBulkDeleteAsync(string text)
     {
         var ids = GetSelectedIdsInView(text);
         if (ids.Count == 0) return;
+
         if (OnBulkDelete.HasDelegate)
             await OnBulkDelete.InvokeAsync(ids);
+
+        // NEW: 親側の Items 更新を待たずに、即座に選択をクリアしてUIを安全側に
+        _selected.Clear();
+        _selectAll = false;
+        RecalcSelectAll(text);
     }
 
     // ツールバー用コンテキスト（名前は大文字で！）

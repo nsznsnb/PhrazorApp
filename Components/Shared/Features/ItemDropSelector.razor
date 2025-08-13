@@ -6,6 +6,7 @@
     <MudDropContainer T="DropItemModel"
                       @ref="_dropContainer"
                       Items="_items"
+                      @key="_version"
                       ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone))"
                       ItemDropped="HandleItemDropped"
                       Class="d-flex flex-grow-1">
@@ -53,6 +54,7 @@
 @code {
     private List<DropItemModel> _items = new();
     private MudDropContainer<DropItemModel>? _dropContainer;
+    private int _version = 0;   // ★ 再構成トリガ
 
     [Parameter] public List<DropItemModel> SelectedItems { get; set; } = new();
     [Parameter] public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
@@ -64,26 +66,43 @@
     [Parameter] public string? Width { get; set; } = "100%";
     [Parameter] public string? Height { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    // 初期ロードは親からの明示リロードに任せる（ここでは行わない）
+
+    public async Task ReloadAsync(List<DropItemModel>? keepSelection = null)
     {
-        // 一覧取得（Snackbarは空メッセージなので出ない）
+        if (keepSelection is not null)
+            SelectedItems = keepSelection;
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
         var allItems = await UiOperationRunner.ReadNoOverlayAsync(
-            () => GenreService.GetGenreDropItemModelListAsync()   
+            () => GenreService.GetGenreDropItemModelListAsync()
         );
-        if (allItems is null) return;
+        _items = allItems ?? new List<DropItemModel>();
 
         var selected = SelectedItems ?? new List<DropItemModel>();
-
-        foreach (var item in allItems)
+        foreach (var item in _items)
         {
             var isSelected = selected.Any(sel => sel.Key1 == item.Key1 && sel.Key2 == item.Key2);
             item.DropTarget = isSelected ? DropItemType.Target : DropItemType.UnAssigned;
         }
 
-        _items = allItems;
-
-        await InvokeAsync(() => _dropContainer?.Refresh());
+        _version++;                 // ★ @key で強制再構成
+        _dropContainer?.Refresh();  // 念のため
+        StateHasChanged();
     }
+
+    private async Task OnAddButtonClicked()
+    {
+        if (OnAddGenreClicked.HasDelegate)
+            await OnAddGenreClicked.InvokeAsync();
+
+        await ReloadAsync(SelectedItems); // ダイアログ後も最新化
+    }
+
 
     private async Task HandleItemDropped(MudItemDropInfo<DropItemModel> dropInfo)
     {
@@ -122,10 +141,5 @@
             : $"{baseStyle} min-height:70px; max-height:{heightValue};";
     }
 
-    private async Task OnAddButtonClicked()
-    {
-        if (OnAddGenreClicked.HasDelegate)
-            await OnAddGenreClicked.InvokeAsync();
-        StateHasChanged();
-    }
+
 }

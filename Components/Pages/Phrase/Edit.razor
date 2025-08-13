@@ -34,7 +34,11 @@
                         <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <ItemDropSelector SelectedItems="@model.SelectedDropItems" MaxSelection="3" UnassignedLabel="カテゴリ" OnAddGenreClicked="OpenGenreDialog" />
+                        <ItemDropSelector @ref="_selector"
+                                          @bind-SelectedItems="model.SelectedDropItems"
+                                          MaxSelection="3"
+                                          UnassignedLabel="カテゴリ"
+                                          OnAddGenreClicked="OpenGenreDialog" />
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3"
@@ -57,6 +61,7 @@
     [Parameter] public Guid? Id { get; set; }
 
     private MudForm? form;
+    private ItemDropSelector? _selector;
     private bool isEdit;
     private PhraseModel model = new();
 
@@ -65,6 +70,18 @@
         isEdit = Id.HasValue;
         await ClearAsync();
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // 子の @ref が確実に有効になってから実行
+            await Task.Yield();
+            if (_selector is not null)
+                await _selector.ReloadAsync(model.SelectedDropItems);
+        }
+    }
+
 
     private async Task ClearAsync()
     {
@@ -105,19 +122,15 @@
 
     private async Task OpenGenreDialog()
     {
-        var parameters = new DialogParameters
-        {
-            { "GenreId", (Guid?)null }
-        };
+        var parameters = new DialogParameters { { "GenreId", (Guid?)null } };
         var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
-
         var dialog = DialogService.Show<DialogGenreForm>("ジャンル登録", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result.Canceled && _selector is not null)
         {
-            var genre = (GenreModel)result.Data;
-            // TODO: 登録後の model 反映など必要ならここで
+            // 既存の選択を保ったまま再読込（登録後の反映）
+            await _selector.ReloadAsync(model.SelectedDropItems);
         }
     }
 }
