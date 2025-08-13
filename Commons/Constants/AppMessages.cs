@@ -20,7 +20,7 @@
         public const string MSG_I_HELPER_REQUIRED_DETAIL = "{0}を入力してください。(必須)";
         public const string MSG_I_HELPER_ARBITRAY_DETAIL = "{0}を入力してください。(任意)";
         public const string MSG_I_HELPER_REQUIRED_LESS_THAN = "{0}を{1}字以内で入力してください。(必須)";
-        public const string MSG_I_HELPER_ARBITRARY_LESS_TAHN = "{0}を{1}字以内で入力してください。(任意)";
+        public const string MSG_I_HELPER_ARBITRARY_LESS_THAN = "{0}を{1}字以内で入力してください。(任意)";
         public const string MSG_I_TOOL_TIP_BULK_DELETE = "チェックされた{0}を一括削除します";
 
 

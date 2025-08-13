@@ -7,9 +7,9 @@ namespace PhrazorApp.Models.Dtos.Maps
         /// <summary>
         /// CSV用DTO → PhraseModel
         /// </summary>
-        public static PhraseModel ToPhraseModel(this PhraseImportDto dto)
+        public static PhraseEditModel ToPhraseModel(this PhraseImportDto dto)
         {
-            return new PhraseModel
+            return new PhraseEditModel
             {
                 Id = Guid.NewGuid(),
                 Phrase = dto.Phrase,
@@ -39,7 +39,7 @@ namespace PhrazorApp.Models.Dtos.Maps
         /// <summary>
         /// CSV用DTOのリスト → PhraseModelリスト
         /// </summary>
-        public static List<PhraseModel> ToPhraseModels(this IEnumerable<PhraseImportDto> dtos)
+        public static List<PhraseEditModel> ToPhraseModels(this IEnumerable<PhraseImportDto> dtos)
         {
             return dtos.Select(d => d.ToPhraseModel()).ToList();
         }

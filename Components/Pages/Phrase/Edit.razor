@@ -42,7 +42,8 @@
                     </MudItem>
                     <MudItem xs="12" md="12">
                         <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3"
-                                      HelperText="@(string.Format(AppMessages.MSG_I_HELPER_ARBITRARY_LESS_TAHN, "解説や備考", "200"))" ShrinkLabel />
+                                      HelperText="@(string.Format(AppMessages.MSG_I_HELPER_ARBITRARY_LESS_THAN, "解説や備考", "200"))"
+                                      ShrinkLabel />
                     </MudItem>
                     <MudFlexBreak />
                 </MudGrid>
@@ -63,7 +64,7 @@
     private MudForm? form;
     private ItemDropSelector? _selector;
     private bool isEdit;
-    private PhraseModel model = new();
+    private PhraseEditModel model = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,22 +76,27 @@
     {
         if (firstRender)
         {
-            // 子の @ref が確実に有効になってから実行
-            await Task.Yield();
+            await Task.Yield(); // 子の @ref 安定を待つ
             if (_selector is not null)
                 await _selector.ReloadAsync(model.SelectedDropItems);
         }
     }
 
-
     private async Task ClearAsync()
     {
-        // 初期読込
-        var loaded = await UiOperationRunner.ReadNoOverlayAsync(
-            () => PhraseService.GetPhraseViewModelAsync(Id)
-        );
-
-        model = loaded ?? new PhraseModel { Id = Id ?? Guid.NewGuid() };
+        if (isEdit)
+        {
+            // 編集：サービスから読み込み
+            var loaded = await UiOperationRunner.ReadNoOverlayAsync(
+                () => PhraseService.GetPhraseEditAsync(Id!.Value)
+            );
+            model = loaded ?? new PhraseEditModel { Id = Id!.Value };
+        }
+        else
+        {
+            // 新規：ローカル初期化のみ
+            model = new PhraseEditModel { Id = Guid.NewGuid() };
+        }
 
         form?.ResetValidation();
     }
@@ -105,7 +111,6 @@
             string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase));
         if (!ok) return;
 
-        // 作成 or 更新（CTなし）
         var op = await UiOperationRunner.WriteAsync(
             () => isEdit
                 ? PhraseService.UpdatePhraseAsync(model)
@@ -118,8 +123,6 @@
         NavigationManager.NavigateTo("/phrases");
     }
 
-    private Task OnSelectedChanged(HashSet<Guid> _) => Task.CompletedTask;
-
     private async Task OpenGenreDialog()
     {
         var parameters = new DialogParameters { { "GenreId", (Guid?)null } };
@@ -129,7 +132,6 @@
 
         if (!result.Canceled && _selector is not null)
         {
-            // 既存の選択を保ったまま再読込（登録後の反映）
             await _selector.ReloadAsync(model.SelectedDropItems);
         }
     }

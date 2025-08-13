@@ -22,41 +22,33 @@ namespace PhrazorApp.Services
             _logger = logger;
         }
 
-        /// <summary>一覧</summary>
-        public Task<ServiceResult<List<PhraseModel>>> GetPhraseViewModelListAsync()
+        // 一覧（DTOに投影済みをRepoで取得）
+        public Task<ServiceResult<List<PhraseListItemModel>>> GetPhraseListAsync()
         {
             return _uow.ReadAsync(async u =>
             {
-                var phrases = await u.Phrases.GetAllPhrasesAsync();
-                var list = phrases.Select(p => p.ToModel()).ToList();
-                return ServiceResult.Success(list);
+                var uid = _userService.GetUserId();
+                var list = await u.Phrases.GetListProjectedAsync(uid); // ★ Repo 経由
+                // 並び順は Repo 側で済ませても良いが、ここで念のため再度安定化しておく
+                list = list.OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue).ToList();
+                return ServiceResult.Success(list, message: "");
             });
         }
 
-        /// <summary>詳細</summary>
-        public Task<ServiceResult<PhraseModel>> GetPhraseViewModelAsync(Guid? phraseId)
+        // 編集ロード（Aggregate取得 → EditModel）
+        public Task<ServiceResult<PhraseEditModel>> GetPhraseEditAsync(Guid id)
         {
             return _uow.ReadAsync(async u =>
             {
-                var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId);
-                var model = (phraseId == null || phrase == null)
-                    ? new PhraseModel { Id = Guid.NewGuid(), Phrase = "", Meaning = "", Note = "", ImageUrl = "" }
-                    : new PhraseModel
-                    {
-                        Id = phrase.PhraseId,
-                        Phrase = phrase.Phrase ?? "",
-                        Meaning = phrase.Meaning ?? "",
-                        Note = phrase.Note ?? "",
-                        ImageUrl = phrase.DPhraseImage?.Url ?? "",
-                        SelectedDropItems = phrase.MPhraseGenres.ToDropItemModels()
-                    };
-
-                return ServiceResult.Success(model);
+                // ※ Repo: GetPhraseByIdAsync は DPhraseImage / MPhraseGenres(+MSubGenre) を含む想定
+                var e = await u.Phrases.GetPhraseByIdAsync(id);
+                var model = e is null ? new PhraseEditModel { Id = id } : e.ToModel();
+                return ServiceResult.Success(model, message: "");
             });
         }
 
         /// <summary>作成</summary>
-        public async Task<ServiceResult> CreatePhraseAsync(PhraseModel model)
+        public async Task<ServiceResult> CreatePhraseAsync(PhraseEditModel model)
         {
             try
             {
@@ -83,7 +75,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>一括作成</summary>
-        public async Task<ServiceResult> CreatePhrasesAsync(IEnumerable<PhraseModel> models)
+        public async Task<ServiceResult> CreatePhrasesAsync(IEnumerable<PhraseEditModel> models)
         {
             if (models == null) return ServiceResult.Failure("入力が null です。");
 
@@ -132,12 +124,10 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>更新（画像はUpsert、ジャンルは全差し替え）</summary>
-        public async Task<ServiceResult> UpdatePhraseAsync(PhraseModel model)
+        public async Task<ServiceResult> UpdatePhraseAsync(PhraseEditModel model)
         {
             try
             {
-                var userId = _userService.GetUserId();
-
                 await _uow.ExecuteInTransactionAsync(async u =>
                 {
                     var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id);
@@ -193,8 +183,6 @@ namespace PhrazorApp.Services
         {
             try
             {
-                var userId = _userService.GetUserId();
-
                 await _uow.ExecuteInTransactionAsync(async u =>
                 {
                     var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId);
@@ -227,7 +215,6 @@ namespace PhrazorApp.Services
                 if (phraseIds is null || !phraseIds.Any())
                     return ServiceResult.Failure(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
 
-                var userId = _userService.GetUserId();
                 var idSet = phraseIds.Distinct().ToArray(); // Guid 重複除去
 
                 await _uow.ExecuteInTransactionAsync(async u =>

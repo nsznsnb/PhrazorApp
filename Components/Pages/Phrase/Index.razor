@@ -28,7 +28,7 @@
 
     <BaseCard>
         <!-- シンプル版 SelectableTable -->
-        <SelectableTable TItem="PhraseModel"
+        <SelectableTable TItem="PhraseListItemModel"
                          Items="Elements"
                          IdSelector="@(x => x.Id)"
                          Title="フレーズ一覧"
@@ -44,16 +44,49 @@
 
             <HeaderContent>
                 <MudTh>フレーズ</MudTh>
+                <MudTh style="min-width:220px;">カテゴリ</MudTh>
+                <MudTh style="width:120px; white-space:nowrap; text-align:right;">復習回数</MudTh>
+                <MudTh style="width:160px; white-space:nowrap;">作成日時</MudTh>
                 <MudTh style="min-width:200px;">操作</MudTh>
             </HeaderContent>
 
             <RowTemplate Context="x">
+                <!-- フレーズ＋意味 -->
                 <MudTd>
                     <MudStack Spacing="1">
                         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@x.Phrase</MudText>
                         <MudText Typo="Typo.subtitle1">@x.Meaning</MudText>
                     </MudStack>
                 </MudTd>
+
+                <!-- カテゴリ（選択済のサブジャンル名をチップで） -->
+                <MudTd>
+                    @if (x.SelectedDropItems?.Count > 0)
+                    {
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                            @foreach (var c in x.SelectedDropItems)
+                            {
+                                <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">@c.Name</MudChip>
+                            }
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudText Color="Color.Secondary">—</MudText>
+                    }
+                </MudTd>
+
+                <!-- 復習回数 -->
+                <MudTd Align="Align.Right" style="white-space:nowrap;">
+                    @x.ReviewCount
+                </MudTd>
+
+                <!-- 作成日時 -->
+                <MudTd style="white-space:nowrap;">
+                    @DateUtil.Format(x.CreatedAt)
+                </MudTd>
+
+                <!-- 操作 -->
                 <MudTd Align="Align.Right" style="min-width:200px;">
                     <MudStack Row>
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
@@ -100,7 +133,7 @@
 
 @code {
     // データ
-    private List<PhraseModel> Elements = new();
+    private List<PhraseListItemModel> Elements = new();
 
     // 1ページ表示件数
     private int _rowsPerPage = 10;
@@ -109,7 +142,7 @@
     protected override async Task OnInitializedAsync()
     {
         var data = await UiOperationRunner.ReadWithOverlayAsync(
-            () => PhraseService.GetPhraseViewModelListAsync(),
+            () => PhraseService.GetPhraseListAsync(),    // ★ 修正
             message: AppMessages.MSG_I_PROGRESS_READ
         );
 
@@ -145,8 +178,8 @@
         if (!ok) return;
 
         var list = await UiOperationRunner.WriteThenReloadAsync(
-            operation: () => PhraseService.DeletePhrasesAsync(ids),          
-            reloadData: () => PhraseService.GetPhraseViewModelListAsync(),
+            operation: () => PhraseService.DeletePhrasesAsync(ids),
+            reloadData: () => PhraseService.GetPhraseListAsync(), // ★ 修正
             message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
@@ -155,7 +188,7 @@
     }
 
     // 個別削除
-    private async Task OnDeleteButtonClickedAsync(PhraseModel item)
+    private async Task OnDeleteButtonClickedAsync(PhraseListItemModel item) // ★ 型を修正
     {
         var suffix = item.Phrase.Length > 50 ? "..." : "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
@@ -166,8 +199,8 @@
         if (!ok) return;
 
         var list = await UiOperationRunner.WriteThenReloadAsync(
-            operation: () => PhraseService.DeletePhraseAsync(item.Id),       
-            reloadData: () => PhraseService.GetPhraseViewModelListAsync(),
+            operation: () => PhraseService.DeletePhraseAsync(item.Id),
+            reloadData: () => PhraseService.GetPhraseListAsync(), // ★ 修正
             message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
@@ -178,16 +211,25 @@
     // CSV 読み込み
     private async Task OpenCsvUploadDialog()
     {
-        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload, PhraseModel>(
+        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload, PhraseEditModel>(
             this,
             OnCsvUploadCompleted
         );
     }
 
-    private async Task OnCsvUploadCompleted(List<PhraseModel> importedPhrases)
+    private async Task OnCsvUploadCompleted(List<PhraseEditModel> importedPhrases)
     {
         if (importedPhrases is null || importedPhrases.Count == 0) return;
-        Elements = importedPhrases;
+
+        // 取込後は正式APIで一覧を再読込（DTO: PhraseListItemModel）
+        var list = await UiOperationRunner.ReadNoOverlayAsync(
+            () => PhraseService.GetPhraseListAsync()
+        );
+
+        if (list is not null)
+            Elements = list;
+
+        Snackbar.Add(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN, Severity.Success);
     }
 
     // ▼ 選択して復習（全選択セットを受け取る）

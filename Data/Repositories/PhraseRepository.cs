@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Entities;
+using PhrazorApp.Models;
+using PhrazorApp.Models.Mappings;
 
 namespace PhrazorApp.Data.Repositories
 {
@@ -8,21 +10,24 @@ namespace PhrazorApp.Data.Repositories
     {
         public PhraseRepository(EngDbContext context) : base(context) { }
 
-        public Task<List<DPhrase>> GetAllPhrasesAsync()
-        {
-            return _context.Set<DPhrase>()
-                .Include(p => p.DPhraseImage)
-                .Include(p => p.MPhraseGenres)
-                .Include(p => p.DReviewLogs)
-                .ToListAsync();
-        }
-
         public Task<DPhrase?> GetPhraseByIdAsync(Guid? phraseId)
         {
             return _context.Set<DPhrase>()
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
+                    .ThenInclude(pg => pg.MSubGenre) // š ’Ç‰Á
                 .FirstOrDefaultAsync(p => p.PhraseId == phraseId);
+        }
+
+        public Task<List<DPhrase>> GetAllPhrasesAsync()
+        {
+            return _context.Set<DPhrase>()
+                .Include(p => p.DPhraseImage)
+                .Include(p => p.MPhraseGenres)
+                    .ThenInclude(pg => pg.MSubGenre) // š ’Ç‰Á
+                .Include(p => p.DReviewLogs)
+                .AsSplitQuery()
+                .ToListAsync();
         }
 
         public async Task<List<DPhrase>> GetByPhrasesIdsAsync(IEnumerable<Guid> ids)
@@ -37,6 +42,15 @@ namespace PhrazorApp.Data.Repositories
                 .Include(p => p.DPhraseImage)
                 .Include(p => p.MPhraseGenres)
                 .AsSplitQuery()
+                .ToListAsync();
+        }
+
+        public Task<List<PhraseListItemModel>> GetListProjectedAsync(string userId)
+        {
+            return _context.Set<DPhrase>()
+                .Where(p => p.UserId == userId)
+                .Select(PhraseModelMapper.ListProjection)     // š EF‚ÅDTO‚É“Š‰e
+                .OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue)
                 .ToListAsync();
         }
 
