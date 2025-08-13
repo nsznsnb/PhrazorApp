@@ -5,3 +5,4 @@ global using PhrazorApp.Commons.Results;
 global using PhrazorApp.Commons.Themes;
 global using PhrazorApp.Infrastructure;
 global using PhrazorApp.Utils;
+global using System.Linq;

@@ -90,3 +90,22 @@ public enum PhraseGenreType
     /// </summary>
     SubGenre
 }
+
+/// <summary>
+/// ジャンル一括設定モード
+/// </summary>
+public enum BulkGenreMode
+{
+    /// <summary>
+    /// 既存を全消し→選択を追加
+    /// </summary>
+    ReplaceAll = 0,
+    /// <summary>
+    /// 既存に無いものだけ追加
+    /// </summary>
+    AddMerge = 1,
+    /// <summary>
+    /// 既存を全消し（選択は無視）
+    /// </summary>
+    ClearAll = 2  
+}

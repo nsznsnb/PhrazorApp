@@ -1,5 +1,9 @@
 ﻿@page "/phrases"
 @attribute [Authorize]
+@using MudBlazor
+@using PhrazorApp.Models
+@using PhrazorApp.Utils
+@using System.Linq.Expressions
 
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
@@ -10,7 +14,6 @@
 
 <MudStack Spacing="2">
     <SectionTitle Title="フレーズ一覧" />
-
     <!-- 上部アクション -->
     <ActionCard>
         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
@@ -25,23 +28,129 @@
             CSV読込
         </MudButton>
     </ActionCard>
-
     <BaseCard>
-        <!-- シンプル版 SelectableTable -->
         <SelectableTable TItem="PhraseListItemModel"
+                         @ref="_table"
                          Items="Elements"
                          IdSelector="@(x => x.Id)"
-                         Title="フレーズ一覧"
+                         Title=""
                          Search="true"
                          SearchPlaceholder="検索"
                          SearchBy="@(x => new[] { x.Phrase ?? string.Empty, x.Meaning ?? string.Empty })"
                          Pager="TablePagerMode.Auto"
                          RowsPerPage="@_rowsPerPage"
-                         Height="500px"
-                         OnBulkDelete="OnBulkDeleteRequested"
-                         BulkDeleteLabel="@AppConstants.LABEL_BUTTON_BULK_DELETE"
-                         MobileSelectAllLabel="全選択（検索結果）">
+                         Height="500px">
 
+            <!-- ツールバー（ページ側で全て差し込む） -->
+            <ExtraToolbar Context="tb">
+                @if (tb.IsMdUp)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                               Disabled="@(tb.SelectedCountInView == 0)"
+                               OnClick="@(() => StartTest(tb.GetSelectedIdsInView()))">
+                        テスト開始
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                        選択して復習
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.TwoTone.Label"
+                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                        カテゴリー一括設定
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Info"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.TwoTone.Bookmarks"
+                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                        フレーズ帳に追加
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.TwoTone.Delete"
+                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                        一括削除
+                    </MudButton>
+
+                    <MudSpacer />
+
+                }
+                else
+                {
+                    <MudStack Row Spacing="1" AlignItems="AlignItems.Center" Style="width:100%">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                                   FullWidth="true"
+                                   Disabled="@(tb.SelectedCountInView == 0)"
+                                   OnClick="@(() => StartTest(tb.GetSelectedIdsInView()))">
+                            テスト開始
+                        </MudButton>
+
+                        <MudMenu Dense="true" OffsetY="true">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="Color.Default"
+                                           Size="Size.Small"
+                                           StartIcon="@Icons.Material.TwoTone.MoreHoriz">
+                                    その他
+                                </MudButton>
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem Class="mud-primary-text"
+                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                             OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.PlayArrow" Color="Color.Primary" Class="mr-2" />
+                                    選択して復習
+                                </MudMenuItem>
+
+                                <MudMenuItem Class="mud-info-text"
+                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                             OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Label" Color="Color.Info" Class="mr-2" />
+                                    カテゴリー一括設定
+                                </MudMenuItem>
+
+                                <MudMenuItem Class="mud-secondary-text"
+                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                             OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks" Color="Color.Secondary" Class="mr-2" />
+                                    フレーズ帳に追加
+                                </MudMenuItem>
+
+                                <MudMenuItem Class="mud-error-text"
+                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                             OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Delete" Color="Color.Error" Class="mr-2" />
+                                    一括削除
+                                </MudMenuItem>
+                            </ChildContent>
+
+                        </MudMenu>
+                    </MudStack>
+                }
+            </ExtraToolbar>
+
+            <!-- Header -->
             <HeaderContent>
                 <MudTh>フレーズ</MudTh>
                 <MudTh style="min-width:220px;">カテゴリ</MudTh>
@@ -50,8 +159,8 @@
                 <MudTh style="min-width:200px;">操作</MudTh>
             </HeaderContent>
 
+            <!-- Rows -->
             <RowTemplate Context="x">
-                <!-- フレーズ＋意味 -->
                 <MudTd>
                     <MudStack Spacing="1">
                         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@x.Phrase</MudText>
@@ -59,7 +168,6 @@
                     </MudStack>
                 </MudTd>
 
-                <!-- カテゴリ（選択済のサブジャンル名をチップで） -->
                 <MudTd>
                     @if (x.SelectedDropItems?.Count > 0)
                     {
@@ -76,53 +184,27 @@
                     }
                 </MudTd>
 
-                <!-- 復習回数 -->
-                <MudTd Align="Align.Right" style="white-space:nowrap;">
-                    @x.ReviewCount
-                </MudTd>
+                <MudTd Align="Align.Right">@x.ReviewCount</MudTd>
 
-                <!-- 作成日時 -->
                 <MudTd style="white-space:nowrap;">
                     @DateUtil.Format(x.CreatedAt)
                 </MudTd>
 
-                <!-- 操作 -->
                 <MudTd Align="Align.Right" style="min-width:200px;">
                     <MudStack Row>
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info"
                                    StartIcon="@Icons.Material.TwoTone.Edit"
                                    OnClick="@(() => GoEdit(x.Id))">
-                            @AppConstants.LABEL_BUTTON_EDIT
+                            編集
                         </MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error"
                                    StartIcon="@Icons.Material.TwoTone.Delete"
                                    OnClick="@(() => OnDeleteButtonClickedAsync(x))">
-                            @AppConstants.LABEL_BUTTON_DELETE
+                            削除
                         </MudButton>
                     </MudStack>
                 </MudTd>
             </RowTemplate>
-
-            <!-- ツールバー拡張（テスト開始/選択して復習） -->
-            <ExtraToolbar Context="tb">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.TwoTone.PlayArrow"
-                           Disabled="@(tb.SelectedCountInView == 0)"
-                           FullWidth="@(!tb.IsMdUp)"
-                           OnClick="@(() => StartTest(tb.GetSelectedIdsInView().ToHashSet()))">
-                    テスト開始
-                </MudButton>
-
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.TwoTone.PlayArrow"
-                           Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
-                           FullWidth="@(!tb.IsMdUp)"
-                           OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                    選択して復習
-                </MudButton>
-            </ExtraToolbar>
 
             <NoRecordsContent>
                 <MudText Class="p-4">データがありません。</MudText>
@@ -132,27 +214,25 @@
 </MudStack>
 
 @code {
-    // データ
-    private List<PhraseListItemModel> Elements = new();
+    private SelectableTable<PhraseListItemModel>? _table;
 
-    // 1ページ表示件数
+    private List<PhraseListItemModel> Elements = new();
     private int _rowsPerPage = 10;
 
-    // 初期表示：一覧読込
     protected override async Task OnInitializedAsync()
     {
         var data = await UiOperationRunner.ReadWithOverlayAsync(
-            () => PhraseService.GetPhraseListAsync(),    // ★ 修正
+            () => PhraseService.GetPhraseListAsync(),
             message: AppMessages.MSG_I_PROGRESS_READ
         );
-
-        if (data is not null)
-        {
-            Elements = data;
-        }
+        if (data is not null) Elements = data;
     }
 
-    private async Task StartTest(HashSet<Guid> idsInView)
+    // --- Toolbar actions ---
+    private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
+    private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");
+
+    private void StartTest(HashSet<Guid> idsInView)
     {
         if (idsInView.Count == 0)
         {
@@ -160,79 +240,8 @@
             return;
         }
         Snackbar.Add($"テスト開始: {idsInView.Count} 件", Severity.Info);
-        // 例：NavigationManager.NavigateTo($"/phrases/test?ids={string.Join(',', idsInView)}");
     }
 
-    // 一括削除（SelectableTable から受け取る）
-    private async Task OnBulkDeleteRequested(HashSet<Guid> ids)
-    {
-        if (ids is null || ids.Count == 0)
-        {
-            Snackbar.Add("削除対象が選択されていません。", Severity.Warning);
-            return;
-        }
-
-        var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.DeleteConfirm,
-            $"選択中 {ids.Count} 件を削除します。よろしいですか？");
-        if (!ok) return;
-
-        var list = await UiOperationRunner.WriteThenReloadAsync(
-            operation: () => PhraseService.DeletePhrasesAsync(ids),
-            reloadData: () => PhraseService.GetPhraseListAsync(), // ★ 修正
-            message: AppMessages.MSG_I_PROGRESS_DELETE
-        );
-
-        if (list is not null)
-            Elements = list;
-    }
-
-    // 個別削除
-    private async Task OnDeleteButtonClickedAsync(PhraseListItemModel item) // ★ 型を修正
-    {
-        var suffix = item.Phrase.Length > 50 ? "..." : "";
-        var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
-
-        var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.DeleteConfirm,
-            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
-        if (!ok) return;
-
-        var list = await UiOperationRunner.WriteThenReloadAsync(
-            operation: () => PhraseService.DeletePhraseAsync(item.Id),
-            reloadData: () => PhraseService.GetPhraseListAsync(), // ★ 修正
-            message: AppMessages.MSG_I_PROGRESS_DELETE
-        );
-
-        if (list is not null)
-            Elements = list;
-    }
-
-    // CSV 読み込み
-    private async Task OpenCsvUploadDialog()
-    {
-        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload, PhraseEditModel>(
-            this,
-            OnCsvUploadCompleted
-        );
-    }
-
-    private async Task OnCsvUploadCompleted(List<PhraseEditModel> importedPhrases)
-    {
-        if (importedPhrases is null || importedPhrases.Count == 0) return;
-
-        // 取込後は正式APIで一覧を再読込（DTO: PhraseListItemModel）
-        var list = await UiOperationRunner.ReadNoOverlayAsync(
-            () => PhraseService.GetPhraseListAsync()
-        );
-
-        if (list is not null)
-            Elements = list;
-
-        Snackbar.Add(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN, Severity.Success);
-    }
-
-    // ▼ 選択して復習（全選択セットを受け取る）
     private void StartReviewSelected(HashSet<Guid> selectedIds)
     {
         if (selectedIds.Count == 0)
@@ -248,12 +257,105 @@
             return;
         }
 
-        // 表＝英語( Phrase )、裏＝日本語( Meaning )
         ReviewSession.Set(selected, x => x.Phrase, x => x.Meaning);
         NavigationManager.NavigateTo("/phrases/review?shuffle=true&loop=true");
     }
 
-    // ナビ
-    private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
-    private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");
+    private async Task OpenCsvUploadDialog()
+    {
+        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload, PhraseEditModel>(
+            this,
+            OnCsvUploadCompleted
+        );
+    }
+
+    private async Task OnCsvUploadCompleted(List<PhraseEditModel> _)
+    {
+        var list = await UiOperationRunner.ReadNoOverlayAsync(() => PhraseService.GetPhraseListAsync());
+        if (list is not null) Elements = list;
+        Snackbar.Add(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN, Severity.Success);
+    }
+
+    private async Task OnBulkDeleteRequested(HashSet<Guid> ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            Snackbar.Add("削除対象が選択されていません。", Severity.Warning);
+            return;
+        }
+
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DeleteConfirm,
+            $"選択中 {ids.Count} 件を削除します。よろしいですか？");
+        if (!ok) return;
+
+        var list = await UiOperationRunner.WriteThenReloadAsync(
+            operation: () => PhraseService.DeletePhrasesAsync(ids),
+            reloadData: () => PhraseService.GetPhraseListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
+        );
+
+        if (list is not null) Elements = list;
+
+        // 即時に選択をクリア（UXの安全側）
+        _table?.ClearSelection();
+    }
+
+    private async Task OpenBulkGenreDialog(HashSet<Guid> ids)
+    {
+        if (ids.Count == 0)
+        {
+            Snackbar.Add("対象が選択されていません。", Severity.Warning);
+            return;
+        }
+
+        await DialogService.ShowWithParamsAndCallbackAsync<DialogBulkSetGenres, bool>(
+            title: "カテゴリ一括設定",
+            caller: this,
+            values: new (Expression<Func<DialogBulkSetGenres, object?>>, object?)[] {
+                (x => x.TargetIds, ids)
+            },
+            callbackSelector: x => x.OnApplied,
+            handler: async _ =>
+            {
+                // ★ 反映後は一覧を再読込して正値（CreatedAt/カテゴリ/復習回数）を反映
+                var list = await UiOperationRunner.ReadNoOverlayAsync(() => PhraseService.GetPhraseListAsync());
+                if (list is not null) Elements = list;
+                Snackbar.Add("一括設定が完了しました。", Severity.Success);
+            },
+            options: DialogServiceExtensions.OptionsSm()
+        );
+    }
+
+    private Task OpenBulkPhrasebookDialog(HashSet<Guid> ids)
+    {
+        if (ids.Count == 0)
+        {
+            Snackbar.Add("対象が選択されていません。", Severity.Warning);
+            return Task.CompletedTask;
+        }
+        // TODO: フレーズ帳選択ダイアログを開く → 反映後 Elements 再読込
+        Snackbar.Add("フレーズ帳への一括追加は未実装です。", Severity.Info);
+        return Task.CompletedTask;
+    }
+
+    // 個別削除
+    private async Task OnDeleteButtonClickedAsync(PhraseListItemModel item)
+    {
+        var suffix = item.Phrase.Length > 50 ? "..." : "";
+        var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
+
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DeleteConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
+        if (!ok) return;
+
+        var list = await UiOperationRunner.WriteThenReloadAsync(
+            operation: () => PhraseService.DeletePhraseAsync(item.Id),
+            reloadData: () => PhraseService.GetPhraseListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
+        );
+
+        if (list is not null) Elements = list;
+    }
 }
