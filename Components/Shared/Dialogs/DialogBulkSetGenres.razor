@@ -1,0 +1,92 @@
+﻿@using PhrazorApp.Models
+@using MudBlazor
+
+<DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
+                   DialogTitle="カテゴリ一括設定"
+                   ExecuteButtonText="反映"
+                   CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
+                   OnExecuteAsync="ApplyAsync">
+
+    <MudStack Spacing="2">
+        <MudRadioGroup T="BulkGenreMode" @bind-Selected="Mode">
+            <MudRadio T="BulkGenreMode"
+                      Option="BulkGenreMode.ReplaceAll"
+                      Color="Color.Primary">
+                既存を全て入れ替え
+            </MudRadio>
+
+            <MudRadio T="BulkGenreMode"
+                      Option="BulkGenreMode.AddMerge"
+                      Color="Color.Primary">
+                既存に追加（重複は無視）
+            </MudRadio>
+
+            <MudRadio T="BulkGenreMode"
+                      Option="BulkGenreMode.ClearAll"
+                      Color="Color.Primary">
+                カテゴリを全てクリア
+            </MudRadio>
+        </MudRadioGroup>
+
+        @if (Mode != BulkGenreMode.ClearAll)
+        {
+            <ItemDropSelector @ref="_selector"
+                              @bind-SelectedItems="Selected"
+                              MaxSelection="3"
+                              UnassignedLabel="カテゴリ"
+                              OnAddGenreClicked="OpenGenreDialog" />
+        }
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            すべての選択フレーズに対して上記の操作を適用します。
+        </MudText>
+    </MudStack>
+</DialogBaseWrapper>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public HashSet<Guid> TargetIds { get; set; } = new();
+    [Parameter] public EventCallback<bool> OnApplied { get; set; }
+
+    [Inject] private UiOperationRunner UiOperationRunner { get; set; } = default!;
+    [Inject] private PhraseService PhraseService { get; set; } = default!;
+    [Inject] private IDialogService DialogService { get; set; } = default!;
+
+    private ItemDropSelector? _selector;
+    private List<DropItemModel> Selected = new();
+    private BulkGenreMode Mode = BulkGenreMode.ReplaceAll;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Yield();
+            await _selector?.ReloadAsync(Selected)!;
+        }
+    }
+
+    private async Task OpenGenreDialog()
+    {
+        var dialog = DialogService.Show<DialogGenreForm>("ジャンル登録",
+            new DialogParameters { { "GenreId", (Guid?)null } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await _selector!.ReloadAsync(Selected); // 登録直後に再読込
+        }
+    }
+
+    private async ValueTask<bool> ApplyAsync()
+    {
+        var ok = await UiOperationRunner.WriteAsync(
+            () => PhraseService.SetGenresBulkAsync(TargetIds, Selected, Mode),
+            message: AppMessages.MSG_I_PROGRESS_SAVE
+        );
+
+        if (!ok.IsSuccess) return false;
+
+        if (OnApplied.HasDelegate) await OnApplied.InvokeAsync(true);
+        return true; // ダイアログは成功時に閉じる想定
+    }
+}
