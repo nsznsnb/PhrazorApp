@@ -74,16 +74,18 @@ public static class DialogServiceExtensions
         string title,
         object caller,
         (Expression<Func<TDialog, object?>> Selector, object? Value)[] values,
-        Expression<Func<TDialog, object?>> callbackSelector,
+        Expression<Func<TDialog, EventCallback<TArg>>> callbackSelector, // ★ ここを強く型付け
         Func<TArg, Task> handler,
         DialogOptions? options = null)
-        where TDialog : IComponent 
+        where TDialog : IComponent
     {
         var parameters = new DialogParameters<TDialog>();
         foreach (var (sel, val) in values)
             parameters.Add(sel, val);
 
+        // ★ EventCallback<TArg> を正しく生成して渡す
         parameters.Add(callbackSelector, EventCallback.Factory.Create(caller, handler));
+
         return dialogService.ShowAsync<TDialog>(title, parameters, options ?? OptionsSm());
     }
 
