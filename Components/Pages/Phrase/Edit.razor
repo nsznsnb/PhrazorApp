@@ -17,7 +17,7 @@
         <SectionTitle Title="@(isEdit ? "フレーズ編集" : "フレーズ新規作成")" />
         <ActionCard>
             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
-            <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
+            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
         </ActionCard>
 
         <BaseCard>
@@ -47,8 +47,8 @@
         </BaseCard>
         <ActionCard>
             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
-            <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
-            <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@AppConstants.LABEL_BUTTON_RETURN_INDEX</MudButton>
+            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
+            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@AppConstants.LABEL_BUTTON_RETURN_INDEX</MudButton>
         </ActionCard>
     </MudStack>
 </MudForm>
