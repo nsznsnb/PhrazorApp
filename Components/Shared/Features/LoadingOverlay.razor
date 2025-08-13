@@ -1,16 +1,15 @@
-﻿@* LoadingOverlay.razor *@
-@inject LoadingManager LoadingManager
+﻿@inject LoadingManager LoadingManager
+@implements IDisposable
 
 @if (ShouldShow)
 {
     <MudOverlay Visible="true"
-                Absolute="@ResolvedAbsolute"
+                Absolute="@Absolute" 
                 LightBackground="true"
-                ZIndex="@ResolvedZIndex">
+                ZIndex="@ZIndex">
         <MudPaper Elevation="12" Class="loading-panel">
             <MudStack Spacing="1" AlignItems="AlignItems.Center">
                 <MudText Typo="Typo.subtitle1">@LoadingManager.Message</MudText>
-
                 @if (LoadingManager.Indeterminate)
                 {
                     <MudProgressLinear Striped Rounded Indeterminate Class="mt-2" Style="width:220px;" />
@@ -23,6 +22,7 @@
         </MudPaper>
     </MudOverlay>
 }
+
 <style>
     .loading-panel {
         position: relative;
@@ -41,26 +41,16 @@
 @code {
     [Parameter] public OverlayScope Mode { get; set; } = OverlayScope.BodyOnly;
 
-    // 必要なら上書き可能（指定しなければ Mode から自動計算）
-    [Parameter] public int? ZIndex { get; set; }
-    [Parameter] public bool? LightBackground { get; set; }
-    [Parameter] public bool? Absolute { get; set; }
+    private bool ShouldShow => LoadingManager.IsVisible && LoadingManager.Scope == Mode;
+    private bool Absolute => Mode == OverlayScope.BodyOnly; // BodyOnly=親を覆う, Global=全画面
+    private int ZIndex => Mode == OverlayScope.BodyOnly ? AppZIndex.ContentOverlay
+                                                             : AppZIndex.GlobalOverlay;
 
-    private bool ShouldShow =>
-        LoadingManager.IsVisible && LoadingManager.Scope == Mode;
-
-    private int ResolvedZIndex =>
-        ZIndex ?? (Mode == OverlayScope.BodyOnly ? AppZIndex.ContentOverlay : AppZIndex.GlobalOverlay);
-
-
-    private bool ResolvedAbsolute =>
-        Absolute ?? (Mode == OverlayScope.BodyOnly); // Content=親内だけ覆う, Global=全画面
-
-    protected override void OnInitialized()
-        => LoadingManager.VisibilityChanged += OnChanged;
+    protected override void OnInitialized() =>
+        LoadingManager.VisibilityChanged += OnChanged;
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 
-    public void Dispose()
-        => LoadingManager.VisibilityChanged -= OnChanged;
+    public void Dispose() =>
+        LoadingManager.VisibilityChanged -= OnChanged;
 }
