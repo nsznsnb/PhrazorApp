@@ -1,33 +1,50 @@
 ﻿@implements IDisposable
-
 @inject NavigationManager NavigationManager
 
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home">Home</MudNavLink>
-    <MudNavLink Href="phrases" Match="NavLinkMatch.Prefix" Icon="material-symbols-outlined/dictionary">フレーズ一覧</MudNavLink>
-    <MudNavLink Href="genres" Match="NavLinkMatch.Prefix" Icon="material-symbols-outlined/category">フレーズジャンル一覧</MudNavLink>
+    <!-- ホーム -->
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home">
+        Home
+    </MudNavLink>
+
+    <!-- フレーズ関連 -->
+    <MudNavLink Href="phrases" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Translate">
+        フレーズ一覧
+    </MudNavLink>
+
+    <!-- フレーズジャンル -->
+    <MudNavLink Href="genres" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Category">
+        フレーズジャンル一覧
+    </MudNavLink>
+
+    <!-- ★ 追加：フレーズ帳 -->
+    <MudNavLink Href="phrasebooks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.MenuBook">
+        フレーズ帳
+    </MudNavLink>
 
     <AuthorizeView>
         <Authorized>
-            <form action="Account/Logout" method="post">
+            <form action="Account/Logout" method="post" class="mt-1">
                 <AntiforgeryToken />
                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                 <button type="submit" class="mud-nav-link mud-ripple">
-                    <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Secondary" Class="mr-3" ></MudIcon> ログアウト
+                    <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Secondary" class="mr-3" />
+                    ログアウト
                 </button>
             </form>
         </Authorized>
         <NotAuthorized>
-            <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Person" >アカウント作成</MudNavLink>
-            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Password" >ログイン</MudNavLink>
+            <MudNavLink Href="Account/Register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.PersonAdd">
+                アカウント作成
+            </MudNavLink>
+            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Login">
+                ログイン
+            </MudNavLink>
         </NotAuthorized>
     </AuthorizeView>
 </MudNavMenu>
 
-
 @code {
-
-    bool _expanded = true;
     private string? currentUrl;
 
     protected override void OnInitialized()
@@ -42,9 +59,5 @@
         StateHasChanged();
     }
 
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
+    public void Dispose() => NavigationManager.LocationChanged -= OnLocationChanged;
 }
-

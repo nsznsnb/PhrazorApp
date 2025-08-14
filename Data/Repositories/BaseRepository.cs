@@ -13,6 +13,11 @@ namespace PhrazorApp.Data.Repositories
 
         protected BaseRepository(DbContext context) => _context = context;
 
+
+        // IQueryable を外に出す薄いヘルパー
+        public virtual IQueryable<TEntity> Queryable() => Set;
+
+
         public virtual Task AddAsync(TEntity entity)
         {
             Stamp(entity, isNew: true);

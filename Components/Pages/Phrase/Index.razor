@@ -581,7 +581,7 @@
 
     private async Task OnCsvUploadCompleted(List<PhraseEditModel> _)
     {
-        var list = await UiOperationRunner.ReadNoOverlayAsync(() => PhraseService.GetPhraseListAsync());
+        var list = await UiOperationRunner.ReadAsync(() => PhraseService.GetPhraseListAsync());
         if (list is not null)
         {
             Elements = list;
@@ -641,7 +641,7 @@
             callbackSelector: x => x.OnApplied,
             handler: async _ =>
             {
-                var list = await UiOperationRunner.ReadNoOverlayAsync(() => PhraseService.GetPhraseListAsync());
+                var list = await UiOperationRunner.ReadAsync(() => PhraseService.GetPhraseListAsync());
                 if (list is not null)
                 {
                     Elements = list;

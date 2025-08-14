@@ -29,16 +29,16 @@ namespace PhrazorApp.Infrastructure
         public async Task<ServiceResult<string>> GenerateImageUrlAsync(string phrase, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(phrase))
-                return ServiceResult.Failure<string>("フレーズが空です。");
+                return ServiceResult.Error<string>("フレーズが空です。");
 
             // まずプロンプトを生成
             var promptResult = await BuildPromptAsync(phrase, ct);
             if (!promptResult.IsSuccess || string.IsNullOrWhiteSpace(promptResult.Data))
-                return ServiceResult.Failure<string>(promptResult.Message ?? "画像プロンプトの生成に失敗しました。");
+                return ServiceResult.Error<string>(promptResult.Message ?? "画像プロンプトの生成に失敗しました。");
 
             var apiKey = _options.ApiKey;
             if (string.IsNullOrWhiteSpace(apiKey))
-                return ServiceResult.Failure<string>("OpenAI API キーが設定されていません。");
+                return ServiceResult.Error<string>("OpenAI API キーが設定されていません。");
 
             var size = string.IsNullOrWhiteSpace(_options.ImageSize) ? "1024x1024" : _options.ImageSize;
 
@@ -63,7 +63,7 @@ namespace PhrazorApp.Infrastructure
                 if (!res.IsSuccessStatusCode)
                 {
 
-                    return ServiceResult.Failure<string>($"画像生成に失敗しました。（{(int)res.StatusCode}）");
+                    return ServiceResult.Error<string>($"画像生成に失敗しました。（{(int)res.StatusCode}）");
                 }
 
                 using var doc = JsonDocument.Parse(json);
@@ -77,13 +77,13 @@ namespace PhrazorApp.Infrastructure
                         return ServiceResult.Success(url!, "画像を生成しました。");
                 }
 
-                return ServiceResult.Failure<string>("画像生成レスポンスの解析に失敗しました。");
+                return ServiceResult.Error<string>("画像生成レスポンスの解析に失敗しました。");
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogErrorWithContext(LogEvents.GetItem, ex, "画像生成で例外が発生しました。");
-                return ServiceResult.Failure<string>("画像生成に失敗しました。");
+                return ServiceResult.Error<string>("画像生成に失敗しました。");
             }
         }
 
@@ -93,11 +93,11 @@ namespace PhrazorApp.Infrastructure
         public async Task<ServiceResult<string>> BuildPromptAsync(string phrase, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(phrase))
-                return ServiceResult.Failure<string>("フレーズが空です。");
+                return ServiceResult.Error<string>("フレーズが空です。");
 
             var apiKey = _options.ApiKey;
             if (string.IsNullOrWhiteSpace(apiKey))
-                return ServiceResult.Failure<string>("OpenAI API キーが設定されていません。");
+                return ServiceResult.Error<string>("OpenAI API キーが設定されていません。");
 
             var request = new
             {
@@ -124,7 +124,7 @@ namespace PhrazorApp.Infrastructure
                 if (!res.IsSuccessStatusCode)
                 {
 
-                    return ServiceResult.Failure<string>($"プロンプト生成に失敗しました。（{(int)res.StatusCode}）");
+                    return ServiceResult.Error<string>($"プロンプト生成に失敗しました。（{(int)res.StatusCode}）");
                 }
 
                 using var doc = JsonDocument.Parse(json);
@@ -137,13 +137,13 @@ namespace PhrazorApp.Infrastructure
                         return ServiceResult.Success(content!, "");
                 }
 
-                return ServiceResult.Failure<string>("プロンプト生成レスポンスの解析に失敗しました。");
+                return ServiceResult.Error<string>("プロンプト生成レスポンスの解析に失敗しました。");
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogErrorWithContext(LogEvents.GetItem, ex, "プロンプト生成で例外が発生しました。");
-                return ServiceResult.Failure<string>("プロンプト生成に失敗しました。");
+                return ServiceResult.Error<string>("プロンプト生成に失敗しました。");
             }
         }
     }

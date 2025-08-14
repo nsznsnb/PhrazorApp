@@ -138,7 +138,7 @@
         if (IsEdit && Id.HasValue)
         {
             // 読み取り（Snackbarは出さない運用）
-            var loaded = await UiOperationRunner.ReadNoOverlayAsync(
+            var loaded = await UiOperationRunner.ReadAsync(
                 () => GenreService.GetGenreViewModelAsync(Id.Value)   
             );
             model = loaded ?? new GenreModel { Id = Id.Value };

@@ -33,7 +33,7 @@ namespace PhrazorApp.Infrastructure
         public async Task<ServiceResult<string>> UploadImageAsync(string prompt, byte[] imageBytes)
         {
             if (imageBytes is null || imageBytes.Length == 0)
-                return ServiceResult.Failure<string>("画像データが空です。");
+                return ServiceResult.Error<string>("画像データが空です。");
 
             var fileName = $"{SanitizeFileName(prompt)}_{Guid.NewGuid():N}.png";
 
@@ -66,7 +66,7 @@ namespace PhrazorApp.Infrastructure
             {
                 _logger.LogError(ex, "画像の保存に失敗しました。FileName={FileName}, Container={Container}",
                                  fileName, _options.ContainerName);
-                return ServiceResult.Failure<string>("画像の保存に失敗しました。");
+                return ServiceResult.Error<string>("画像の保存に失敗しました。");
             }
         }
 

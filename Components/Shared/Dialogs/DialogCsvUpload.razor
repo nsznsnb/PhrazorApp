@@ -89,7 +89,7 @@
                 // まとめて登録
                 var created = await PhraseService.CreatePhrasesAsync(phraseModels);
                 if (!created.IsSuccess)
-                    return ServiceResult.Failure<bool>(created.Message);
+                    return ServiceResult.Error<bool>(created.Message ?? string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, "フレーズ"));
 
                 // 呼び出し元へ通知
                 await RaiseCompletedAsync(phraseModels);

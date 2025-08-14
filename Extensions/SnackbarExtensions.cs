@@ -13,7 +13,7 @@ namespace PhrazorApp.Extensions
         /// <param name="snackbar"></param>
         /// <param name="result">サービス結果</param>
         /// <returns></returns>
-        public static Snackbar? AddServiceResult(this ISnackbar snackbar, ServiceResult result)
+        public static Snackbar? AddServiceResult<T>(this ISnackbar snackbar, ServiceResult<T> result)
         {
             var message = result?.Message ?? string.Empty;
 

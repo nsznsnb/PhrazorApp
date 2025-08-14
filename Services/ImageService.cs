@@ -32,13 +32,13 @@ namespace PhrazorApp.Services
             {
                 var result = await _openAi.GenerateImageUrlAsync(prompt);
                 if (string.IsNullOrWhiteSpace(result.Data))
-                    return ServiceResult.Failure<string>("画像生成に失敗しました。");
+                    return ServiceResult.Error<string>("画像生成に失敗しました。");
                 return ServiceResult.Success(result.Data, "画像を生成しました。");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "画像生成エラー");
-                return ServiceResult.Failure<string>("画像生成に失敗しました。");
+                return ServiceResult.Error<string>("画像生成に失敗しました。");
             }
         }
 
@@ -49,13 +49,13 @@ namespace PhrazorApp.Services
             {
                 var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
                 if (bytes is null || bytes.Length == 0)
-                    return ServiceResult.Failure<byte[]>("画像のダウンロードに失敗しました。");
+                    return ServiceResult.Error<byte[]>("画像のダウンロードに失敗しました。");
                 return ServiceResult.Success(bytes, "");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "画像ダウンロードエラー: {Url}", imageUrl);
-                return ServiceResult.Failure<byte[]>("画像ダウンロードに失敗しました。");
+                return ServiceResult.Error<byte[]>("画像ダウンロードに失敗しました。");
             }
         }
 
@@ -66,18 +66,18 @@ namespace PhrazorApp.Services
             {
                 var dl = await DownloadImageAsync(imageUrl);
                 if (!dl.IsSuccess || dl.Data is null)
-                    return ServiceResult.Failure<string>(dl.Message ?? "画像の取得に失敗しました。");
+                    return ServiceResult.Error<string>(dl.Message ?? "画像の取得に失敗しました。");
 
                 var result = await _blob.UploadImageAsync(prompt, dl.Data);
                 if (string.IsNullOrWhiteSpace(result.Data))
-                    return ServiceResult.Failure<string>("画像の保存に失敗しました。");
+                    return ServiceResult.Error<string>("画像の保存に失敗しました。");
 
                 return ServiceResult.Success(result.Data, "画像を保存しました。");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "画像保存エラー: {Url}", imageUrl);
-                return ServiceResult.Failure<string>("画像保存に失敗しました。");
+                return ServiceResult.Error<string>("画像保存に失敗しました。");
             }
         }
     }

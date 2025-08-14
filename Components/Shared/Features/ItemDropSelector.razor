@@ -78,7 +78,7 @@
 
     private async Task LoadAsync()
     {
-        var allItems = await UiOperationRunner.ReadNoOverlayAsync(
+        var allItems = await UiOperationRunner.ReadAsync(
             () => GenreService.GetGenreDropItemModelListAsync()
         );
         _items = allItems ?? new List<DropItemModel>();

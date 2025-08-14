@@ -87,7 +87,7 @@
         if (isEdit)
         {
             // 編集：サービスから読み込み
-            var loaded = await UiOperationRunner.ReadNoOverlayAsync(
+            var loaded = await UiOperationRunner.ReadAsync(
                 () => PhraseService.GetPhraseEditAsync(Id!.Value)
             );
             model = loaded ?? new PhraseEditModel { Id = Id!.Value };

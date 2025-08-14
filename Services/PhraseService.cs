@@ -48,7 +48,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>作成</summary>
-        public async Task<ServiceResult> CreatePhraseAsync(PhraseEditModel model)
+        public async Task<NoContentResult> CreatePhraseAsync(PhraseEditModel model)
         {
             try
             {
@@ -65,22 +65,22 @@ namespace PhrazorApp.Services
                         await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ登録で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>一括作成</summary>
-        public async Task<ServiceResult> CreatePhrasesAsync(IEnumerable<PhraseEditModel> models)
+        public async Task<NoContentResult> CreatePhrasesAsync(IEnumerable<PhraseEditModel> models)
         {
-            if (models == null) return ServiceResult.Failure("入力が null です。");
+            if (models == null) return ServiceResultNoContent.Error("入力が null です。");
 
             var list = models.Where(m => m != null).ToList();
-            if (list.Count == 0) return ServiceResult.Failure("登録対象がありません。");
+            if (list.Count == 0) return ServiceResultNoContent.Error("登録対象がありません。");
 
             var userId = _userService.GetUserId();
 
@@ -114,21 +114,21 @@ namespace PhrazorApp.Services
                     if (phraseGenreEntities.Count > 0) await u.PhraseGenres.AddRangeAsync(phraseGenreEntities);
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ一括登録で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
-        public async Task<ServiceResult> SetGenresBulkAsync(IEnumerable<Guid> phraseIds,
+        public async Task<NoContentResult> SetGenresBulkAsync(IEnumerable<Guid> phraseIds,
                                                     List<DropItemModel> selected,
                                                     BulkGenreMode mode)
         {
             if (phraseIds is null || !phraseIds.Any())
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "対象"));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "対象"));
 
             selected ??= new();
 
@@ -185,17 +185,17 @@ namespace PhrazorApp.Services
                     if (toAdd.Count > 0) await u.PhraseGenres.AddRangeAsync(toAdd);
                 });
 
-                return ServiceResult.Success("カテゴリを一括設定しました。");
+                return ServiceResultNoContent.Success("カテゴリを一括設定しました。");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "カテゴリ一括設定で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "カテゴリ一括設定"));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "カテゴリ一括設定"));
             }
         }
 
         /// <summary>更新（画像はUpsert、ジャンルは全差し替え）</summary>
-        public async Task<ServiceResult> UpdatePhraseAsync(PhraseEditModel model)
+        public async Task<NoContentResult> UpdatePhraseAsync(PhraseEditModel model)
         {
             try
             {
@@ -240,17 +240,17 @@ namespace PhrazorApp.Services
                         await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ更新で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>削除</summary>
-        public async Task<ServiceResult> DeletePhraseAsync(Guid phraseId)
+        public async Task<NoContentResult> DeletePhraseAsync(Guid phraseId)
         {
             try
             {
@@ -269,22 +269,22 @@ namespace PhrazorApp.Services
                     await u.Phrases.DeleteAsync(phrase);
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ削除で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>一括削除</summary>
-        public async Task<ServiceResult> DeletePhrasesAsync(IEnumerable<Guid> phraseIds)
+        public async Task<NoContentResult> DeletePhrasesAsync(IEnumerable<Guid> phraseIds)
         {
             try
             {
                 if (phraseIds is null || !phraseIds.Any())
-                    return ServiceResult.Failure(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
+                    return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
 
                 var idSet = phraseIds.Distinct().ToArray(); // Guid 重複除去
 
@@ -321,12 +321,12 @@ namespace PhrazorApp.Services
                     await u.Phrases.DeleteRangeAsync(allPhrases);
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ一括削除で例外が発生しました。");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
     }

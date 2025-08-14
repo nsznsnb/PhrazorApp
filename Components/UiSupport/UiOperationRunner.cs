@@ -1,15 +1,18 @@
 ﻿using MudBlazor;
-using PhrazorApp.Extensions;     // ToSeverity()
-using PhrazorApp.Commons;        // ServiceResult, OverlayScope
+using PhrazorApp.Extensions;          // ToSeverity()
+using PhrazorApp.Commons;             // OverlayScope
+using PhrazorApp.Commons.Results;     // ServiceResult<T>, Unit
 
 namespace PhrazorApp.Components.UiSupport
 {
     /// <summary>
-    /// UI操作ランナー（キャンセルなし・公開APIは4つ）
-    /// 1) ReadAsync                   … 読込（ローディングなし）
-    /// 2) ReadWithOverlayAsync        … 読込（BodyOnly オーバーレイ）
-    /// 3) WriteAsync                  … 登録・削除（BodyOnly オーバーレイ）
-    /// 4) WriteThenReloadAsync        … 登録・削除 → 再読込（Global オーバーレイ）
+    /// UI操作ランナー（キャンセルなし）
+    /// 公開APIは4つのみ：
+    /// 1) ReadAsync                 … 読込（オーバーレイ無し）
+    /// 2) ReadWithOverlayAsync      … 読込（BodyOnly オーバーレイ）
+    /// 3) WriteAsync<T>             … 書き込み（常に Global オーバーレイ）
+    /// 4) WriteThenReloadAsync<TL,TO> … 書き込み → 再読込（常に Global オーバーレイ）
+    ///    ※ 書き込み結果の型 TO は任意（必要がなければ Unit を使う）
     /// </summary>
     public sealed class UiOperationRunner
     {
@@ -22,14 +25,11 @@ namespace PhrazorApp.Components.UiSupport
             _loading = loading;
         }
 
-        /// <summary>既定のローディング文言</summary>
         public string DefaultMessage { get; set; } = "処理中です…";
-
-        /// <summary>true: 不確定進捗</summary>
         public bool DefaultIndeterminate { get; set; } = true;
 
-        // ========================= 1) 読込（ローディングなし） =========================
-        public async Task<T?> ReadNoOverlayAsync<T>(Func<Task<ServiceResult<T>>> loadData)
+        // 1) 読込（オーバーレイ無し）
+        public async Task<T?> ReadAsync<T>(Func<Task<ServiceResult<T>>> loadData)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace PhrazorApp.Components.UiSupport
             }
         }
 
-        // ========================= 2) 読込（BodyOnly オーバーレイ） =========================
+        // 2) 読込（BodyOnly オーバーレイ）
         public async Task<T?> ReadWithOverlayAsync<T>(
             Func<Task<ServiceResult<T>>> loadData,
             string? message = null)
@@ -71,9 +71,10 @@ namespace PhrazorApp.Components.UiSupport
             }
         }
 
-        // ========================= 3) 登録・削除（BodyOnly オーバーレイ） =========================
-        public async Task<ServiceResult> WriteAsync(
-            Func<Task<ServiceResult>> operation,
+        // 3) 書き込み（常に Global オーバーレイ）
+        // 戻り値不要な書込みは Unit を使う: Func<Task<ServiceResult<Unit>>>
+        public async Task<ServiceResult<T>> WriteAsync<T>(
+            Func<Task<ServiceResult<T>>> operation,
             string? message = null)
         {
             _loading.Show(message ?? DefaultMessage, indeterminate: DefaultIndeterminate, scope: OverlayScope.Global);
@@ -88,7 +89,7 @@ namespace PhrazorApp.Components.UiSupport
             {
                 Console.Error.WriteLine(ex);
                 _snackbar.Add("処理に失敗しました。", Severity.Error);
-                return ServiceResult.Failure("処理に失敗しました。");
+                return ServiceResult.Error<T>("処理に失敗しました。");
             }
             finally
             {
@@ -96,10 +97,11 @@ namespace PhrazorApp.Components.UiSupport
             }
         }
 
-        // ===== 4) 登録・削除 → 再読込（Global オーバーレイ） =====
-        public async Task<T?> WriteThenReloadAsync<T>(
-            Func<Task<ServiceResult>> operation,
-            Func<Task<ServiceResult<T>>> reloadData,
+        // 4) 書き込み → 再読込（常に Global オーバーレイ）
+        // 書き込み結果 TO は使わない場合でも Unit でOK。再読込の結果 TL を返す。
+        public async Task<TL?> WriteThenReloadAsync<TL, TO>(
+            Func<Task<ServiceResult<TO>>> operation,
+            Func<Task<ServiceResult<TL>>> reloadData,
             string? message = null)
         {
             _loading.Show(message ?? DefaultMessage, indeterminate: DefaultIndeterminate, scope: OverlayScope.Global);

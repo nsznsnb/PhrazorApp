@@ -112,6 +112,46 @@ namespace PhrazorApp.Data.UnitOfWork
             }
         }
 
+        /// <summary>
+        /// 書き込みあり(戻り値あり)
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="work"></param>
+        /// <returns></returns>
+        public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<Repos, Task<TResult>> work)
+        {
+            await using var ctx = await _factory.CreateDbContextAsync();
+
+            var originalAutoDetect = ctx.ChangeTracker.AutoDetectChangesEnabled;
+            ctx.ChangeTracker.AutoDetectChangesEnabled = false;
+
+            var strategy = ctx.Database.CreateExecutionStrategy();
+            try
+            {
+                return await strategy.ExecuteAsync(async () =>
+                {
+                    await using var tx = await ctx.Database.BeginTransactionAsync();
+                    try
+                    {
+                        var repos = new Repos(ctx);
+                        var result = await work(repos);
+                        await ctx.SaveChangesAsync();
+                        await tx.CommitAsync();
+                        return result;
+                    }
+                    catch
+                    {
+                        try { await tx.RollbackAsync(); } catch { }
+                        throw;
+                    }
+                });
+            }
+            finally
+            {
+                ctx.ChangeTracker.AutoDetectChangesEnabled = originalAutoDetect;
+            }
+        }
+
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

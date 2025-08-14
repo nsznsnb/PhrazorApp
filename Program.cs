@@ -132,6 +132,8 @@ namespace PhrazorApp
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<GenreService>();
             builder.Services.AddScoped<PhraseService>();
+            builder.Services.AddScoped<PhraseBookService>();
+
 
             // オプションパターン
             builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));

@@ -19,40 +19,29 @@ namespace PhrazorApp.Commons.Results
         Error
     }
 
-    public class ServiceResult
+    /// <summary>結果 + メッセージ + ステータス（ジェネリックのみ）</summary>
+    public sealed class ServiceResult<T>
     {
-        public ServiceStatus Status { get; set; }
-        public string Message { get; set; } = string.Empty;
+        public ServiceStatus Status { get; init; }
+        public string? Message { get; init; }
+        public T? Data { get; init; }
 
         public bool IsSuccess => Status == ServiceStatus.Success;
         public bool IsWarning => Status == ServiceStatus.Warning;
         public bool IsError => Status == ServiceStatus.Error;
-
-        // ===== 非ジェネリック版 =====
-        public static ServiceResult Success(string? message = null)
-            => new ServiceResult { Status = ServiceStatus.Success, Message = message };
-
-        public static ServiceResult Warning(string? message = null)
-            => new ServiceResult { Status = ServiceStatus.Warning, Message = message };
-
-        public static ServiceResult Failure(string message)
-            => new ServiceResult { Status = ServiceStatus.Error, Message = message };
-
-        // ===== ジェネリック返却版 =====
-        public static ServiceResult<T> Success<T>(T data, string? message = null)
-            => new ServiceResult<T> { Status = ServiceStatus.Success, Data = data, Message = message };
-
-        public static ServiceResult<T> Warning<T>(T data, string? message = null)
-            => new ServiceResult<T> { Status = ServiceStatus.Warning, Data = data, Message = message };
-
-        public static ServiceResult<T> Failure<T>(string message)
-            => new ServiceResult<T> { Status = ServiceStatus.Error, Data = default, Message = message };
     }
 
-    public class ServiceResult<T> : ServiceResult
+    /// <summary>生成用のファクトリ（ジェネリックのみ）</summary>
+    public static class ServiceResult
     {
-        public T? Data { get; set; }
+        public static ServiceResult<T> Success<T>(T data, string? message = null)
+            => new() { Status = ServiceStatus.Success, Data = data, Message = message };
 
+        public static ServiceResult<T> Warning<T>(T data, string? message = null)
+            => new() { Status = ServiceStatus.Warning, Data = data, Message = message };
+
+        public static ServiceResult<T> Error<T>(string message)
+            => new() { Status = ServiceStatus.Error, Data = default, Message = message };
     }
 
 }

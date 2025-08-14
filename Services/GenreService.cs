@@ -59,7 +59,7 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>ジャンルの新規作成（サブジャンル未指定なら既定を1件付与）</summary>
-        public async Task<ServiceResult> CreateGenreAsync(GenreModel model)
+        public async Task<NoContentResult> CreateGenreAsync(GenreModel model)
         {
             var userId = _userService.GetUserId();
             var entity = model.ToEntity(userId);
@@ -74,17 +74,17 @@ namespace PhrazorApp.Services
                     await u.Genres.AddAsync(entity);   // MSubGenres がセットされていれば一括で追加
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル作成エラー");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>ジャンルの更新（子サブジャンルは全入れ替え、Default を必ず1件維持）</summary>
-        public async Task<ServiceResult> UpdateGenreAsync(GenreModel model)
+        public async Task<NoContentResult> UpdateGenreAsync(GenreModel model)
         {
             var userId = _userService.GetUserId();
             var incoming = model.ToEntity(userId);
@@ -116,17 +116,17 @@ namespace PhrazorApp.Services
                     await u.Genres.UpdateAsync(old);
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル更新エラー");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>ジャンルの削除（子サブジャンルも削除）</summary>
-        public async Task<ServiceResult> DeleteGenreAsync(Guid genreId)
+        public async Task<NoContentResult> DeleteGenreAsync(Guid genreId)
         {
             try
             {
@@ -142,12 +142,12 @@ namespace PhrazorApp.Services
                     await u.Genres.DeleteAsync(genre);
                 });
 
-                return ServiceResult.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル削除エラー");
-                return ServiceResult.Failure(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
 
