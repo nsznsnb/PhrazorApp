@@ -25,6 +25,27 @@
     <MudNavLink Href="tests/setup" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.FactCheck">
         フレーズテスト
     </MudNavLink>
+    <!-- ★ 共通設定（Admin のみ表示） -->
+    <AuthorizeView Roles="Admin">
+        <MudNavGroup Title="共通設定" Icon="@Icons.Material.TwoTone.AdminPanelSettings">
+            <MudNavLink Href="admin/proverbs" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.TwoTone.FormatQuote">
+                格言マスタ
+            </MudNavLink>
+            <MudNavLink Href="admin/operation-types" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.TwoTone.BuildCircle">
+                操作種別マスタ
+            </MudNavLink>
+            <MudNavLink Href="admin/review-types" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.TwoTone.Replay">
+                復習種別マスタ
+            </MudNavLink>
+            <MudNavLink Href="admin/grades" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.TwoTone.EmojiEvents">
+                成績マスタ
+            </MudNavLink>
+        </MudNavGroup>
+    </AuthorizeView>
     <AuthorizeView>
         <Authorized>
             <form action="Account/Logout" method="post" class="mt-1">

@@ -1,0 +1,21 @@
+﻿@inject NavigationManager NavigationManager
+
+@code {
+    // 必要なら外から上書きできるように
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // すでにログインページなら何もしない（ループ防止）
+        var current = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        if (current.StartsWith("Account/Login", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // 既定は現在の絶対URLを返り先に
+        var ru = ReturnUrl ?? NavigationManager.Uri;
+        var encoded = Uri.EscapeDataString(ru);
+
+        // 認証はサーバーで処理するため forceLoad=true
+        NavigationManager.NavigateTo($"Account/Login?returnUrl={encoded}", forceLoad: true);
+    }
+}
