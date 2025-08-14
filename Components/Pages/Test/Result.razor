@@ -1,0 +1,91 @@
+﻿@page "/tests/result"
+@attribute [Authorize]
+@inject TestResultSession TestResult
+@inject ReviewSession ReviewSession
+@inject GenreService GenreService   // 成績マスタ MGrade を使うなら GradeService を注入
+
+<MudStack Spacing="3" AlignItems="AlignItems.Center">
+    <!-- トップ：月桂冠風のバッジ -->
+    <img src="/images/laurel.svg" alt="Result" style="width:120px;height:120px;" />
+
+    <!-- 右上：グレード -->
+    <div style="position:absolute; top:16px; right:16px;">
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large">
+            成績：@GetGrade(TestResult.Rate())
+        </MudChip>
+    </div>
+
+    <!-- 概要 -->
+    <MudText Typo="Typo.h5">テスト結果</MudText>
+    <MudText Typo="Typo.subtitle1">
+        正解 @TestResult.Correct / 合計 @TestResult.Total（正答率 @((int)(TestResult.Rate() * 100))%）
+    </MudText>
+
+    <!-- 明細 -->
+    <BaseCard>
+        <MudTable Items="TestResult.Items" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>結果</MudTh>
+                <MudTh>英作文（Front）</MudTh>
+                <MudTh>日本語（Back）</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    @if (context.IsCorrect)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                    }
+                    else
+                    {
+
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
+                    }
+                </MudTd>
+                <MudTd>@context.Front</MudTd>
+                <MudTd>@context.Back</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </BaseCard>
+
+    <!-- ボタン -->
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong">
+            不正解だけ再テスト
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll">
+            すべて再テスト
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => NavToPhrases())">
+            終了
+        </MudButton>
+    </MudStack>
+</MudStack>
+
+@code {
+    [Inject] NavigationManager Nav { get; set; } = default!;
+
+    private string GetGrade(double rate)
+    {
+        // TODO: MGrade を参照する実装に差し替え（閾値例: S≥90, A≥75, B≥60, D<60）
+        var pct = rate * 100;
+        if (pct >= 90) return "S";
+        if (pct >= 75) return "A";
+        if (pct >= 60) return "B";
+        return "D";
+    }
+
+    private void RetestWrong()
+    {
+        var wrong = TestResult.WrongOnly();
+        ReviewSession.Set(wrong, x => x.Front, x => x.Back);
+        Nav.NavigateTo("/phrases/writing");
+    }
+
+    private void RetestAll()
+    {
+        ReviewSession.Set(TestResult.Items, x => x.Front, x => x.Back);
+        Nav.NavigateTo("/phrases/writing");
+    }
+
+    private void NavToPhrases() => Nav.NavigateTo("/phrases");
+}

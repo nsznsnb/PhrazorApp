@@ -125,6 +125,7 @@ namespace PhrazorApp
 
 
             builder.Services.AddScoped<ReviewSession>();
+            builder.Services.AddScoped<TestResultSession>();
             builder.Services.AddScoped<LoadingManager>();
             builder.Services.AddScoped<JsInteropManager>();
             builder.Services.AddScoped<UiOperationRunner>();
@@ -133,7 +134,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<GenreService>();
             builder.Services.AddScoped<PhraseService>();
             builder.Services.AddScoped<PhraseBookService>();
-
+            builder.Services.AddScoped<TestService>();
 
             // オプションパターン
             builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));

@@ -54,7 +54,8 @@ public enum DropItemType
 /// <summary>
 /// カスタムテーブルページャ表示モード
 /// </summary>
-public enum TablePagerMode { 
+public enum TablePagerMode
+{
     /// <summary>
     /// 表示
     /// </summary>
@@ -62,13 +63,14 @@ public enum TablePagerMode {
     /// <summary>
     /// 非表示
     /// </summary>
-    Off 
+    Off
 }
 
 /// <summary>
 /// オーバーレイの囲う範囲
 /// </summary>
-public enum OverlayScope { 
+public enum OverlayScope
+{
     /// <summary>
     /// ボディ部のみ
     /// </summary>
@@ -107,5 +109,7 @@ public enum BulkGenreMode
     /// <summary>
     /// 既存を全消し（選択は無視）
     /// </summary>
-    ClearAll = 2  
+    ClearAll = 2
 }
+
+public enum DateRangePreset { None, Today, Yesterday, Last7Days, Last30Days, Custom }

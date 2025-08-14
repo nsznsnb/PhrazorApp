@@ -1,0 +1,177 @@
+﻿@page "/tests/setup"
+@attribute [Authorize]
+
+@using System.Linq
+@using PhrazorApp.Commons.Constants
+@using PhrazorApp.Models
+@inject PhraseService PhraseService
+@inject GenreService GenreService
+@inject PhraseBookService PhraseBookService
+@inject ReviewSession ReviewSession
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject PhrazorApp.Components.UiSupport.UiOperationRunner UiRunner
+
+<SectionTitle Title="テスト設定" />
+
+<!-- ★ アクションは共通の ActionCard に集約 -->
+<ActionCard>
+    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+               StartIcon="@Icons.Material.TwoTone.Visibility" OnClick="PreviewAsync">
+        プレビュー
+    </MudButton>
+
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+               StartIcon="@Icons.Material.TwoTone.Style" Disabled="@(!_hasPreview)" OnClick="StartReviewAsync">
+        復習してから開始
+    </MudButton>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.TwoTone.PlayArrow" Disabled="@(!_hasPreview)" OnClick="StartTestAsync">
+        テスト開始
+    </MudButton>
+</ActionCard>
+
+<BaseCard Class="pa-4" Style="min-height: 400px;">
+
+    <!-- ★ 縦並び（大画面でも列分けしない） -->
+    <MudStack Spacing="2" Class="mt-2">
+
+        <!-- フレーズ帳：複数選択 -->
+@*         <MudSelect T="Guid"
+                   MultiSelection="true"
+                   @bind-SelectedValues="_f.PhraseBookIds">
+            @foreach (var b in _books)
+            {
+                <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>
+            }
+        </MudSelect> *@
+
+
+        <!-- ジャンル（MudList：単一選択） -->
+        <MudText Typo="Typo.caption">ジャンル</MudText>
+        <MudList T="Guid?" Hover="true" Dense="true" @bind-SelectedValue="GenreId">
+            <MudListItem T="Guid?" Value="@((Guid?)null)">（未選択）</MudListItem>
+            @foreach (var g in _genres)
+            {
+                <MudListItem T="Guid?" Value="@((Guid?)g.Id)">@g.Name</MudListItem>
+            }
+        </MudList>
+
+        <!-- サブジャンル（MudList：単一選択） -->
+        <MudText Typo="Typo.caption">サブジャンル</MudText>
+        <MudList T="Guid?" Hover="true" Dense="true" @bind-SelectedValue="_f.SubGenreId" Disabled="@(!_subGenres.Any())">
+            <MudListItem T="Guid?" Value="@((Guid?)null)">（未選択）</MudListItem>
+            @foreach (var sg in _subGenres)
+            {
+                <MudListItem T="Guid?" Value="@((Guid?)sg.Id)">@sg.Name</MudListItem>
+            }
+        </MudList>
+
+        <!-- 期間 -->
+        <MudSelect T="DateRangePreset" Label="期間"
+                   @bind-Value="_f.DatePreset" Margin="Margin.Dense" Variant="Variant.Outlined" Dense="true">
+            <MudSelectItem Value="DateRangePreset.None">指定なし</MudSelectItem>
+            <MudSelectItem Value="DateRangePreset.Today">今日</MudSelectItem>
+            <MudSelectItem Value="DateRangePreset.Yesterday">昨日</MudSelectItem>
+            <MudSelectItem Value="DateRangePreset.Last7Days">直近7日</MudSelectItem>
+            <MudSelectItem Value="DateRangePreset.Last30Days">直近30日</MudSelectItem>
+            <MudSelectItem Value="DateRangePreset.Custom">カスタム</MudSelectItem>
+        </MudSelect>
+
+        @if (_f.DatePreset == DateRangePreset.Custom)
+        {
+            <MudDatePicker Label="開始日" @bind-Date="_f.DateFrom"
+                           Margin="Margin.Dense" Variant="Variant.Outlined" />
+            <MudDatePicker Label="終了日" @bind-Date="_f.DateTo"
+                           Margin="Margin.Dense" Variant="Variant.Outlined" />
+        }
+
+        <!-- オプション -->
+        <MudSwitch T="bool" Label="テスト未実施のみ" @bind-Checked="_f.UntestedOnly" Color="Color.Primary" />
+        <MudNumericField T="int" Label="出題数" @bind-Value="_f.Limit" Min="1" Max="500"
+                         Margin="Margin.Dense" Variant="Variant.Outlined" />
+        <MudSwitch T="bool" Label="シャッフル" @bind-Checked="_f.Shuffle" Color="Color.Primary" />
+
+        <!-- プレビュー（あれば下部に縦で表示） -->
+        @if (_hasPreview)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Elevation="0" Class="mt-2">
+                対象件数：@_preview.Count 件（先頭10件）
+            </MudAlert>
+            <MudTable Items="_preview.Take(10)" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>フレーズ</MudTh>
+                    <MudTh>意味</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Phrase</MudTd>
+                    <MudTd>@context.Meaning</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudStack>
+</BaseCard>
+
+@code {
+    private TestFilterModel _f = new();
+    private List<GenreModel> _genres = new();
+    private List<SubGenreModel> _subGenres = new();
+    private List<PhraseBookListItemModel> _books = new();
+    private List<PhraseListItemModel> _preview = new();
+    private bool _hasPreview;
+
+    // ★ MudList単一選択のバインド先。setterでサブジャンルを更新（ValueChangedの二重回避）
+    private Guid? GenreId
+    {
+        get => _f.GenreId;
+        set
+        {
+            _f.GenreId = value;
+            _subGenres = _genres.FirstOrDefault(x => x.Id == value)?.SubGenres?
+                            .OrderBy(x => x.OrderNo).ToList() ?? new();
+            _f.SubGenreId = null;
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _genres = await UiRunner.ReadAsync(() => GenreService.GetGenreViewModelListAsync()) ?? new();
+        _books  = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
+    }
+
+    private async Task PreviewAsync()
+    {
+        _preview = await UiRunner.ReadWithOverlayAsync(
+                     () => PhraseService.BuildCandidatesAsync(_f),
+                     "対象を抽出中…") ?? new();
+
+        _hasPreview = _preview.Count > 0;
+        if (!_hasPreview) Snackbar.Add("該当データがありません。条件を見直してください。", Severity.Warning);
+    }
+
+    private async Task EnsurePreviewAsync()
+    {
+        if (_hasPreview) return;
+        await PreviewAsync();
+    }
+
+    private async Task StartReviewAsync()
+    {
+        await EnsurePreviewAsync();
+        if (!_hasPreview) return;
+
+        ReviewSession.Set(_preview, x => x.Phrase, x => x.Meaning);
+        Nav.NavigateTo("/phrases/review");
+    }
+
+    private async Task StartTestAsync()
+    {
+        await EnsurePreviewAsync();
+        if (!_hasPreview) return;
+
+        ReviewSession.Set(_preview, x => x.Phrase, x => x.Meaning);
+        Nav.NavigateTo("/phrases/writing");
+    }
+}

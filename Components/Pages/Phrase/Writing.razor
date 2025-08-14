@@ -1,4 +1,6 @@
 ﻿@page "/phrases/writing"
+@page "/tests/writing"
+
 @attribute [Authorize]
 
 @using System.Text
@@ -9,6 +11,8 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ReviewSession ReviewSession
+@inject TestResultSession TestResultSession
+
 
 <MudStack Spacing="2">
     <SectionTitle Title="英作文テスト" />
@@ -136,6 +140,7 @@
     private int _index;
     private int _count;
     private ReviewSession.Card _current;
+    private readonly List<TestResultSession.Row> _rows = new();
 
     // フォーム
     private AnswerForm _form = new();
@@ -268,6 +273,7 @@
         {
             _correctCount++;
             _answeredCount++;
+            _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true));
             Snackbar.Add("正解です！", Severity.Success);
             await NextAsync();
         }
@@ -282,6 +288,8 @@
             {
                 _wrongCount++;
                 _answeredCount++;
+                _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false));
+
                 Snackbar.Add("不正解。次の問題に進みます。", Severity.Error);
                 await NextAsync();
             }
@@ -302,7 +310,8 @@
     {
         if (_answeredCount >= _count)
         {
-            Navigation.NavigateTo($"/phrases/writing/result?total={_count}&correct={_correctCount}&wrong={_wrongCount}");
+            TestResultSession.Set(_rows);
+            Navigation.NavigateTo("/tests/result");
             return;
         }
 

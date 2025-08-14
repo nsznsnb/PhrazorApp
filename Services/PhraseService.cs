@@ -47,6 +47,25 @@ namespace PhrazorApp.Services
             });
         }
 
+
+        // Services/PhraseService.cs
+        public Task<ServiceResult<List<PhraseListItemModel>>> BuildCandidatesAsync(TestFilterModel filter)
+        {
+            return _uow.ReadAsync(async u =>
+            {
+                var uid = _userService.GetUserId();
+                var list = await u.Phrases.GetListByFilterProjectedAsync(uid, filter);
+
+                if (filter.Shuffle && list.Count > 1)
+                    list = list.OrderBy(_ => Guid.NewGuid()).ToList();
+
+                return ServiceResult.Success(list, "");
+            });
+        }
+
+
+
+
         /// <summary>作成</summary>
         public async Task<NoContentResult> CreatePhraseAsync(PhraseEditModel model)
         {
