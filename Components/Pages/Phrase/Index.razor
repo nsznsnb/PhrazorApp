@@ -160,10 +160,12 @@
                     <!-- ★ 復習回数：『範囲』と分かるよう1カラムで横並び表示 -->
                     <MudItem xs="12" md="4">
                         <MudStack Row Spacing="1" AlignItems="AlignItems.End">
-                            <MudNumericField T="int?" Label="復習回数(開始)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0"
+                            <MudNumericField T="int?" Label="復習回数(開始)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Step="1"
+                                             InputMode="InputMode.numeric"
                                              @bind-Value="_qReviewMin" Clearable="true" Style="min-width:120px;" />
                             <MudText Class="pb-2">〜</MudText>
-                            <MudNumericField T="int?" Label="復習回数(終了)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0"
+                            <MudNumericField T="int?" Label="復習回数(終了)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Step="1"
+                                            InputMode="InputMode.numeric"
                                              @bind-Value="_qReviewMax" Clearable="true" Style="min-width:120px;" />
                         </MudStack>
                     </MudItem>
