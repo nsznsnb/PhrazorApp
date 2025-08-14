@@ -3,6 +3,7 @@
 @using MudBlazor
 @using PhrazorApp.Models
 @using PhrazorApp.Utils
+@using System.Globalization
 @using System.Linq.Expressions
 
 @inject NavigationManager NavigationManager
@@ -14,137 +15,301 @@
 
 <MudStack Spacing="2">
     <SectionTitle Title="フレーズ一覧" />
+
     <!-- 上部アクション -->
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+        <MudButton Variant="Variant.Outlined" Size="@BtnSize" Color="Color.Info"
                    StartIcon="@Icons.Material.TwoTone.Add"
                    OnClick="GoCreate">
             新規追加
         </MudButton>
 
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
+        <MudButton Variant="Variant.Outlined" Size="@BtnSize" Color="Color.Default"
                    StartIcon="@Icons.Material.TwoTone.UploadFile"
                    OnClick="OpenCsvUploadDialog">
             CSV読込
         </MudButton>
     </ActionCard>
+
     <BaseCard>
+        <!-- 検索条件 -->
+        <MudCardHeader>
+            <CardHeaderContent>
+                <SectionTitle HeadingLevel="3" Title="検索条件" />
+            </CardHeaderContent>
+        </MudCardHeader>
+
+        <MudCardContent Class="pt-0">
+
+            <!-- 主要条件（常時表示） -->
+            <MudGrid Spacing="2" Class="mb-2">
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  @bind-Value="_qPhrase" Immediate="true" Clearable="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  @bind-Value="_qMeaning" Immediate="true" Clearable="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string"
+                               Label="カテゴリ（複数選択）"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               MultiSelection="true"
+                               Clearable="true"
+                               SelectedValues="_qCategories"
+                               SelectedValuesChanged="@( (IEnumerable<string> vs) =>
+                                   { _qCategories = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                                                      ?? new(StringComparer.OrdinalIgnoreCase);
+                                     StateHasChanged();
+                                   })">
+                        @foreach (var opt in _categoryOptions)
+                        {
+                            <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <!-- 詳細条件＋検索/クリア（md↑は左:ボタン群/右:件数。sm↓はFullWidth） -->
+            <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                <MudStack Row Spacing="1" AlignItems="@AlignItems.Center" Class="mt-1 mb-1">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="@BtnSize"
+                               StartIcon="@(_showAdvanced ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                               OnClick="@ToggleAdvanced">
+                        詳細条件
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="@BtnSize"
+                               StartIcon="@Icons.Material.TwoTone.Search"
+                               OnClick="@ApplyFilter">
+                        検索
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="@BtnSize"
+                               StartIcon="@Icons.Material.TwoTone.Clear"
+                               OnClick="@ClearFilter">
+                        クリア
+                    </MudButton>
+
+                    <MudSpacer />
+
+                    <MudText Color="Color.Secondary">表示件数: @_filtered.Count</MudText>
+                </MudStack>
+            </MudHidden>
+
+            <MudHidden Breakpoint="@Breakpoint.MdAndUp">
+                <MudStack Spacing="1" AlignItems="@AlignItems.Stretch" Class="mt-1 mb-1">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="@BtnSize"
+                               StartIcon="@(_showAdvanced ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                               FullWidth="true"
+                               OnClick="@ToggleAdvanced">
+                        詳細条件
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="@BtnSize"
+                               StartIcon="@Icons.Material.TwoTone.Search"
+                               FullWidth="true"
+                               OnClick="@ApplyFilter">
+                        検索
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="@BtnSize"
+                               StartIcon="@Icons.Material.TwoTone.Clear"
+                               FullWidth="true"
+                               OnClick="@ClearFilter">
+                        クリア
+                    </MudButton>
+
+                    <MudText Color="Color.Secondary">表示件数: @_filtered.Count</MudText>
+                </MudStack>
+            </MudHidden>
+
+            <!-- 詳細条件（折りたたみ） -->
+            <MudCollapse Expanded="@_showAdvanced" Class="mt-2">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="4">
+                        <MudTextField T="string" Label="フレーズ帳" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      @bind-Value="_qPhrasebook" Clearable="true"
+                                      HelperText="※ モデル拡張後にフィルタ適用予定" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudDateRangePicker Label="作成日（範囲）"
+                                            @bind-DateRange="_qCreatedRange"
+                                            Culture="_ja"
+                                            DateFormat="yyyy/MM/dd"
+                                            Variant="Variant.Outlined"
+                                            Margin="Margin.Dense"
+                                            Clearable="true" />
+                    </MudItem>
+                    <!-- ★ 復習回数：『範囲』と分かるよう1カラムで横並び表示 -->
+                    <MudItem xs="12" md="4">
+                        <MudStack Row Spacing="1" AlignItems="AlignItems.End">
+                            <MudNumericField T="int?" Label="復習回数(開始)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             @bind-Value="_qReviewMin" Clearable="true" Style="min-width:120px;" />
+                            <MudText Class="pb-2">〜</MudText>
+                            <MudNumericField T="int?" Label="復習回数(終了)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             @bind-Value="_qReviewMax" Clearable="true" Style="min-width:120px;" />
+                        </MudStack>
+                    </MudItem>
+
+
+                </MudGrid>
+            </MudCollapse>
+
+        </MudCardContent>
+
+        <MudDivider />
+
+        <!-- 一覧本体 -->
         <SelectableTable TItem="PhraseListItemModel"
                          @ref="_table"
-                         Items="Elements"
+                         Items="_filtered"
                          IdSelector="@(x => x.Id)"
                          Title=""
-                         Search="true"
-                         SearchPlaceholder="検索"
-                         SearchBy="BuildSearchTerms"
+                         Search="false"
                          Pager="TablePagerMode.Auto"
                          RowsPerPage="@_rowsPerPage"
                          Height="500px">
 
-            <!-- ツールバー（ページ側で全て差し込む） -->
+            <!-- ツールバー（ページ側で差し込み） -->
             <ExtraToolbar Context="tb">
+                @{
+                    var selView = tb.SelectedCountInView;                // 表示中の選択数
+                    var selAll  = tb.GetSelectedIdsAll()?.Count ?? 0;    // 全体選択数
+                    var hasAnyAll  = selAll  > 0;
+                }
+
                 @if (tb.IsMdUp)
                 {
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               Size="Size.Small"
+                               Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.PlayArrow"
-                               Disabled="@(tb.SelectedCountInView == 0)"
+                               Disabled="@(selView == 0)"
                                OnClick="@(() => StartTest(tb.GetSelectedIdsInView()))">
                         テスト開始
                     </MudButton>
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               Size="Size.Small"
+                               Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.PlayArrow"
-                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               Disabled="@(selAll == 0)"
                                OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                         選択して復習
                     </MudButton>
 
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Info"
-                               Size="Size.Small"
+                               Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.Label"
-                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               Disabled="@(selAll == 0)"
                                OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                         カテゴリー一括設定
                     </MudButton>
 
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Info"
-                               Size="Size.Small"
+                               Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.Bookmarks"
-                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                               Disabled="@(selAll == 0)"
                                OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                         フレーズ帳に追加
                     </MudButton>
 
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Error"
-                               Size="Size.Small"
-                               StartIcon="@Icons.Material.TwoTone.Delete"
-                               Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
-                               OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                        一括削除
-                    </MudButton>
+                    <!-- ★ 右端の「一括削除」にだけバッジ（右上） -->
+                    <MudBadge Content="@selAll"
+                              Max="99999"
+                              Overlap
+                              Bordered
+                              Origin="Origin.TopRight">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   Size="@BtnSize"
+                                   StartIcon="@Icons.Material.TwoTone.Delete"
+                                   Disabled="@(selAll == 0)"
+                                   OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                            一括削除
+                        </MudButton>
+                    </MudBadge>
 
                     <MudSpacer />
-
                 }
                 else
                 {
-                    <MudStack Row Spacing="1" AlignItems="AlignItems.Center" Style="width:100%">
+                    <MudStack Row Spacing="1" AlignItems="@AlignItems.Center" Style="width:100%">
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Primary"
-                                   Size="Size.Small"
+                                   Size="@BtnSize"
                                    StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                    FullWidth="true"
-                                   Disabled="@(tb.SelectedCountInView == 0)"
+                                   Disabled="@(selView == 0)"
                                    OnClick="@(() => StartTest(tb.GetSelectedIdsInView()))">
                             テスト開始
                         </MudButton>
 
                         <MudMenu Dense="true" OffsetY="true">
                             <ActivatorContent>
-                                <MudButton Variant="Variant.Outlined"
-                                           Color="Color.Default"
-                                           Size="Size.Small"
-                                           StartIcon="@Icons.Material.TwoTone.MoreHoriz">
-                                    その他
-                                </MudButton>
+                                <!-- ★ モバイルは常時表示の右端「その他」ボタンにバッジ（右上） -->
+                                <MudBadge Content="@selAll"
+                                          Max="99999"
+                                          Overlap
+                                          Bordered
+                                          Origin="Origin.TopRight">
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               Size="@BtnSize"
+                                               StartIcon="@Icons.Material.TwoTone.MoreHoriz">
+                                        その他
+                                    </MudButton>
+                                </MudBadge>
                             </ActivatorContent>
                             <ChildContent>
-                                <MudMenuItem Class="mud-primary-text"
-                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                <!-- 未選択時は Default 色 -->
+                                <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.PlayArrow" Color="Color.Primary" Class="mr-2" />
+                                    <MudIcon Icon="@Icons.Material.TwoTone.PlayArrow"
+                                             Color="@(hasAnyAll ? Color.Primary : Color.Default)" Class="mr-2" />
                                     選択して復習
                                 </MudMenuItem>
 
-                                <MudMenuItem Class="mud-info-text"
-                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Label" Color="Color.Info" Class="mr-2" />
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Label"
+                                             Color="@(hasAnyAll ? Color.Info : Color.Default)" Class="mr-2" />
                                     カテゴリー一括設定
                                 </MudMenuItem>
 
-                                <MudMenuItem Class="mud-secondary-text"
-                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks" Color="Color.Secondary" Class="mr-2" />
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks"
+                                             Color="@(hasAnyAll ? Color.Secondary : Color.Default)" Class="mr-2" />
                                     フレーズ帳に追加
                                 </MudMenuItem>
 
-                                <MudMenuItem Class="mud-error-text"
-                                             Disabled="@(((tb.GetSelectedIdsAll()?.Count) ?? 0) == 0)"
+                                <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Delete" Color="Color.Error" Class="mr-2" />
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Delete"
+                                             Color="@(hasAnyAll ? Color.Error : Color.Default)" Class="mr-2" />
                                     一括削除
                                 </MudMenuItem>
                             </ChildContent>
-
                         </MudMenu>
                     </MudStack>
                 }
@@ -153,56 +318,98 @@
             <!-- Header -->
             <HeaderContent>
                 <MudTh>フレーズ</MudTh>
-                <MudTh style="min-width:220px;">カテゴリ</MudTh>
-                <MudTh style="width:120px; white-space:nowrap; text-align:right;">復習回数</MudTh>
-                <MudTh style="width:160px; white-space:nowrap;">作成日時</MudTh>
-                <MudTh style="min-width:200px;">操作</MudTh>
+                <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                    <MudTh style="min-width:180px;">カテゴリ</MudTh>
+                </MudHidden>
+                <MudTh style="min-width:120px;">操作</MudTh>
             </HeaderContent>
 
             <!-- Rows -->
             <RowTemplate Context="x">
                 <MudTd>
                     <MudStack Spacing="1">
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@x.Phrase</MudText>
-                        <MudText Typo="Typo.subtitle1">@x.Meaning</MudText>
-                    </MudStack>
-                </MudTd>
-
-                <MudTd>
-                    @if (x.SelectedDropItems?.Count > 0)
-                    {
-                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
-                            @foreach (var c in x.SelectedDropItems)
-                            {
-                                <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">@c.Name</MudChip>
-                            }
+                        <MudStack Row AlignItems="@AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@x.Phrase</MudText>
                         </MudStack>
-                    }
-                    else
-                    {
-                        <MudText Color="Color.Secondary">—</MudText>
-                    }
-                </MudTd>
+                        <MudText Typo="Typo.subtitle1">@x.Meaning</MudText>
 
-                <MudTd Align="Align.Right">@x.ReviewCount</MudTd>
-
-                <MudTd style="white-space:nowrap;">
-                    @DateUtil.Format(x.CreatedAt)
-                </MudTd>
-
-                <MudTd Align="Align.Right" style="min-width:200px;">
-                    <MudStack Row>
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info"
-                                   StartIcon="@Icons.Material.TwoTone.Edit"
-                                   OnClick="@(() => GoEdit(x.Id))">
-                            編集
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error"
-                                   StartIcon="@Icons.Material.TwoTone.Delete"
-                                   OnClick="@(() => OnDeleteButtonClickedAsync(x))">
-                            削除
-                        </MudButton>
+                        <!-- 960px以下はカテゴリを下段に要約表示 -->
+                        <MudHidden Breakpoint="@Breakpoint.SmAndUp">
+                            <MudStack Row Wrap="@Wrap.Wrap" Spacing="1" Class="mt-1">
+                                @if (x.SelectedDropItems?.Count > 0)
+                                {
+                                    @foreach (var c in x.SelectedDropItems.Take(3))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="mr-1 mb-1">@c.Name</MudChip>
+                                    }
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
+                                }
+                            </MudStack>
+                        </MudHidden>
                     </MudStack>
+                </MudTd>
+
+                <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                    <MudTd>
+                        @if (x.SelectedDropItems?.Count > 0)
+                        {
+                            <MudStack Row Wrap="@Wrap.Wrap" Spacing="1">
+                                @foreach (var c in x.SelectedDropItems)
+                                {
+                                    <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">@c.Name</MudChip>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary">—</MudText>
+                        }
+                    </MudTd>
+                </MudHidden>
+
+                <MudTd Align="Align.Right" style="min-width:120px;">
+                    <!-- md以上：アイコンボタン -->
+                    <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                        <MudStack Row>
+                            <MudTooltip Text="編集"><MudIconButton Icon="@Icons.Material.TwoTone.Edit" Color="Color.Info" Size="@BtnSize" AriaLabel="編集" OnClick="@(() => GoEdit(x.Id))" /></MudTooltip>
+                            <MudTooltip Text="削除"><MudIconButton Icon="@Icons.Material.TwoTone.Delete" Color="Color.Error" Size="@BtnSize" AriaLabel="削除" OnClick="@(() => OnDeleteButtonClickedAsync(x))" /></MudTooltip>
+                        </MudStack>
+                    </MudHidden>
+
+                    <!-- sm以下：テキストボタン / xsはメニュー -->
+                    <MudHidden Breakpoint="@Breakpoint.MdAndUp">
+                        <MudStack Row>
+                            <MudButton Variant="Variant.Outlined" Size="@BtnSize" Color="Color.Info"
+                                       StartIcon="@Icons.Material.TwoTone.Edit"
+                                       OnClick="@(() => GoEdit(x.Id))">
+                                編集
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Size="@BtnSize" Color="Color.Error"
+                                       StartIcon="@Icons.Material.TwoTone.Delete"
+                                       OnClick="@(() => OnDeleteButtonClickedAsync(x))">
+                                削除
+                            </MudButton>
+                        </MudStack>
+                    </MudHidden>
+
+                    <MudHidden Breakpoint="@Breakpoint.SmAndUp">
+                        <MudMenu Dense OffsetY>
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.TwoTone.MoreHoriz" AriaLabel="その他" Size="@BtnSize" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem OnClick="@(() => GoEdit(x.Id))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="mr-2" /> 編集
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OnDeleteButtonClickedAsync(x))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Delete" Class="mr-2" /> 削除
+                                </MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+                    </MudHidden>
                 </MudTd>
             </RowTemplate>
 
@@ -214,10 +421,33 @@
 </MudStack>
 
 @code {
+    private const Size BtnSize = Size.Small; // このページは Small を採用（他ページは Medium）
+
+    private readonly CultureInfo _ja = new("ja-JP");
     private SelectableTable<PhraseListItemModel>? _table;
 
+    // 全件 & フィルタ後
     private List<PhraseListItemModel> Elements = new();
+    private List<PhraseListItemModel> _filtered = new();
+
+    // ページャ
     private int _rowsPerPage = 10;
+
+    // 検索モデル
+    private string? _qPhrase;
+    private string? _qMeaning;
+    private string? _qPhrasebook; // TODO: モデル拡張後に適用
+    private int? _qReviewMin;
+    private int? _qReviewMax;
+    private DateRange? _qCreatedRange;
+
+    // カテゴリ（候補 & 選択）
+    private List<string> _categoryOptions = new();
+    private HashSet<string> _qCategories = new(StringComparer.OrdinalIgnoreCase);
+
+    // 詳細条件の開閉
+    private bool _showAdvanced = false;
+    private void ToggleAdvanced() => _showAdvanced = !_showAdvanced;
 
     protected override async Task OnInitializedAsync()
     {
@@ -225,7 +455,85 @@
             () => PhraseService.GetPhraseListAsync(),
             message: AppMessages.MSG_I_PROGRESS_READ
         );
-        if (data is not null) Elements = data;
+        if (data is not null)
+        {
+            Elements = data;
+
+            // ★ 既定：直近1か月
+            _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+
+            RebuildCategoryOptions();
+            ApplyFilter();
+        }
+    }
+
+    private void ApplyFilter()
+    {
+        IEnumerable<PhraseListItemModel> q = Elements;
+
+        // フレーズ / 意味
+        if (!string.IsNullOrWhiteSpace(_qPhrase))
+            q = q.Where(x => (x.Phrase ?? "").Contains(_qPhrase.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(_qMeaning))
+            q = q.Where(x => (x.Meaning ?? "").Contains(_qMeaning.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        // カテゴリ（OR マッチ）
+        if (_qCategories.Any())
+        {
+            q = q.Where(x =>
+                (x.SelectedDropItems?.Any() ?? false) &&
+                x.SelectedDropItems.Any(di => !string.IsNullOrEmpty(di.Name) && _qCategories.Contains(di.Name))
+            );
+        }
+
+        // フレーズ帳（TODO）
+        if (!string.IsNullOrWhiteSpace(_qPhrasebook))
+        {
+            // 例: q = q.Where(x => x.PhraseBookNames.Any(n => n.Contains(_qPhrasebook.Trim(), StringComparison.OrdinalIgnoreCase)));
+        }
+
+        // ★ 復習回数：範囲正規化（min > max の場合は入れ替え）
+        int? min = _qReviewMin, max = _qReviewMax;
+        if (min.HasValue && max.HasValue && min > max) (min, max) = (max, min);
+        if (min.HasValue) q = q.Where(x => x.ReviewCount >= min.Value);
+        if (max.HasValue) q = q.Where(x => x.ReviewCount <= max.Value);
+
+        // 作成日時（両端含む）
+        var from = _qCreatedRange?.Start?.Date;
+        var to   = _qCreatedRange?.End?.Date;
+        if (from.HasValue) q = q.Where(x => x.CreatedAt.HasValue && x.CreatedAt.Value.Date >= from.Value);
+        if (to.HasValue)   q = q.Where(x => x.CreatedAt.HasValue && x.CreatedAt.Value.Date <= to.Value);
+
+        _filtered = q.ToList();
+
+        _table?.ClearSelection(); // 安全側
+        StateHasChanged();
+    }
+
+    private void ClearFilter()
+    {
+        _qPhrase = _qMeaning = _qPhrasebook = null;
+        _qCategories.Clear();
+        _qReviewMin = _qReviewMax = null;
+
+        // クリア後も直近1か月に戻す
+        _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+            // ★ 詳細条件を閉じる
+        _showAdvanced = false;
+
+        ApplyFilter();
+    }
+
+    private void RebuildCategoryOptions()
+    {
+        _categoryOptions = Elements
+            .Where(e => e.SelectedDropItems is not null)
+            .SelectMany(e => e.SelectedDropItems!)
+            .Select(di => di.Name ?? "")
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n)
+            .ToList();
     }
 
     // --- Toolbar actions ---
@@ -250,7 +558,7 @@
             return;
         }
 
-        var selected = Elements.Where(x => selectedIds.Contains(x.Id)).ToList();
+        var selected = _filtered.Where(x => selectedIds.Contains(x.Id)).ToList();
         if (selected.Count == 0)
         {
             Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
@@ -272,7 +580,14 @@
     private async Task OnCsvUploadCompleted(List<PhraseEditModel> _)
     {
         var list = await UiOperationRunner.ReadNoOverlayAsync(() => PhraseService.GetPhraseListAsync());
-        if (list is not null) Elements = list;
+        if (list is not null)
+        {
+            Elements = list;
+            RebuildCategoryOptions();
+
+            _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+            ApplyFilter();
+        }
         Snackbar.Add(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN, Severity.Success);
     }
 
@@ -295,9 +610,15 @@
             message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
-        if (list is not null) Elements = list;
+        if (list is not null)
+        {
+            Elements = list;
+            RebuildCategoryOptions();
 
-        // 即時に選択をクリア（UXの安全側）
+            _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+            ApplyFilter();
+        }
+
         _table?.ClearSelection();
     }
 
@@ -318,9 +639,15 @@
             callbackSelector: x => x.OnApplied,
             handler: async _ =>
             {
-                // ★ 反映後は一覧を再読込して正値（CreatedAt/カテゴリ/復習回数）を反映
                 var list = await UiOperationRunner.ReadNoOverlayAsync(() => PhraseService.GetPhraseListAsync());
-                if (list is not null) Elements = list;
+                if (list is not null)
+                {
+                    Elements = list;
+                    RebuildCategoryOptions();
+
+                    _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+                    ApplyFilter();
+                }
                 Snackbar.Add("一括設定が完了しました。", Severity.Success);
             },
             options: DialogServiceExtensions.OptionsSm()
@@ -334,7 +661,7 @@
             Snackbar.Add("対象が選択されていません。", Severity.Warning);
             return Task.CompletedTask;
         }
-        // TODO: フレーズ帳選択ダイアログを開く → 反映後 Elements 再読込
+
         Snackbar.Add("フレーズ帳への一括追加は未実装です。", Severity.Info);
         return Task.CompletedTask;
     }
@@ -342,7 +669,7 @@
     // 個別削除
     private async Task OnDeleteButtonClickedAsync(PhraseListItemModel item)
     {
-        var suffix = item.Phrase.Length > 50 ? "..." : "";
+        var suffix = item.Phrase.Length > 50 ? "...": "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
 
         var ok = await DialogService.ShowConfirmAsync(
@@ -356,38 +683,13 @@
             message: AppMessages.MSG_I_PROGRESS_DELETE
         );
 
-        if (list is not null) Elements = list;
-    }
-
-    private IEnumerable<string> BuildSearchTerms(PhraseListItemModel x)
-    {
-        // 基本
-        var terms = new List<string>
-    {
-        x.Phrase ?? string.Empty,
-        x.Meaning ?? string.Empty
-    };
-
-        // カテゴリ名（サブジャンル名）
-        if (x.SelectedDropItems is not null && x.SelectedDropItems.Count > 0)
-            terms.AddRange(x.SelectedDropItems.Select(c => c.Name ?? string.Empty));
-
-        // 復習回数（数字検索対応）
-        terms.Add(x.ReviewCount.ToString());
-
-        // 作成日：いくつかの書式を用意（半角/区切り違いでもヒットさせる）
-        if (x.CreatedAt.HasValue)
+        if (list is not null)
         {
-            var d = x.CreatedAt.Value;
-            terms.Add(DateUtil.Format(d));          // 既定の表示フォーマット
-            terms.Add(d.ToString("yyyy/MM/dd"));
-            terms.Add(d.ToString("yyyy-MM-dd"));
-            terms.Add(d.ToString("yyyyMMdd"));
-            terms.Add(d.ToString("yyyy/MM"));
-            terms.Add(d.ToString("yyyy-MM"));
-            terms.Add(d.Year.ToString());           // 年だけ検索も可
-        }
+            Elements = list;
+            RebuildCategoryOptions();
 
-        return terms;
+            _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+            ApplyFilter();
+        }
     }
 }
