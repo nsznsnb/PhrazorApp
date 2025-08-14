@@ -1,0 +1,11 @@
+﻿@page "/admin/settings/operation-types/edit/{id:guid?}"
+@attribute [Authorize(Roles = "Admin")]
+
+<MudStack Spacing="2">
+    <SectionTitle Title="操作種別マスタ（編集）" />
+    <BaseCard Class="pa-4">（実装予定）</BaseCard>
+</MudStack>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+}
