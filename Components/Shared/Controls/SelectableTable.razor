@@ -61,11 +61,15 @@
     <!-- Header（左端：選択チェック。デスクトップのみ） -->
     <HeaderContent>
         <MudTh style="width:48px;text-align:center;">
+
             <MudHidden Breakpoint="Breakpoint.SmAndDown">
-                <MudCheckBox T="bool"
-                             Value="@_selectAll"
-                             ValueChanged="@( (bool v) => OnSelectAllChanged(v, _lastSearchText) )"
-                             Disabled="@(!HasRows(_lastSearchText))" />
+                <MudTooltip Text="@(_selectAll ? "全解除" : "全選択")"
+                            Arrow="true" Placement="Placement.Top">
+                    <MudCheckBox T="bool"
+                                 Value="@_selectAll"
+                                 ValueChanged="@( (bool v) => OnSelectAllChanged(v, _lastSearchText) )"
+                                 Disabled="@(!HasRows(_lastSearchText))" />
+                </MudTooltip>
             </MudHidden>
         </MudTh>
         @HeaderContent
