@@ -105,24 +105,6 @@ namespace PhrazorApp
             builder.Services.AddSingleton<BlobStorageClient>();
 
 
-            // Repositoriesの登録
-            builder.Services.AddScoped<DailyUsageRepository>();
-            builder.Services.AddScoped<EnglishDiaryRepository>();
-            builder.Services.AddScoped<PhraseImageRepository>();
-            builder.Services.AddScoped<PhraseRepository>();
-            builder.Services.AddScoped<ReviewLogRepository>();
-            builder.Services.AddScoped<TestResultDetailRepository>();
-            builder.Services.AddScoped<TestResultRepository>();
-            builder.Services.AddScoped<DiaryTagRepository>();
-            builder.Services.AddScoped<GenreRepository>();
-            builder.Services.AddScoped<GradeRepository>();
-            builder.Services.AddScoped<OperationTypeRepository>();
-            builder.Services.AddScoped<PhraseGenreRepository>();
-            builder.Services.AddScoped<ProverbRepository>();
-            builder.Services.AddScoped<ReviewTypeRepository>();
-            builder.Services.AddScoped<SubGenreRepository>();
-
-
 
             builder.Services.AddScoped<ReviewSession>();
             builder.Services.AddScoped<TestResultSession>();
@@ -135,6 +117,8 @@ namespace PhrazorApp
             builder.Services.AddScoped<PhraseService>();
             builder.Services.AddScoped<PhraseBookService>();
             builder.Services.AddScoped<TestService>();
+            builder.Services.AddScoped<ProverbService>();
+
 
             // オプションパターン
             builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));
