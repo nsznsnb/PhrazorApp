@@ -13,7 +13,7 @@ namespace PhrazorApp.Components.Shared.Dialogs
         /// 任意：読み込んだデータをどう処理するか（DB登録など）を呼び出し元が注入。
         /// 成功/失敗メッセージは ServiceResult に載せて返す。
         /// </summary>
-        [Parameter] public Func<List<TItem>, Task<ServiceResult<NoContent>>>? ProcessAsync { get; set; }
+        [Parameter] public Func<List<TItem>, Task<ServiceResult<Unit>>>? ProcessAsync { get; set; }
 
         // UIカスタマイズ
         [Parameter] public string DialogTitle { get; set; } = "CSV読込";

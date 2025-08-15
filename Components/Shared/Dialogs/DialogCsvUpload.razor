@@ -85,7 +85,7 @@
             // UI側へ通知（リロード等）
             await RaiseCompletedAsync(items);
 
-            return ServiceResultNoContent.Success(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);
+            return ServiceResult.None.Success(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);
         }, message: AppMessages.MSG_I_PROGRESS_TAKE_IN);
 
         return res.IsSuccess;

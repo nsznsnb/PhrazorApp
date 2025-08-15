@@ -127,7 +127,7 @@ public static class DialogServiceExtensions
         this IDialogService dialogService,
         object caller,
         Func<List<TItem>, Task> onUploadCompleted,
-        Func<List<TItem>, Task<ServiceResult<NoContent>>>? processAsync = null,
+        Func<List<TItem>, Task<ServiceResult<Unit>>>? processAsync = null,
         string? title = null,
         string? executeText = null,
         string? accept = null,

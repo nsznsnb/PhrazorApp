@@ -31,7 +31,6 @@ namespace PhrazorApp.Commons.Results
         public bool IsError => Status == ServiceStatus.Error;
     }
 
-    /// <summary>生成用のファクトリ（ジェネリックのみ）</summary>
     public static class ServiceResult
     {
         public static ServiceResult<T> Success<T>(T data, string? message = null)
@@ -42,6 +41,18 @@ namespace PhrazorApp.Commons.Results
 
         public static ServiceResult<T> Error<T>(string message)
             => new() { Status = ServiceStatus.Error, Data = default, Message = message };
+
+        public static class None
+        {
+            public static ServiceResult<Unit> Success(string? message = null)
+                => ServiceResult.Success(Unit.Value, message);
+
+            public static ServiceResult<Unit> Warning(string? message = null)
+                => ServiceResult.Warning(Unit.Value, message);
+
+            public static ServiceResult<Unit> Error(string message)
+                => ServiceResult.Error<Unit>(message);
+        }
     }
 
 }

@@ -123,13 +123,13 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>フレーズ帳アイテムの追加（複数可／重複は自動除外）</summary>
-        public async Task<NoContentResult> CreateAsync(Guid phraseBookId, IEnumerable<Guid> phraseIds)
+        public async Task<ServiceResult<Unit>> CreateAsync(Guid phraseBookId, IEnumerable<Guid> phraseIds)
         {
             try
             {
                 var ids = (phraseIds ?? Array.Empty<Guid>()).Distinct().ToList();
                 if (ids.Count == 0)
-                    return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "追加対象"));
+                    return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "追加対象"));
 
                 await _uow.ExecuteInTransactionAsync(async u =>
                 {
@@ -151,23 +151,23 @@ namespace PhrazorApp.Services
                         await u.PhraseBookItems.AddRangeAsync(toAdd);
                 });
 
-                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ帳アイテム追加で例外が発生しました。");
-                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>フレーズ帳の名称更新</summary>
-        public async Task<NoContentResult> UpdateAsync(Guid phraseBookId, string newName)
+        public async Task<ServiceResult<Unit>> UpdateAsync(Guid phraseBookId, string newName)
         {
             try
             {
                 var trimmed = (newName ?? string.Empty).Trim();
                 if (string.IsNullOrWhiteSpace(trimmed))
-                    return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "名称"));
+                    return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "名称"));
 
                 await _uow.ExecuteInTransactionAsync(async u =>
                 {
@@ -180,17 +180,17 @@ namespace PhrazorApp.Services
                     await u.PhraseBooks.UpdateAsync(book);
                 });
 
-                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ帳更新で例外が発生しました。");
-                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>フレーズ帳の削除（中身ごと）</summary>
-        public async Task<NoContentResult> DeleteAsync(Guid phraseBookId)
+        public async Task<ServiceResult<Unit>> DeleteAsync(Guid phraseBookId)
         {
             try
             {
@@ -210,23 +210,23 @@ namespace PhrazorApp.Services
                     await u.PhraseBooks.DeleteAsync(book);
                 });
 
-                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ帳削除で例外が発生しました。");
-                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
             }
         }
 
         /// <summary>フレーズ帳アイテムの削除（複数可）</summary>
-        public async Task<NoContentResult> DeleteAsync(Guid phraseBookId, IEnumerable<Guid> phraseIds)
+        public async Task<ServiceResult<Unit>> DeleteAsync(Guid phraseBookId, IEnumerable<Guid> phraseIds)
         {
             try
             {
                 var ids = (phraseIds ?? Array.Empty<Guid>()).Distinct().ToArray();
                 if (ids.Length == 0)
-                    return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
+                    return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
 
                 await _uow.ExecuteInTransactionAsync(async u =>
                 {
@@ -240,12 +240,12 @@ namespace PhrazorApp.Services
                     await u.PhraseBookItems.DeleteRangeAsync(targets);
                 });
 
-                return ServiceResultNoContent.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "フレーズ"));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "フレーズ"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ帳アイテム削除で例外が発生しました。");
-                return ServiceResultNoContent.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, "フレーズ"));
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, "フレーズ"));
             }
         }
     }

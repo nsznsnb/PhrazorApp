@@ -37,10 +37,10 @@ namespace PhrazorApp.Services
             });
         }
 
-        public async Task<NoContentResult> UpsertAsync(ProverbModel model)
+        public async Task<ServiceResult<Unit>> UpsertAsync(ProverbModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Text))
-                return ServiceResultNoContent.Error("格言は必須です。");
+                return ServiceResult.None.Success("格言は必須です。");
 
             // 正規化（null/trimをここで揃える）
             var text = model.Text.Trim();
@@ -74,16 +74,16 @@ namespace PhrazorApp.Services
                     }
                 });
 
-                return ServiceResultNoContent.Success($"{MSG_PREFIX}を保存しました。");
+                return ServiceResult.None.Success($"{MSG_PREFIX}を保存しました。");
             }
             catch (Exception ex)
             {
                 _log.LogError(ex, "Proverb upsert error");
-                return ServiceResultNoContent.Error($"{MSG_PREFIX}の保存に失敗しました。");
+                return ServiceResult.None.Success($"{MSG_PREFIX}の保存に失敗しました。");
             }
         }
 
-        public async Task<NoContentResult> DeleteAsync(Guid id)
+        public async Task<ServiceResult<Unit>> DeleteAsync(Guid id)
         {
             try
             {
@@ -92,19 +92,19 @@ namespace PhrazorApp.Services
                     var e = await u.Proverbs.GetByIdAsync(id) ?? throw new InvalidOperationException("not found");
                     await u.Proverbs.DeleteAsync(e);
                 });
-                return ServiceResultNoContent.Success($"{MSG_PREFIX}を削除しました。");
+                return ServiceResult.None.Success($"{MSG_PREFIX}を削除しました。");
             }
             catch (Exception ex)
             {
                 _log.LogError(ex, "Proverb delete error");
-                return ServiceResultNoContent.Error($"{MSG_PREFIX}の削除に失敗しました。");
+                return ServiceResult.None.Error($"{MSG_PREFIX}の削除に失敗しました。");
             }
         }
 
         /// <summary>CSV 行の Upsert（Text+Author をキー）</summary>
-        public async Task<NoContentResult> ImportCsvAsync(IEnumerable<ProverbImportDto> rows)
+        public async Task<ServiceResult<Unit>> ImportCsvAsync(IEnumerable<ProverbImportDto> rows)
         {
-            if (rows is null) return ServiceResultNoContent.Error("CSV にデータがありません。");
+            if (rows is null) return ServiceResult.None.Error("CSV にデータがありません。");
 
             try
             {
@@ -126,12 +126,12 @@ namespace PhrazorApp.Services
                     await u.Proverbs.UpsertRangeByTextAuthorAsync(ents);
                 });
 
-                return ServiceResultNoContent.Success("CSV を取り込みました。");
+                return ServiceResult.None.Success("CSV を取り込みました。");
             }
             catch (Exception ex)
             {
                 _log.LogError(ex, "Proverb CSV import error");
-                return ServiceResultNoContent.Error("CSV 取込に失敗しました。");
+                return ServiceResult.None.Success("CSV 取込に失敗しました。");
             }
         }
     }
