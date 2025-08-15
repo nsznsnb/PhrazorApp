@@ -26,7 +26,7 @@ public partial class DDailyUsage
     /// <summary>
     /// 操作回数
     /// </summary>
-    public int? OperationCount { get; set; }
+    public int OperationCount { get; set; }
 
     public virtual MOperationType OperationType { get; set; } = null!;
 }

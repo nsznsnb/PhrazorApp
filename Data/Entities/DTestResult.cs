@@ -21,7 +21,7 @@ public partial class DTestResult
     /// <summary>
     /// 成績ID
     /// </summary>
-    public Guid? GradeId { get; set; }
+    public Guid GradeId { get; set; }
 
     /// <summary>
     /// 完了フラグ
@@ -36,14 +36,14 @@ public partial class DTestResult
     /// <summary>
     /// 作成日時
     /// </summary>
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>
     /// 更新日時
     /// </summary>
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public virtual ICollection<DTestResultDetail> DTestResultDetails { get; set; } = new List<DTestResultDetail>();
 
-    public virtual MGrade? Grade { get; set; }
+    public virtual MGrade Grade { get; set; } = null!;
 }

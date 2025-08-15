@@ -21,12 +21,12 @@ public partial class DReviewLog
     /// <summary>
     /// 復習日
     /// </summary>
-    public DateTime? ReviewDate { get; set; }
+    public DateTime ReviewDate { get; set; }
 
     /// <summary>
     /// 復習種別ID
     /// </summary>
-    public Guid? ReviewTypeId { get; set; }
+    public Guid ReviewTypeId { get; set; }
 
     /// <summary>
     /// テスト結果ID
@@ -41,16 +41,16 @@ public partial class DReviewLog
     /// <summary>
     /// 作成日時
     /// </summary>
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>
     /// 更新日時
     /// </summary>
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public virtual DTestResultDetail DTestResultDetail { get; set; } = null!;
 
     public virtual DPhrase Phrase { get; set; } = null!;
 
-    public virtual MReviewType? ReviewType { get; set; }
+    public virtual MReviewType ReviewType { get; set; } = null!;
 }

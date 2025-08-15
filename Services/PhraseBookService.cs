@@ -51,7 +51,7 @@ namespace PhrazorApp.Services
                 var q = from bi in repos.PhraseBookItems.Queryable()
                         where bi.PhraseBookId == phraseBookId
                         join p in repos.Phrases.Queryable() on bi.PhraseId equals p.PhraseId
-                        orderby (p.CreatedAt ?? DateTime.MinValue) descending
+                        orderby p.CreatedAt descending
                         select p;
 
                 var rows = await q.SelectItems().ToListAsync();
@@ -75,7 +75,7 @@ namespace PhrazorApp.Services
                     .Where(p => p.UserId == uid
                                 && !exists.Contains(p.PhraseId)
                                 && (((p.Phrase ?? "").Contains(term)) || ((p.Meaning ?? "").Contains(term))))
-                    .OrderByDescending(p => (p.CreatedAt ?? DateTime.MinValue))
+                    .OrderByDescending(p => p.CreatedAt)
                     .Select(p => new PhraseSuggestionModel
                     {
                         Id = p.PhraseId,

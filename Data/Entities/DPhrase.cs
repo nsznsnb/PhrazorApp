@@ -16,7 +16,7 @@ public partial class DPhrase
     /// <summary>
     /// フレーズ
     /// </summary>
-    public string? Phrase { get; set; }
+    public string Phrase { get; set; } = null!;
 
     /// <summary>
     /// 意味
@@ -31,17 +31,17 @@ public partial class DPhrase
     /// <summary>
     /// ユーザーID
     /// </summary>
-    public string? UserId { get; set; }
+    public string UserId { get; set; } = null!;
 
     /// <summary>
     /// 作成日時
     /// </summary>
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>
     /// 更新日時
     /// </summary>
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public virtual DPhraseImage? DPhraseImage { get; set; }
 

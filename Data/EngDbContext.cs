@@ -305,6 +305,7 @@ public partial class EngDbContext : DbContext
 
             entity.HasOne(d => d.ReviewType).WithMany(p => p.DReviewLogs)
                 .HasForeignKey(d => d.ReviewTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("D_REVIEW_LOGS_FK3");
 
             entity.HasOne(d => d.DTestResultDetail).WithMany(p => p.DReviewLogs)
@@ -355,6 +356,7 @@ public partial class EngDbContext : DbContext
 
             entity.HasOne(d => d.Grade).WithMany(p => p.DTestResults)
                 .HasForeignKey(d => d.GradeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("D_TEST_RESULTS_FK1");
         });
 
