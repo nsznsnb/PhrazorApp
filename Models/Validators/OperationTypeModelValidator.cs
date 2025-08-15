@@ -11,7 +11,7 @@ namespace PhrazorApp.Models.Validators
                                 .MaximumLength(20).WithMessage("操作種別名は20文字以内で入力してください。");
             RuleFor(x => x.Code).NotEmpty().WithMessage("操作種別コードを入力してください。")
                                 .MaximumLength(50).WithMessage("操作種別コードは50文字以内で入力してください。");
-            RuleFor(x => x.Limit).GreaterThanOrEqualTo(0).When(x => x.Limit.HasValue)
+            RuleFor(x => x.Limit).GreaterThanOrEqualTo(0)
                                  .WithMessage("操作回数上限は0以上で入力してください。");
         }
     }

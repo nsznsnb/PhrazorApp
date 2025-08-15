@@ -1,0 +1,143 @@
+﻿@page "/"
+@attribute [Authorize]
+@inject UiOperationRunner UiOperationRunner
+@inject HomeDashboardService DashboardService
+
+<MudGrid GutterSize="3">
+
+    <!-- KPI: 登録フレーズ -->
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
+            <MudStack Spacing="1" Style="height:100%;">
+                <MudText Typo="Typo.subtitle2" Style="opacity:.75;">登録フレーズ数</MudText>
+                <MudText Typo="Typo.h3">@(_vm?.RegisteredPhraseCount ?? 0)</MudText>
+                <MudText Color="Color.Info" Style="margin-top:auto;">
+                    <MudIcon Icon="@Icons.Material.TwoTone.LibraryBooks" Style="margin-right:4px;" /> My Phrases
+                </MudText>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- KPI: 習得フレーズ -->
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
+            <MudStack Spacing="1" Style="height:100%;">
+                <MudText Typo="Typo.subtitle2" Style="opacity:.75;">習得フレーズ数（暫定）</MudText>
+                <MudText Typo="Typo.h3">@(_vm?.LearnedPhraseCount ?? 0)</MudText>
+                <MudText Color="Color.Success" Style="margin-top:auto;">
+                    <MudIcon Icon="@Icons.Material.TwoTone.Verified" Style="margin-right:4px;" /> Learned
+                </MudText>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- 今日の格言 -->
+    <MudItem xs="12" sm="12" md="4">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
+            <MudStack Spacing="1">
+                <MudText Typo="Typo.subtitle2" Style="opacity:.75;">今日のフレーズ（格言）</MudText>
+                @if (_vm?.TodayProverb is not null)
+                {
+                    <MudText Typo="Typo.h6" MaxLines="2">“@_vm.TodayProverb.Text”</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.8;">— @_vm.TodayProverb.Author</MudText>
+                    @if (!string.IsNullOrWhiteSpace(_vm.TodayProverb.Meaning))
+                    {
+                        <MudText Typo="Typo.caption" Style="opacity:.7; margin-top:4px;">@_vm.TodayProverb.Meaning</MudText>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">格言データがありません。</MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- 直近14日 レビュー回数（Bar） -->
+    <MudItem xs="12" sm="6">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:220px;">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">直近14日 レビュー回数</MudText>
+            <MudChart ChartType="ChartType.Bar"
+                      ChartSeries="@DailySeries"
+                      XAxisLabels="@DailyLabels" />
+        </MudPaper>
+    </MudItem>
+
+    <!-- 直近テスト 正答率（Line） -->
+    <MudItem xs="12" sm="6">
+        <MudPaper Elevation="2" Class="pa-4  rounded-xl" Style="height:220px;">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">直近テスト 正答率</MudText>
+            <MudChart ChartType="ChartType.Line"
+                      ChartSeries="@AccuracySeries"
+                      XAxisLabels="@AccuracyLabels" />
+        </MudPaper>
+    </MudItem>
+
+    <!-- 直近8週間 新規フレーズ（Bar） -->
+    <MudItem xs="12" sm="6" md="8">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">直近8週間 新規フレーズ</MudText>
+            <MudChart ChartType="ChartType.Bar"
+                      ChartSeries="@WeeklySeries"
+                      XAxisLabels="@WeeklyLabels"
+                      AxisChartOptions="@_axisChartOptions" />
+        </MudPaper>
+    </MudItem>
+
+    <!-- レビュー種別 内訳（Donut） -->
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">レビュー種別 内訳</MudText>
+            <MudChart ChartType="ChartType.Donut"
+                      ChartSeries="@BreakdownSeries"
+                      XAxisLabels="@BreakdownLabels" 
+                      AxisChartOptions="@_axisChartOptions"
+                      Height="160px"
+                      Width="80%"/>
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+@code {
+    private HomeDashboardModel? _vm;
+    private AxisChartOptions _axisChartOptions = new AxisChartOptions() {MatchBoundsToSize = true };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vm = await UiOperationRunner.ReadWithOverlayAsync(
+            () => DashboardService.GetAsync(),
+            message: AppMessages.MSG_I_PROGRESS_READ
+        ) ?? new HomeDashboardModel();
+    }
+
+    // ---- chart helpers (MudBlazor v7+) ----
+    private string[] DailyLabels
+        => _vm?.DailyReviews.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    private List<ChartSeries> DailySeries => new()
+    {
+        new ChartSeries { Name = "レビュー", Data = _vm?.DailyReviews.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
+    };
+
+    private string[] WeeklyLabels
+        => _vm?.WeeklyNewPhrases.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    private List<ChartSeries> WeeklySeries => new()
+    {
+        new ChartSeries { Name = "新規", Data = _vm?.WeeklyNewPhrases.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
+    };
+
+    private string[] BreakdownLabels
+        => _vm?.ReviewTypeBreakdown.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    private List<ChartSeries> BreakdownSeries => new()
+    {
+        new ChartSeries { Name = "内訳", Data = _vm?.ReviewTypeBreakdown.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
+    };
+
+    private string[] AccuracyLabels
+        => _vm?.TestAccuracyTimeline.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    private List<ChartSeries> AccuracySeries => new()
+    {
+        new ChartSeries { Name = "正答率(%)", Data = _vm?.TestAccuracyTimeline.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
+    };
+}

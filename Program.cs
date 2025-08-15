@@ -117,6 +117,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<PageMessageStore>();
 
             builder.Services.AddScoped<ImageService>();
+            builder.Services.AddScoped<HomeDashboardService>();
             builder.Services.AddScoped<GenreService>();
             builder.Services.AddScoped<PhraseService>();
             builder.Services.AddScoped<PhraseBookService>();
