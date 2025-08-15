@@ -1,5 +1,5 @@
 ﻿
-<DialogBaseWrapper DialogAlertType="@alertType"
+<DialogBaseWrapper DialogAlertType="@_alertType"
                      DialogTitle="@titleText"
                      ExecuteButtonText="@executeButtonText"
                      CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
@@ -14,7 +14,7 @@
     [Parameter] public DialogConfirmType DialogPattern { get; set; }
     [Parameter] public string ContentText { get; set; } = string.Empty;
 
-    private DialogAlertType alertType = DialogAlertType.Info;
+    private DialogAlertType _alertType = DialogAlertType.Info;
     private string titleText = string.Empty;
     private string executeButtonText = string.Empty;
 
@@ -23,17 +23,17 @@
         switch (DialogPattern)
         {
             case DialogConfirmType.DeleteConfirm:
-                alertType = DialogAlertType.Error;
+                _alertType = DialogAlertType.Error;
                 titleText = AppConstants.LABEL_DIALOG_TITLE_DELETE_CONFIRM;
                 executeButtonText = AppConstants.LABEL_BUTTON_DELETE;
                 break;
             case DialogConfirmType.RegisterConfirm:
-                alertType = DialogAlertType.Info;
+                _alertType = DialogAlertType.Info;
                 titleText = AppConstants.LABEL_DIALOG_TITLE_REGISTER_CONFIRM;
                 executeButtonText = AppConstants.LABEL_BUTTON_REGISTER;
                 break;
             default:
-                alertType = DialogAlertType.Info;
+                _alertType = DialogAlertType.Info;
                 titleText = "確認";
                 executeButtonText = "OK";
                 break;

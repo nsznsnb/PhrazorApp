@@ -1,25 +1,34 @@
-﻿@inject ISnackbar Snackbar
+﻿@using Blazored.FluentValidation
+@using FluentValidation.Results
+@inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject GenreService GenreService
 @inject NavigationManager NavigationManager
 @inject UiOperationRunner UiOperationRunner
+@inject IServiceProvider ServiceProvider
 
-<MudForm T="GenreModel" Model="@model" @ref="@form" Validation="@(genreValidator.ValidateValue)" ValidationDelay="0">
+<EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+    <FluentValidationValidator />
     <MudStack Spacing="2">
         <ActionCard>
-            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary"
-                       StartIcon="@Icons.Material.TwoTone.Save"
-                       OnClick="@(async () => await SubmitAsync())">
+            <!-- ❶ クリックで Validate させたいので Submit に変更 -->
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.TwoTone.Save">
                 @AppConstants.LABEL_BUTTON_REGISTER
             </MudButton>
-            <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
+
+            <MudButton Variant="Variant.Filled"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Default"
                        StartIcon="@Icons.Material.TwoTone.Block"
                        OnClick="ClearAsync">
                 @AppConstants.LABEL_BUTTON_CLEAR
             </MudButton>
         </ActionCard>
 
-        <!-- ジャンル名入力 -->
         <BaseCard>
             <MudCardHeader>
                 <CardHeaderContent>
@@ -30,19 +39,22 @@
             <MudCardContent Class="pt-0">
                 <MudGrid Spacing="1">
                     <MudItem xs="12" md="4">
-                        <MudTextField T="string" @bind-Value="@model.Name"
-                                      Margin="Margin.Dense" Variant="Variant.Outlined"
-                                      Label="ジャンル名" For="() => model.Name" ShrinkLabel />
+                        <MudTextField T="string"
+                                      @bind-Value="_model.Name"
+                                      For="() => _model.Name"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Outlined"
+                                      Label="ジャンル名"
+                                      ShrinkLabel />
                     </MudItem>
                 </MudGrid>
             </MudCardContent>
 
             <MudDivider />
 
-            <!-- サブジャンルテーブル -->
             <TableWithToolbar TItem="SubGenreModel"
                               Title="サブジャンル一覧入力"
-                              Items="@model.SubGenres"
+                              Items="@List" 
                               Height="400px"
                               Search="false"
                               Pager="TablePagerMode.Off">
@@ -62,45 +74,44 @@
                     <MudTh style="width:320px;">操作</MudTh>
                 </HeaderContent>
 
-                <RowTemplate Context="context">
+                <RowTemplate Context="sg">
                     <MudTd>
                         <MudTooltip Text="既定にする">
                             <MudIconButton Size="Size.Medium"
-                                           Icon="@(context.IsDefault ? Icons.Material.Filled.RadioButtonChecked
-                                                                                                                                                                  : Icons.Material.Filled.RadioButtonUnchecked)"
-                                           Color="@(context.IsDefault ? Color.Primary : Color.Default)"
-                                           OnClick="@(() => SetDefaultById(context.Id))" />
+                                           Icon="@(sg.IsDefault ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
+                                           Color="@(sg.IsDefault ? Color.Primary : Color.Default)"
+                                           OnClick="@(() => SetDefaultById(sg.Id))" />
                         </MudTooltip>
                     </MudTd>
 
                     <MudTd>
-                        <MudForm T="SubGenreModel" Model="@context" Validation="@(subGenreValidator.ValidateValue)" ValidationDelay="0">
-                            <MudTextField T="string" @bind-Value="@context.Name"
-                                          For="() => context.Name"
-                                          Class="pb-2" Margin="Margin.Dense" Variant="Variant.Outlined"
-                                          Label="サブジャンル名" ShrinkLabel />
-                        </MudForm>
+                        <MudTextField T="string"
+                                      @bind-Value="sg.Name"
+                                      For="() => sg.Name"
+                                      Class="pb-2"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Outlined"
+                                      Label="サブジャンル名"
+                                      ShrinkLabel />
                     </MudTd>
 
                     <MudTd>
                         <MudStack Row Spacing="1">
                             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"
                                        StartIcon="@Icons.Material.TwoTone.Delete"
-                                       OnClick="() => OnDeleteButtonClicked(context)">
+                                       OnClick="@(()=> OnDeleteButtonClicked(sg))">
                                 @AppConstants.LABEL_BUTTON_ROW_DELETE
                             </MudButton>
-
                             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
                                        StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp"
-                                       Disabled="@isFirst(context)"
-                                       OnClick="@(() => MoveUp(context))">
+                                       Disabled="@IsFirst(sg)"
+                                       OnClick="@(() => MoveUp(sg))">
                                 上へ
                             </MudButton>
-
                             <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
                                        StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown"
-                                       Disabled="@isLast(context)"
-                                       OnClick="@(() => MoveDown(context))">
+                                       Disabled="@IsLast(sg)"
+                                       OnClick="@(() => MoveDown(sg))">
                                 下へ
                             </MudButton>
                         </MudStack>
@@ -114,152 +125,158 @@
 
         </BaseCard>
     </MudStack>
-</MudForm>
+</EditForm>
 
 @code {
     [Parameter] public Guid? Id { get; set; }
     [Parameter] public bool IsDialog { get; set; } = false;
     [CascadingParameter] IMudDialogInstance? DialogInstance { get; set; }
-
     private bool IsEdit => Id.HasValue;
 
-    public GenreModel GetModel() => model;
-    private GenreModel model = new();
-    private MudForm form = default!;
-    private readonly GenreModelValidator genreValidator = new();
-    private readonly SubGenreModelValidator subGenreValidator = new();
+    private GenreModel _model = new();   // ❸ コンストラクタで new()
+    private EditContext? _editCtx;
 
-    private Guid? _defaultSubGenreId;
+    // ★ ❷ どこでも必ずこのプロパティ経由で触る（null を完全に排除）
+    private List<SubGenreModel> List => _model.SubGenres ??= new();
 
-    protected override async Task OnInitializedAsync() => await ClearAsync();
-
-    private async Task ClearAsync()
+    protected override async Task OnInitializedAsync()
     {
-        if (IsEdit && Id.HasValue)
+        // 先に空 EditContext を作っておく（ルート引数直後のレンダでエラーにしない）
+        _editCtx = new EditContext(_model);
+
+        if (IsEdit)
         {
-            // 読み取り（Snackbarは出さない運用）
             var loaded = await UiOperationRunner.ReadAsync(
-                () => GenreService.GetGenreViewModelAsync(Id.Value)   
-            );
-            model = loaded ?? new GenreModel { Id = Id.Value };
+                () => GenreService.GetGenreViewModelAsync(Id!.Value));
+            _model = loaded ?? new GenreModel { Id = Id!.Value };
         }
         else
         {
-            model = new GenreModel { Id = Guid.NewGuid() };
+            _model = new GenreModel { Id = Guid.NewGuid() };
         }
 
-        SyncDefaultStateAfterLoad();
+        // ❹ ロード後も二重で補強
+        _model.SubGenres ??= new();
 
-        if (form is not null)
-            form.ResetValidation();
+        _editCtx = new EditContext(_model);
+        SyncDefaultStateAfterLoad();
     }
+
 
     private void SyncDefaultStateAfterLoad()
     {
-        _defaultSubGenreId = model.SubGenres.FirstOrDefault(x => x.IsDefault)?.Id;
-        if (_defaultSubGenreId == null && model.SubGenres.Count > 0)
-        {
-            _defaultSubGenreId = model.SubGenres[0].Id;
-            SetDefaultById(_defaultSubGenreId.Value);
-        }
+        if (List.Count == 0) return;
+        if (!List.Any(x => x.IsDefault))
+            List[0].IsDefault = true;
     }
 
     private void OnAddButtonClicked()
     {
-        var nextOrder = model.SubGenres.Count > 0 ? model.SubGenres.Max(x => x.OrderNo) + 1 : 0;
+        var nextOrder = List.Count > 0 ? List.Max(x => x.OrderNo) + 1 : 0;
         var item = new SubGenreModel
         {
             Id = Guid.NewGuid(),
             Name = "",
-            OrderNo = nextOrder
+            OrderNo = nextOrder,
+            IsDefault = List.Count == 0
         };
-
-        if (model.SubGenres.Count == 0)
-        {
-            item.IsDefault = true;
-            _defaultSubGenreId = item.Id;
-        }
-
-        model.SubGenres.Add(item);
+        List.Add(item);
+        StateHasChanged();
     }
 
     private void OnDeleteButtonClicked(SubGenreModel item)
     {
         var wasDefault = item.IsDefault;
-        model.SubGenres.Remove(item);
+        List.Remove(item);
         ReorderSortOrder();
 
-        if (wasDefault)
-        {
-            if (model.SubGenres.Count > 0)
-                SetDefaultById(model.SubGenres[0].Id);
-        }
+        if (wasDefault && List.Count > 0)
+            List[0].IsDefault = true;
     }
 
     private void ReorderSortOrder()
     {
-        for (int i = 0; i < model.SubGenres.Count; i++)
-            model.SubGenres[i].OrderNo = i;
+        for (int i = 0; i < List.Count; i++)
+            List[i].OrderNo = i;
     }
 
     private void MoveUp(SubGenreModel item)
     {
-        var index = model.SubGenres.IndexOf(item);
+        var index = List.IndexOf(item);
         if (index > 0)
         {
-            (model.SubGenres[index], model.SubGenres[index - 1]) = (model.SubGenres[index - 1], model.SubGenres[index]);
+            (List[index], List[index - 1]) = (List[index - 1], List[index]);
             ReorderSortOrder();
         }
     }
 
     private void MoveDown(SubGenreModel item)
     {
-        var index = model.SubGenres.IndexOf(item);
-        if (index < model.SubGenres.Count - 1)
+        var index = List.IndexOf(item);
+        if (index >= 0 && index < List.Count - 1)
         {
-            (model.SubGenres[index], model.SubGenres[index + 1]) = (model.SubGenres[index + 1], model.SubGenres[index]);
+            (List[index], List[index + 1]) = (List[index + 1], List[index]);
             ReorderSortOrder();
         }
     }
 
-    private bool isFirst(SubGenreModel item) => model.SubGenres.Any() && model.SubGenres.First() == item;
-    private bool isLast(SubGenreModel item) => model.SubGenres.Any() && model.SubGenres.Last() == item;
+    private bool IsFirst(SubGenreModel item)
+        => List.Count > 0 && ReferenceEquals(List.First(), item);
+
+    private bool IsLast(SubGenreModel item)
+        => List.Count > 0 && ReferenceEquals(List.Last(), item);
 
     private void SetDefaultById(Guid id)
     {
-        foreach (var sg in model.SubGenres)
-            sg.IsDefault = sg.Id == id;
-        _defaultSubGenreId = id;
+        foreach (var sg in List) sg.IsDefault = sg.Id == id;
     }
 
-    public async Task SubmitAsync()
+    // ====== ダイアログから呼ばれる想定）======
+    public async ValueTask<bool> SubmitAsync(bool validate = true)
     {
-        await form.Validate();
-        if (!form.IsValid) return;
+        if (_editCtx is null) return false;
 
-        if (model.SubGenres.Count > 0 && !model.SubGenres.Any(x => x.IsDefault))
+        if (validate && !_editCtx.Validate())
         {
-            SetDefaultById(model.SubGenres[0].Id);
+            // 失敗時だけページレベルメッセージを発行
+            _editCtx.PublishPageLevelErrors(ServiceProvider);
+            return false;
         }
 
-        var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.RegisterConfirm,
-            string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Name));
-        if (!ok) return;
+        await SubmitCoreAsync();
+        return true;
+    }
+    private Task HandleValidSubmit() => SubmitCoreAsync();
 
-        // ★ CT なし版に差し替え
+    private async Task SubmitCoreAsync()
+    {
         var op = await UiOperationRunner.WriteAsync(
-            () => IsEdit
-                ? GenreService.UpdateGenreAsync(model)
-                : GenreService.CreateGenreAsync(model)
-            , message: AppMessages.MSG_I_PROGRESS_SAVE
-        );
+            () => IsEdit ? GenreService.UpdateGenreAsync(_model)
+                         : GenreService.CreateGenreAsync(_model),
+            message: AppMessages.MSG_I_PROGRESS_SAVE);
 
         if (!op.IsSuccess) return;
 
         if (IsDialog && DialogInstance is not null)
-            DialogInstance.Close(DialogResult.Ok(model));
+            DialogInstance.Close(DialogResult.Ok(_model));
         else
             NavigationManager.NavigateTo("/genres");
+    }
+
+    private void OnInvalidSubmit(EditContext editContext)
+    {
+
+        editContext.PublishPageLevelErrors(ServiceProvider);
+    }
+
+
+
+    private Task ClearAsync()
+    {
+        _model = new GenreModel { Id = Guid.NewGuid() };
+        _model.SubGenres ??= new();  // 念のため
+        _editCtx = new EditContext(_model);
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }

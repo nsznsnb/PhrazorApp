@@ -1,0 +1,54 @@
+﻿@using MudBlazor
+@using PhrazorApp.Components.State
+@inject PageMessageStore Store
+@implements IDisposable
+
+<MudCollapse Expanded="@_hasAny" Class="mb-2">
+    <MudPaper Class="pa-2">
+        <MudStack Spacing="1">
+            @foreach (var msg in _items)
+            {
+                <MudAlert Severity="@msg.Severity"
+                          Dense
+                          Elevation="0"
+                          Closeable="true"
+                          OnClose="@(() => Store.Remove(msg))">
+                    @msg.Text
+                </MudAlert>
+            }
+
+            @if (ShowDismissAll && _items.Count > 1)
+            {
+                <MudStack Row Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Color="Color.Default"
+                               StartIcon="@Icons.Material.TwoTone.ClearAll"
+                               OnClick="Store.Clear">
+                        すべて閉じる
+                    </MudButton>
+                </MudStack>
+            }
+        </MudStack>
+    </MudPaper>
+</MudCollapse>
+
+@code {
+    // 既定は「ページ単位でしか出せないエラーだけ表示」
+    [Parameter] public bool ErrorsOnly { get; set; } = true;
+    [Parameter] public bool ShowDismissAll { get; set; } = true;
+
+    private IReadOnlyList<PageMessage> _items =>
+        (ErrorsOnly ? Store.Items.Where(x => x.Severity == Severity.Error) : Store.Items).ToList();
+
+    private bool _hasAny => _items.Count > 0;
+
+    protected override void OnInitialized()
+    {
+        Store.Changed += OnStoreChanged;
+    }
+
+    private void OnStoreChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Store.Changed -= OnStoreChanged;
+}

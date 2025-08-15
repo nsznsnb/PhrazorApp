@@ -31,7 +31,7 @@
         @if (Mode != BulkGenreMode.ClearAll)
         {
             <ItemDropSelector @ref="_selector"
-                              @bind-SelectedItems="Selected"
+                              @bind-SelectedItems="_selected"
                               MaxSelection="3"
                               UnassignedLabel="カテゴリ"
                               OnAddGenreClicked="OpenGenreDialog" />
@@ -53,7 +53,7 @@
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
     private ItemDropSelector? _selector;
-    private List<DropItemModel> Selected = new();
+    private List<DropItemModel> _selected = new();
     private BulkGenreMode Mode = BulkGenreMode.ReplaceAll;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -61,26 +61,31 @@
         if (firstRender)
         {
             await Task.Yield();
-            await _selector?.ReloadAsync(Selected)!;
+            await _selector?.ReloadAsync(_selected)!;
         }
     }
 
     private async Task OpenGenreDialog()
     {
-        var dialog = DialogService.Show<DialogGenreForm>("ジャンル登録",
-            new DialogParameters { { "GenreId", (Guid?)null } },
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
-        var result = await dialog.Result;
-        if (!result.Canceled)
+        var dlg = await DialogService.ShowWithAsync<DialogGenreForm, Guid?>(
+            title: "ジャンル登録",
+            paramSelector: x => x.GenreId,
+            value: null,
+            options: DialogServiceExtensions.OptionsMd()
+        );
+
+        var result = await dlg.Result;
+        if (!(result?.Canceled ?? true))
         {
-            await _selector!.ReloadAsync(Selected); // 登録直後に再読込
+            await _selector!.ReloadAsync(_selected); // 登録直後に再読込
         }
+
     }
 
     private async ValueTask<bool> ApplyAsync()
     {
         var ok = await UiOperationRunner.WriteAsync(
-            () => PhraseService.SetGenresBulkAsync(TargetIds, Selected, Mode),
+            () => PhraseService.SetGenresBulkAsync(TargetIds, _selected, Mode),
             message: AppMessages.MSG_I_PROGRESS_SAVE
         );
 

@@ -1,9 +1,9 @@
 ﻿<BaseCard Elevation="@Elevation" Outlined="@Outlined" Class="@Class" Style="@Style">
     <MudCardContent Class="py-2">
-        <MudStack Row="@(Responsive? IsMdUp : true)"
+        <MudStack Row="@(Responsive? _isMdUp : true)"
                   Spacing="@Spacing"
-                  AlignItems="@(Responsive ? (IsMdUp ? AlignItems.Center : AlignItems.Stretch) : AlignItems.Center)"
-                  Class="@((Responsive && FullWidthOnSmall && !IsMdUp) ? "ac-sm-full" : null)">
+                  AlignItems="@(Responsive ? (_isMdUp ? AlignItems.Center : AlignItems.Stretch) : AlignItems.Center)"
+                  Class="@((Responsive && FullWidthOnSmall && !_isMdUp) ? "ac-sm-full" : null)">
             @ChildContent
         </MudStack>
     </MudCardContent>
@@ -12,7 +12,7 @@
 @code {
     // 追加：親レイアウトから受け取る
     [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
-    private bool IsMdUp => CurrentBreakpoint >= Breakpoint.Md;
+    private bool _isMdUp => CurrentBreakpoint >= Breakpoint.Md;
 
     // 既存
     [Parameter] public int Elevation { get; set; } = AppConstants.DEFAULT_ELEVATION;

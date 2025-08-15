@@ -2,7 +2,7 @@
 
 namespace PhrazorApp.Models.Validators
 {
-    public class FileModelValidator : AppValidator<FileModel>
+    public class FileModelValidator : AbstractValidator<FileModel>
     {
         // 最大10MB
         private const long MaxFileSize = 10 * 1024 * 1024;

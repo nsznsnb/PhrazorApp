@@ -22,10 +22,10 @@ namespace PhrazorApp.Data
         public override IdentityError LoginAlreadyAssociated() =>
             new() { Code = nameof(LoginAlreadyAssociated), Description = "このログインはすでに他のアカウントに関連付けられています。" };
 
-        public override IdentityError InvalidUserName(string userName) =>
+        public override IdentityError InvalidUserName(string? userName) =>
             new() { Code = nameof(InvalidUserName), Description = $"ユーザーID '{userName}' は無効です。" };
 
-        public override IdentityError InvalidEmail(string email) =>
+        public override IdentityError InvalidEmail(string? email) =>
             new() { Code = nameof(InvalidEmail), Description = $"メールアドレス '{email}' は無効です。" };
 
         public override IdentityError DuplicateUserName(string userName) =>
@@ -34,7 +34,7 @@ namespace PhrazorApp.Data
         public override IdentityError DuplicateEmail(string email) =>
             new() { Code = nameof(DuplicateEmail), Description = $"メールアドレス '{email}' は既に使用されています。" };
 
-        public override IdentityError InvalidRoleName(string role) =>
+        public override IdentityError InvalidRoleName(string? role) =>
             new() { Code = nameof(InvalidRoleName), Description = $"ロール名 '{role}' は無効です。" };
 
         public override IdentityError DuplicateRoleName(string role) =>

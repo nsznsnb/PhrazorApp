@@ -1,5 +1,6 @@
 ﻿@typeparam TItem
 @using Microsoft.AspNetCore.Components.Forms
+@using Blazored.FluentValidation
 @using MudBlazor
 @using PhrazorApp.Utils
 @inherits PhrazorApp.Components.Shared.Dialogs.DialogCsvUploadBase<TItem>
@@ -12,14 +13,17 @@
                    ContentClass="py-5 my-1"
                    OnExecuteAsync="SubmitAsync">
 
-    <MudForm Model="@model" @ref="@form" Validation="@(ValidationRules.ValidateValue)" ValidationDelay="0">
+    <EditForm EditContext="_editCtx">
+        <!-- Blazored.FluentValidation を有効化（アセンブリスキャンは不要に） -->
+        <FluentValidationValidator DisableAssemblyScanning="true" />
+
         <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
 
         <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
             <MudFileUpload T="IBrowserFile"
                            @ref="_file"
-                           For="@(() => model.File)"
-                           @bind-Files="model.File"
+                           For="@(() => _model.File)"
+                           @bind-Files="_model.File"
                            Accept="@Accept"
                            MaximumFileCount="1"
                            OnFilesChanged="OnFilesChanged"
@@ -34,55 +38,58 @@
             </MudFileUpload>
 
             <MudList T="string">
-                <MudListItem>@(model.File?.Name ?? string.Empty)</MudListItem>
+                <MudListItem>@(_model.File?.Name ?? string.Empty)</MudListItem>
             </MudList>
         </MudStack>
 
-        @if (_fvFileErrors?.Any() == true)
-        {
-            @foreach (var msg in _fvFileErrors)
-            {
-                <MudText Color="Color.Error" Class="mt-1">@msg</MudText>
-            }
-        }
-    </MudForm>
+    </EditForm>
 </DialogBaseWrapper>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    private MudForm form = default!;
-    private FileModel model = new();
-    private FileModelValidator ValidationRules = new();
+    private readonly FileModel _model = new();
+    private EditContext? _editCtx;
     private MudFileUpload<IBrowserFile> _file = default!;
-    private List<string> _fvFileErrors = new();
 
-    private async Task OnFilesChanged(InputFileChangeEventArgs _) => await UpdateFileValidationAsync();
-
-    private async Task UpdateFileValidationAsync()
+    protected override void OnInitialized()
     {
-        var result = await ValidationRules.ValidateValue(model, nameof(FileModel.File));
-        _fvFileErrors = result?.ToList() ?? new();
+        // EditContext をモデルに紐づけ
+        _editCtx = new EditContext(_model);
+    }
+
+    private Task OnFilesChanged(InputFileChangeEventArgs _)
+    {
+        // ファイル選択時に当該フィールドの再検証を明示的にトリガー
+        _editCtx?.NotifyFieldChanged(new FieldIdentifier(_model, nameof(FileModel.File)));
+        return Task.CompletedTask;
     }
 
     private async ValueTask<bool> SubmitAsync()
     {
-        await form.Validate();
-        if (!form.IsValid || model.File is null) return false;
+        if (_editCtx is null) return false;
+
+        // Blazored.FluentValidation 経由で FluentValidation を実行
+        if (!_editCtx.Validate())
+            return false;
+
+        // ファイルはバリデータ側で NotNull/サイズ/拡張子 等をチェック済み
+        if (_model.File is null) return false;
 
         var res = await UiOperationRunner.WriteAsync(async () =>
         {
-            using var stream = model.File.OpenReadStream(MaxSizeMB * 1024 * 1024);
+            using var stream = _model.File.OpenReadStream((MaxSizeMB > 0 ? MaxSizeMB : 10) * 1024 * 1024);
+
             var items = await CsvUtil.ReadToListAsync<TItem>(stream);
 
-            // 任意の処理（DB反映など）を呼び出し側から注入
+            // 呼び出し側で DB 反映などを差し込みたい場合
             if (ProcessAsync is not null)
             {
                 var op = await ProcessAsync(items);
-                if (!op.IsSuccess) return op; // 失敗時はここで終了
+                if (!op.IsSuccess) return op; // 失敗はそのまま返す
             }
 
-            // UI側へ通知（リロード等）
+            // 呼び出し元へ通知（テーブル再読込など）
             await RaiseCompletedAsync(items);
 
             return ServiceResult.None.Success(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);

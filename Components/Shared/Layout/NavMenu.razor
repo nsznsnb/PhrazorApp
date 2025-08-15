@@ -50,7 +50,7 @@
         <Authorized>
             <form action="Account/Logout" method="post" class="mt-1">
                 <AntiforgeryToken />
-                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
                 <button type="submit" class="mud-nav-link mud-ripple">
                     <MudIcon Icon="@Icons.Material.TwoTone.Logout" Color="Color.Secondary" class="mr-3" />
                     ログアウト
@@ -69,17 +69,17 @@
 </MudNavMenu>
 
 @code {
-    private string? currentUrl;
+    private string? _currentUrl;
 
     protected override void OnInitialized()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        _currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
     }
 

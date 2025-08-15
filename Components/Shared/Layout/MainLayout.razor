@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager NavigationManager
 @inject LoadingManager LoadingManager
+@inject PhrazorApp.Components.State.PageMessageStore PageMessageStore
 
 <MudThemeProvider Theme="AppTheme.MyCustomTheme" />
 <MudPopoverProvider />
@@ -41,18 +43,21 @@
         <LoadingOverlay Mode="OverlayScope.BodyOnly" />
 
         <MudContainer Class="pt-16">
+            <!--  各ページ先頭に出るメッセージバー -->
+            <PageMessageBar />
+
             <MudBreakpointProvider OnBreakpointChanged="OnBpChanged" />
             <CascadingValue Value="CurrentBreakpoint">
                 @Body
             </CascadingValue>
         </MudContainer>
 
-        <MudScrollToTop>
+        <MudScrollToTop TopOffset="100">
             <MudFab Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp" />
         </MudScrollToTop>
     </MudMainContent>
-
 </MudLayout>
+
 <!-- 全画面用（ダイアログ時など） -->
 <LoadingOverlay Mode="OverlayScope.Global" />
 
@@ -64,31 +69,48 @@
 
 <style>
     .main-host {
-        position: relative; /* ★ これで子の MudOverlay(Absolute) がこの領域だけを覆う */
-        min-height: 100%; /* 任意：背が低いページでも覆えるように */
+        position: relative; /* 子の MudOverlay(Absolute) がこの領域だけを覆う */
+        min-height: 100%;
     }
 </style>
 
-
 @code {
-    private IDisposable? _navReg;
-
-    bool _drawerOpen = true;     // Md以上では押し出し表示、Md未満ではオーバーレイ表示
-    void Toggle() => _drawerOpen = !_drawerOpen;
-    void Close() => _drawerOpen = false;
-
-    // 初期値はデスクトップ想定（初回レンダー後に実値へ更新されます）
+    private IDisposable? _navChangingReg;
+    private bool _drawerOpen = true;     // Md以上:押し出し / Md未満:オーバーレイ
     private Breakpoint CurrentBreakpoint = Breakpoint.Xl;
 
     protected override void OnInitialized()
     {
-        // ページ遷移「開始」時にローディングを必ず閉じる
-        _navReg = NavigationManager.RegisterLocationChangingHandler(ctx =>
+        // 1) ページ遷移開始時：ローディングを閉じる & メッセージを消す
+        _navChangingReg = NavigationManager.RegisterLocationChangingHandler(ctx =>
         {
-            LoadingManager.Hide();             
+            LoadingManager.Hide();
+            PageMessageStore.Clear();   // ← ★遷移開始で確実クリア
             return ValueTask.CompletedTask;
         });
+
+        // 2) 遷移完了時（URL 変化通知）でも念のためクリア（ブラウザ戻る等のケースケア）
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // 3) 初回表示タイミングでも必ずクリア
+            PageMessageStore.Clear();
+        }
+        return Task.CompletedTask;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        PageMessageStore.Clear(); // ← 二重防御（ナビ完了時）
+        StateHasChanged();
+    }
+
+    void Toggle() => _drawerOpen = !_drawerOpen;
+    void Close() => _drawerOpen = false;
 
     private void OnBpChanged(Breakpoint bp)
     {
@@ -96,8 +118,9 @@
         StateHasChanged();
     }
 
-
-    public void Dispose() => _navReg?.Dispose();
+    public void Dispose()
+    {
+        _navChangingReg?.Dispose();
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
 }
-
-

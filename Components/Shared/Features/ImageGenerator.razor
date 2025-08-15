@@ -9,17 +9,17 @@
                    Size="@AppConstants.SIZE_BUTTON"
                    OnClick="Generate"
                    FullWidth
-                   Disabled="IsLoading || string.IsNullOrWhiteSpace(Prompt)">
+                   Disabled="_isLoading || string.IsNullOrWhiteSpace(Prompt)">
             画像生成
         </MudButton>
 
-        @if (IsLoading)
+        @if (_isLoading)
         {
             <MudSkeleton Width="100%" Height="auto" Style="aspect-ratio: 1;" Animation="Animation.Wave" />
         }
         else
         {
-            <MudImage Src="@(string.IsNullOrWhiteSpace(ImageUrlInternal) ? "/images/no_img.png" : ImageUrlInternal)"
+            <MudImage Src="@(string.IsNullOrWhiteSpace(_imageUrlInternal) ? "/images/no_img.png" : _imageUrlInternal)"
                       Alt="生成画像"
                       Elevation="25"
                       Fluid="true"
@@ -30,9 +30,8 @@
 </MudPaper>
 
 @code {
-    private bool IsLoading = false;
-    private string? ImageUrlInternal;
-    private string? ErrorMessage;
+    private bool _isLoading = false;
+    private string? _imageUrlInternal;
 
     [Parameter, EditorRequired]
     public string? Prompt { get; set; }
@@ -45,7 +44,7 @@
 
     protected override void OnParametersSet()
     {
-        ImageUrlInternal = ImageUrl;
+        _imageUrlInternal = ImageUrl;
     }
 
     private async Task Generate()
@@ -54,9 +53,8 @@
             return;
 
         // 局所UIの無効化用
-        IsLoading = true;
-        ErrorMessage = null;
-        ImageUrlInternal = null;
+        _isLoading = true;
+        _imageUrlInternal = null;
         StateHasChanged();
 
         var url = await UiOperationRunner.ReadWithOverlayAsync(
@@ -65,8 +63,8 @@
         );
         if (!string.IsNullOrWhiteSpace(url))
         {
-            ImageUrlInternal = url;
-            await ImageUrlChanged.InvokeAsync(ImageUrlInternal);
+            _imageUrlInternal = url;
+            await ImageUrlChanged.InvokeAsync(_imageUrlInternal);
         }
         else
         {
@@ -75,7 +73,7 @@
         }
 
 
-        IsLoading = false;
+        _isLoading = false;
         StateHasChanged();
     }
 }

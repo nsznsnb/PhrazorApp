@@ -56,8 +56,8 @@
               Items="@ItemsView"
               Hover="true" Dense="true" Bordered="true" Outlined="true" 
               HorizontalScrollbar="true"
-              Height="@EffectiveHeight"
-              FixedHeader="@EffectiveFixedHeader" 
+              Height="@_effectiveHeight"
+              FixedHeader="@_effectiveFixedHeader" 
               FixedFooter="false"
               Elevation="@Elevation" Class="@Class"
               CurrentPage="@_page" CurrentPageChanged="OnPageChanged"
@@ -124,12 +124,12 @@
 
     // “Height を MaxHeight として扱う”ための内部推定
     // Dense=true を前提に行高・ヘッダ高を素朴推定
-    private const int RowHeightPxDense = 40;
-    private const int HeaderHeightPx = 56;
+    private const int _rowHeightPxDense = 40;
+    private const int _headerHeightPx = 56;
 
     // ← ここがキモ：MaxHeight を超えるときだけ MudTable.Height を付け、固定ヘッダを有効化
-    private string? EffectiveHeight => ShouldScroll ? Height : null;
-    private bool EffectiveFixedHeader => ShouldScroll;
+    private string? _effectiveHeight => ShouldScroll ? Height : null;
+    private bool _effectiveFixedHeader => ShouldScroll;
 
     private bool ShouldScroll
     {
@@ -140,7 +140,7 @@
             if (maxPx <= 0) return false;
 
             var visibleCount = Math.Min(_rowsPerPageInternal, ItemsViewCount);
-            var needPx = HeaderHeightPx + (visibleCount * RowHeightPxDense);
+            var needPx = _headerHeightPx + (visibleCount * _rowHeightPxDense);
             return needPx > maxPx;
         }
     }

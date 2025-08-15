@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using FluentValidation;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,8 @@ using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Infrastructure;
+using PhrazorApp.Models;
+using PhrazorApp.Models.Validators;
 using PhrazorApp.Services;
 using PhrazorApp.Utils;
 using Resend;
@@ -111,6 +114,7 @@ namespace PhrazorApp
             builder.Services.AddScoped<LoadingManager>();
             builder.Services.AddScoped<JsInteropManager>();
             builder.Services.AddScoped<UiOperationRunner>();
+            builder.Services.AddScoped<PageMessageStore>();
 
             builder.Services.AddScoped<ImageService>();
             builder.Services.AddScoped<GenreService>();
@@ -119,13 +123,16 @@ namespace PhrazorApp
             builder.Services.AddScoped<TestService>();
             builder.Services.AddScoped<ProverbService>();
 
+            builder.Services.AddScoped<IValidator<GenreModel>, GenreModelValidator>();
+            builder.Services.AddScoped<IValidator<SubGenreModel>, SubGenreModelValidator>();
+            builder.Services.AddScoped<IValidator<FileModel>, FileModelValidator>();
+
 
             // オプションパターン
             builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));
             builder.Services.Configure<AzureBlobOptions>(builder.Configuration.GetSection("AzureBlob"));
             builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
             builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
-
 
             // FluentValidation 設定
             ValidationBootstrapper.Configure();

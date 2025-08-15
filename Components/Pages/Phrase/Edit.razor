@@ -125,14 +125,19 @@
 
     private async Task OpenGenreDialog()
     {
-        var parameters = new DialogParameters { { "GenreId", (Guid?)null } };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<DialogGenreForm>("ジャンル登録", parameters, options);
-        var result = await dialog.Result;
+        var dlg = await DialogService.ShowWithAsync<DialogGenreForm, Guid?>(
+            title: "ジャンル登録",
+            paramSelector: x => x.GenreId,
+            value: null,
+            options: DialogServiceExtensions.OptionsMd()
+        );
 
-        if (!result.Canceled && _selector is not null)
+        var result = await dlg.Result;
+        if (!(result?.Canceled ?? true))
         {
-            await _selector.ReloadAsync(model.SelectedDropItems);
+            await _selector!.ReloadAsync(model.SelectedDropItems); // 登録直後に再読込
         }
+
+
     }
 }
