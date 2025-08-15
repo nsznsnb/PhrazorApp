@@ -37,6 +37,47 @@ namespace PhrazorApp.Services
             });
         }
 
+        public async Task<ServiceResult<Unit>> CreateAsync(ProverbModel model)
+        {
+            try
+            {
+                await _uow.ExecuteInTransactionAsync(async r =>
+                {
+                    if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
+                    await r.Proverbs.AddAsync(model.ToEntityForCreate());
+                });
+
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
+            }
+            catch
+            {
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, MSG_PREFIX));
+            }
+        }
+
+        public async Task<ServiceResult<Unit>> UpdateAsync(ProverbModel model)
+        {
+            try
+            {
+                await _uow.ExecuteInTransactionAsync(async r =>
+                {
+                    var e = await r.Proverbs.GetByIdAsync(model.Id)
+                        ?? throw new InvalidOperationException("対象が見つかりません。");
+
+                    model.ApplyTo(e);
+                    await r.Proverbs.UpdateAsync(e);
+                });
+
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+            }
+            catch
+            {
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+            }
+        }
+
+
+
         public async Task<ServiceResult<Unit>> UpsertAsync(ProverbModel model)
         {
             if (string.IsNullOrWhiteSpace(model.Text))

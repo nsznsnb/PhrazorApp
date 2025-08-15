@@ -14,6 +14,13 @@ namespace PhrazorApp.Models.Mappings
             CreatedAt = e.CreatedAt
         };
 
+        public static void ApplyTo(this ProverbModel m, MProverb e)
+        {
+            e.ProverbText = m.Text;
+            e.Author = m.Author;
+            e.Meaning = m.Meaning;
+        }
+
         public static MProverb ToEntityForCreate(this ProverbModel m) => new()
         {
             ProverbId = m.Id == Guid.Empty ? Guid.NewGuid() : m.Id,
