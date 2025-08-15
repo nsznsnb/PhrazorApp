@@ -130,10 +130,39 @@ namespace PhrazorApp.Services
         {
             try
             {
+                // 1) まず使用中かどうかを “参照Txなし” で判定
+                var usage = await _uow.ReadAsync(async u =>
+                {
+                    var genre = await u.Genres.GetGenreByIdAsync(genreId);
+                    if (genre is null)
+                        return (genre: (MGenre?)null, byGenre: 0, bySub: 0);
+
+                    var subIds = (genre.MSubGenres ?? new List<MSubGenre>()).Select(s => s.SubGenreId).ToList();
+
+                    var byGenre = await u.PhraseGenres.CountByGenreIdAsync(genreId);
+                    var bySub = subIds.Count > 0
+                        ? await u.PhraseGenres.CountBySubGenreIdsAsync(subIds)
+                        : 0;
+
+                    return (genre, byGenre, bySub);
+                });
+
+                if (usage.genre is null)
+                    return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_NOT_FOUND, "指定されたジャンル"));
+
+                var totalRef = usage.byGenre + usage.bySub;
+                if (totalRef > 0)
+                {
+                    // 使用中 → 削除中断（Warning）
+                    var msg = $"このジャンルは {totalRef} 件のフレーズで使用中のため削除できません。";
+                    return ServiceResult.None.Warning(msg);
+                }
+
+                // 2) 未使用なら削除実行（関連サブジャンル → 本体の順）
                 await _uow.ExecuteInTransactionAsync(async u =>
                 {
                     var genre = await u.Genres.GetGenreByIdAsync(genreId);
-                    if (genre == null)
+                    if (genre is null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, "指定されたジャンル"));
 
                     if (genre.MSubGenres is { Count: > 0 })
@@ -142,12 +171,12 @@ namespace PhrazorApp.Services
                     await u.Genres.DeleteAsync(genre);
                 });
 
-                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "ジャンル"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ジャンル削除エラー");
-                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, "ジャンル"));
             }
         }
 
