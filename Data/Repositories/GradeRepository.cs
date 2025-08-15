@@ -8,5 +8,7 @@ namespace PhrazorApp.Data.Repositories
     {
         public GradeRepository(EngDbContext context) : base(context) { }
 
+        public async Task<MGrade?> GetByIdAsync(Guid id)
+           => await Set.FirstOrDefaultAsync(x => x.GradeId == id);
     }
 }

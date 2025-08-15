@@ -122,6 +122,9 @@ namespace PhrazorApp
             builder.Services.AddScoped<PhraseBookService>();
             builder.Services.AddScoped<TestService>();
             builder.Services.AddScoped<ProverbService>();
+            builder.Services.AddScoped<GradeService>();
+            builder.Services.AddScoped<OperationTypeService>();
+            builder.Services.AddScoped<ReviewTypeService>();
 
             builder.Services.AddScoped<IValidator<GenreModel>, GenreModelValidator>();
             builder.Services.AddScoped<IValidator<SubGenreModel>, SubGenreModelValidator>();

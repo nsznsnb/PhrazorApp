@@ -20,18 +20,18 @@ namespace PhrazorApp.Services
 
         public Task<ServiceResult<List<ProverbModel>>> GetListAsync()
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
-                var list = await u.Proverbs.GetListProjectedAsync();
+                var list = await repos.Proverbs.GetListProjectedAsync();
                 return ServiceResult.Success(list, "");
             });
         }
 
         public Task<ServiceResult<ProverbModel>> GetAsync(Guid id)
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
-                var e = await u.Proverbs.GetByIdAsync(id);
+                var e = await repos.Proverbs.GetByIdAsync(id);
                 if (e is null) return ServiceResult.Error<ProverbModel>($"{MSG_PREFIX}が見つかりません。");
                 return ServiceResult.Success(e.ToModel(), "");
             });
@@ -49,14 +49,14 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var ent = await u.Proverbs.GetByTextAuthorAsync(text, author);
+                    var ent = await repos.Proverbs.GetByTextAuthorAsync(text, author);
 
                     if (ent is null)
                     {
                         // 新規
-                        await u.Proverbs.AddAsync(new MProverb
+                        await repos.Proverbs.AddAsync(new MProverb
                         {
                             ProverbId = model.Id == Guid.Empty ? Guid.NewGuid() : model.Id,
                             ProverbText = text,
@@ -70,7 +70,7 @@ namespace PhrazorApp.Services
                         ent.ProverbText = text;   // 仕様上キー同等だが念のため整合
                         ent.Author = author;
                         ent.Meaning = meaning;
-                        await u.Proverbs.UpdateAsync(ent);
+                        await repos.Proverbs.UpdateAsync(ent);
                     }
                 });
 
@@ -87,10 +87,10 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var e = await u.Proverbs.GetByIdAsync(id) ?? throw new InvalidOperationException("not found");
-                    await u.Proverbs.DeleteAsync(e);
+                    var e = await repos.Proverbs.GetByIdAsync(id) ?? throw new InvalidOperationException("not found");
+                    await repos.Proverbs.DeleteAsync(e);
                 });
                 return ServiceResult.None.Success($"{MSG_PREFIX}を削除しました。");
             }
@@ -108,7 +108,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     var ents = rows
                         .Where(r => !string.IsNullOrWhiteSpace(r.Text))
@@ -123,7 +123,7 @@ namespace PhrazorApp.Services
 
                     if (ents.Count == 0) return;
 
-                    await u.Proverbs.UpsertRangeByTextAuthorAsync(ents);
+                    await repos.Proverbs.UpsertRangeByTextAuthorAsync(ents);
                 });
 
                 return ServiceResult.None.Success("CSV を取り込みました。");

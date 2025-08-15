@@ -21,7 +21,7 @@ public partial class DTestResult
     /// <summary>
     /// 成績ID
     /// </summary>
-    public short? GradeId { get; set; }
+    public Guid? GradeId { get; set; }
 
     /// <summary>
     /// 完了フラグ

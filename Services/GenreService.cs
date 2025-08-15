@@ -28,9 +28,9 @@ namespace PhrazorApp.Services
         /// <summary>ジャンル一覧</summary>
         public Task<ServiceResult<List<GenreModel>>> GetGenreViewModelListAsync()
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
-                var genres = await u.Genres.GetAllGenresAsync();
+                var genres = await repos.Genres.GetAllGenresAsync();
                 var list = genres.Select(x => x.ToModel()).ToList();
                 return ServiceResult.Success(list, message: "");
             });
@@ -39,9 +39,9 @@ namespace PhrazorApp.Services
         /// <summary>ドロップダウン用一覧</summary>
         public Task<ServiceResult<List<DropItemModel>>> GetGenreDropItemModelListAsync()
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
-                var genres = await u.Genres.GetAllGenresAsync();
+                var genres = await repos.Genres.GetAllGenresAsync();
                 var list = genres.ToDropItemModelList();
                 return ServiceResult.Success(list, message: "");
             });
@@ -50,9 +50,9 @@ namespace PhrazorApp.Services
         /// <summary>ジャンル詳細</summary>
         public Task<ServiceResult<GenreModel>> GetGenreViewModelAsync(Guid genreId)
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
-                var genre = await u.Genres.GetGenreByIdAsync(genreId);
+                var genre = await repos.Genres.GetGenreByIdAsync(genreId);
                 var model = genre != null ? genre.ToModel() : new GenreModel();
                 return ServiceResult.Success(model, message: "");
             });
@@ -69,9 +69,9 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    await u.Genres.AddAsync(entity);   // MSubGenres がセットされていれば一括で追加
+                    await repos.Genres.AddAsync(entity);   // MSubGenres がセットされていれば一括で追加
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
@@ -94,26 +94,26 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     // ※ Repo: GetGenreByIdAsync は MSubGenres を Include 済み想定
-                    var old = await u.Genres.GetGenreByIdAsync(incoming.GenreId);
+                    var old = await repos.Genres.GetGenreByIdAsync(incoming.GenreId);
                     if (old == null)
                         throw new InvalidOperationException("対象のジャンルが見つかりません。");
 
                     if (old.MSubGenres is { Count: > 0 })
-                        await u.SubGenres.DeleteRangeAsync(old.MSubGenres);
+                        await repos.SubGenres.DeleteRangeAsync(old.MSubGenres);
 
                     if (incoming.MSubGenres?.Any() == true)
                     {
                         foreach (var sg in incoming.MSubGenres)
                             sg.GenreId = incoming.GenreId;
 
-                        await u.SubGenres.AddRangeAsync(incoming.MSubGenres);
+                        await repos.SubGenres.AddRangeAsync(incoming.MSubGenres);
                     }
 
                     old.GenreName = incoming.GenreName;
-                    await u.Genres.UpdateAsync(old);
+                    await repos.Genres.UpdateAsync(old);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -131,17 +131,17 @@ namespace PhrazorApp.Services
             try
             {
                 // 1) まず使用中かどうかを “参照Txなし” で判定
-                var usage = await _uow.ReadAsync(async u =>
+                var usage = await _uow.ReadAsync(async repos =>
                 {
-                    var genre = await u.Genres.GetGenreByIdAsync(genreId);
+                    var genre = await repos.Genres.GetGenreByIdAsync(genreId);
                     if (genre is null)
                         return (genre: (MGenre?)null, byGenre: 0, bySub: 0);
 
                     var subIds = (genre.MSubGenres ?? new List<MSubGenre>()).Select(s => s.SubGenreId).ToList();
 
-                    var byGenre = await u.PhraseGenres.CountByGenreIdAsync(genreId);
+                    var byGenre = await repos.PhraseGenres.CountByGenreIdAsync(genreId);
                     var bySub = subIds.Count > 0
-                        ? await u.PhraseGenres.CountBySubGenreIdsAsync(subIds)
+                        ? await repos.PhraseGenres.CountBySubGenreIdsAsync(subIds)
                         : 0;
 
                     return (genre, byGenre, bySub);
@@ -159,16 +159,16 @@ namespace PhrazorApp.Services
                 }
 
                 // 2) 未使用なら削除実行（関連サブジャンル → 本体の順）
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var genre = await u.Genres.GetGenreByIdAsync(genreId);
+                    var genre = await repos.Genres.GetGenreByIdAsync(genreId);
                     if (genre is null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, "指定されたジャンル"));
 
                     if (genre.MSubGenres is { Count: > 0 })
-                        await u.SubGenres.DeleteRangeAsync(genre.MSubGenres);
+                        await repos.SubGenres.DeleteRangeAsync(genre.MSubGenres);
 
-                    await u.Genres.DeleteAsync(genre);
+                    await repos.Genres.DeleteAsync(genre);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "ジャンル"));

@@ -8,5 +8,7 @@ namespace PhrazorApp.Data.Repositories
     {
         public OperationTypeRepository(EngDbContext context) : base(context) { }
 
+        public Task<MOperationType?> GetByIdAsync(Guid id)
+           => Set.FirstOrDefaultAsync(x => x.OperationTypeId == id);
     }
 }

@@ -11,7 +11,7 @@ public partial class MReviewType
     /// <summary>
     /// 復習種別ID
     /// </summary>
-    public int ReviewTypeId { get; set; }
+    public Guid ReviewTypeId { get; set; }
 
     /// <summary>
     /// 復習種別名

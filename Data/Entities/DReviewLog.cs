@@ -26,7 +26,7 @@ public partial class DReviewLog
     /// <summary>
     /// 復習種別ID
     /// </summary>
-    public int? ReviewTypeId { get; set; }
+    public Guid? ReviewTypeId { get; set; }
 
     /// <summary>
     /// テスト結果ID

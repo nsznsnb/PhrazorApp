@@ -1,11 +1,120 @@
-﻿@page "/admin/settings/operation-types/edit/{id:guid?}"
-@attribute [Authorize(Roles = "Admin")]
+@* @page "/admin/settings/operationtypes/create"
+@page "/admin/settings/operationtypes/edit/{Id:guid}"
+@using Blazored.FluentValidation
+@attribute [Authorize]
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject PhrazorApp.Services.Settings.OperationTypeService Service
+@inject UiOperationRunner UiOperationRunner
+@inject IServiceProvider ServiceProvider
 
-<MudStack Spacing="2">
-    <SectionTitle Title="操作種別マスタ（編集）" />
-    <BaseCard Class="pa-4">（実装予定）</BaseCard>
-</MudStack>
+<EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+    <FluentValidationValidator />
+    <MudStack Spacing="2">
+        <ActionCard>
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.TwoTone.Save">
+                @AppConstants.LABEL_BUTTON_REGISTER
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.TwoTone.Block"
+                       OnClick="ClearAsync">
+                @AppConstants.LABEL_BUTTON_CLEAR
+            </MudButton>
+        </ActionCard>
+
+        <BaseCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <SectionTitle HeadingLevel="3" Title="操作種別入力" />
+                </CardHeaderContent>
+            </MudCardHeader>
+
+            <MudCardContent Class="pt-0">
+                <MudGrid Spacing="1">
+                    <MudItem xs="12" md="4">
+                        <MudTextField T="string"
+                                      @bind-Value="_model.Code"
+                                      For="() => _model.Code"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Outlined"
+                                      Label="操作種別コード"
+                                      ShrinkLabel />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField T="string"
+                                      @bind-Value="_model.Name"
+                                      For="() => _model.Name"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Outlined"
+                                      Label="操作種別名"
+                                      ShrinkLabel />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField T="int"
+                                         @bind-Value="_model.Limit"
+                                         Margin="Margin.Dense"
+                                         Variant="Variant.Outlined"
+                                         Label="操作回数上限"
+                                         Immediate="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </BaseCard>
+    </MudStack>
+</EditForm>
 
 @code {
     [Parameter] public Guid? Id { get; set; }
+    private bool IsEdit => Id.HasValue;
+    private PhrazorApp.Models.OperationTypeModel _model = new();
+    private EditContext? _editCtx;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editCtx = new EditContext(_model);
+
+        if (IsEdit)
+        {
+            var loaded = await UiOperationRunner.ReadAsync(
+                () => Service.GetAsync(Id!.Value));
+            _model = loaded ?? new PhrazorApp.Models.OperationTypeModel { Id = Id!.Value };
+        }
+        else
+        {
+            _model = new PhrazorApp.Models.OperationTypeModel { Id = Guid.NewGuid() };
+        }
+
+        _editCtx = new EditContext(_model);
+    }
+
+    private Task HandleValidSubmit() => SubmitCoreAsync();
+
+    private async Task SubmitCoreAsync()
+    {
+        var op = await UiOperationRunner.WriteAsync(
+            () => IsEdit ? Service.UpdateAsync(_model)
+                         : Service.CreateAsync(_model),
+            message: AppMessages.MSG_I_PROGRESS_SAVE);
+
+        if (!op.IsSuccess) return;
+        NavigationManager.NavigateTo("/admin/settings/operationtypes");
+    }
+
+    private void OnInvalidSubmit(EditContext editContext)
+        => editContext.PublishPageLevelErrors(ServiceProvider);
+
+    private Task ClearAsync()
+    {
+        _model = new PhrazorApp.Models.OperationTypeModel { Id = Guid.NewGuid() };
+        _editCtx = new EditContext(_model);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 }
+ *@

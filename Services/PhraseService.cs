@@ -25,10 +25,10 @@ namespace PhrazorApp.Services
         // 一覧（DTOに投影済みをRepoで取得）
         public Task<ServiceResult<List<PhraseListItemModel>>> GetPhraseListAsync()
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
                 var uid = _userService.GetUserId();
-                var list = await u.Phrases.GetListProjectedAsync(uid); // ★ Repo 経由
+                var list = await repos.Phrases.GetListProjectedAsync(uid); // ★ Repo 経由
                 // 並び順は Repo 側で済ませても良いが、ここで念のため再度安定化しておく
                 list = list.OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue).ToList();
                 return ServiceResult.Success(list, message: "");
@@ -38,10 +38,10 @@ namespace PhrazorApp.Services
         // 編集ロード（Aggregate取得 → EditModel）
         public Task<ServiceResult<PhraseEditModel>> GetPhraseEditAsync(Guid id)
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
                 // ※ Repo: GetPhraseByIdAsync は DPhraseImage / MPhraseGenres(+MSubGenre) を含む想定
-                var e = await u.Phrases.GetPhraseByIdAsync(id);
+                var e = await repos.Phrases.GetPhraseByIdAsync(id);
                 var model = e is null ? new PhraseEditModel { Id = id } : e.ToModel();
                 return ServiceResult.Success(model, message: "");
             });
@@ -51,10 +51,10 @@ namespace PhrazorApp.Services
         // Services/PhraseService.cs
         public Task<ServiceResult<List<PhraseListItemModel>>> BuildCandidatesAsync(TestFilterModel filter)
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
                 var uid = _userService.GetUserId();
-                var list = await u.Phrases.GetListByFilterProjectedAsync(uid, filter);
+                var list = await repos.Phrases.GetListByFilterProjectedAsync(uid, filter);
 
                 if (filter.Shuffle && list.Count > 1)
                     list = list.OrderBy(_ => Guid.NewGuid()).ToList();
@@ -71,17 +71,17 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     var userId = _userService.GetUserId();
 
-                    await u.Phrases.AddAsync(model.ToEntity(userId));
+                    await repos.Phrases.AddAsync(model.ToEntity(userId));
 
                     if (!string.IsNullOrWhiteSpace(model.ImageUrl))
-                        await u.PhraseImages.AddAsync(model.ToImageEntity(DateTime.UtcNow));
+                        await repos.PhraseImages.AddAsync(model.ToImageEntity(DateTime.UtcNow));
 
                     if (model.SelectedDropItems?.Count > 0)
-                        await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
+                        await repos.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
@@ -105,7 +105,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     var nowUtc = DateTime.UtcNow;
 
@@ -128,9 +128,9 @@ namespace PhrazorApp.Services
                             phraseGenreEntities.AddRange(model.ToPhraseGenreEntities());
                     }
 
-                    await u.Phrases.AddRangeAsync(phraseEntities);
-                    if (imageEntities.Count > 0) await u.PhraseImages.AddRangeAsync(imageEntities);
-                    if (phraseGenreEntities.Count > 0) await u.PhraseGenres.AddRangeAsync(phraseGenreEntities);
+                    await repos.Phrases.AddRangeAsync(phraseEntities);
+                    if (imageEntities.Count > 0) await repos.PhraseImages.AddRangeAsync(imageEntities);
+                    if (phraseGenreEntities.Count > 0) await repos.PhraseGenres.AddRangeAsync(phraseGenreEntities);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
@@ -153,7 +153,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     var idSet = phraseIds.Distinct().ToArray();
                     const int chunkSize = 500;
@@ -164,7 +164,7 @@ namespace PhrazorApp.Services
 
                     foreach (var chunk in idSet.Chunk(chunkSize))
                     {
-                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk); // MPhraseGenres 含む
+                        var phrases = await repos.Phrases.GetByPhrasesIdsAsync(chunk); // MPhraseGenres 含む
 
                         foreach (var p in phrases)
                         {
@@ -200,8 +200,8 @@ namespace PhrazorApp.Services
                         }
                     }
 
-                    if (toDelete.Count > 0) await u.PhraseGenres.DeleteRangeAsync(toDelete);
-                    if (toAdd.Count > 0) await u.PhraseGenres.AddRangeAsync(toAdd);
+                    if (toDelete.Count > 0) await repos.PhraseGenres.DeleteRangeAsync(toDelete);
+                    if (toAdd.Count > 0) await repos.PhraseGenres.AddRangeAsync(toAdd);
                 });
 
                 return ServiceResult.None.Success("カテゴリを一括設定しました。");
@@ -218,9 +218,9 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var phraseEntity = await u.Phrases.GetPhraseByIdAsync(model.Id);
+                    var phraseEntity = await repos.Phrases.GetPhraseByIdAsync(model.Id);
                     if (phraseEntity == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
@@ -229,34 +229,34 @@ namespace PhrazorApp.Services
                     phraseEntity.Meaning = model.Meaning;
                     phraseEntity.Note = model.Note;
                     phraseEntity.UpdatedAt = DateTime.UtcNow;
-                    await u.Phrases.UpdateAsync(phraseEntity);
+                    await repos.Phrases.UpdateAsync(phraseEntity);
 
                     // 画像 Upsert
                     if (!string.IsNullOrWhiteSpace(model.ImageUrl))
                     {
                         if (phraseEntity.DPhraseImage is null)
                         {
-                            await u.PhraseImages.AddAsync(model.ToImageEntity(DateTime.UtcNow));
+                            await repos.PhraseImages.AddAsync(model.ToImageEntity(DateTime.UtcNow));
                         }
                         else
                         {
                             phraseEntity.DPhraseImage.Url = model.ImageUrl;
                             phraseEntity.DPhraseImage.UpdatedAt = DateTime.UtcNow;
-                            await u.PhraseImages.UpdateAsync(phraseEntity.DPhraseImage);
+                            await repos.PhraseImages.UpdateAsync(phraseEntity.DPhraseImage);
                         }
                     }
                     else
                     {
                         if (phraseEntity.DPhraseImage is not null)
-                            await u.PhraseImages.DeleteAsync(phraseEntity.DPhraseImage);
+                            await repos.PhraseImages.DeleteAsync(phraseEntity.DPhraseImage);
                     }
 
                     // ジャンル全差し替え（子→親の順で安全）
                     if (phraseEntity.MPhraseGenres is { Count: > 0 })
-                        await u.PhraseGenres.DeleteRangeAsync(phraseEntity.MPhraseGenres);
+                        await repos.PhraseGenres.DeleteRangeAsync(phraseEntity.MPhraseGenres);
 
                     if (model.SelectedDropItems is { Count: > 0 })
-                        await u.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
+                        await repos.PhraseGenres.AddRangeAsync(model.ToPhraseGenreEntities());
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -273,19 +273,19 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var phrase = await u.Phrases.GetPhraseByIdAsync(phraseId);
+                    var phrase = await repos.Phrases.GetPhraseByIdAsync(phraseId);
                     if (phrase == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
                     if (phrase.DPhraseImage is not null)
-                        await u.PhraseImages.DeleteAsync(phrase.DPhraseImage);
+                        await repos.PhraseImages.DeleteAsync(phrase.DPhraseImage);
 
                     if (phrase.MPhraseGenres is { Count: > 0 })
-                        await u.PhraseGenres.DeleteRangeAsync(phrase.MPhraseGenres);
+                        await repos.PhraseGenres.DeleteRangeAsync(phrase.MPhraseGenres);
 
-                    await u.Phrases.DeleteAsync(phrase);
+                    await repos.Phrases.DeleteAsync(phrase);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
@@ -307,14 +307,14 @@ namespace PhrazorApp.Services
 
                 var idSet = phraseIds.Distinct().ToArray(); // Guid 重複除去
 
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     const int chunkSize = 500; // SQL パラメータ上限対策
                     var allPhrases = new List<DPhrase>(capacity: idSet.Length);
 
                     foreach (var chunk in idSet.Chunk(chunkSize))
                     {
-                        var phrases = await u.Phrases.GetByPhrasesIdsAsync(chunk); // 画像・ジャンル込み取得
+                        var phrases = await repos.Phrases.GetByPhrasesIdsAsync(chunk); // 画像・ジャンル込み取得
                         allPhrases.AddRange(phrases);
                     }
 
@@ -332,12 +332,12 @@ namespace PhrazorApp.Services
                                            .ToList();
 
                     if (genres.Count > 0)
-                        await u.PhraseGenres.DeleteRangeAsync(genres);
+                        await repos.PhraseGenres.DeleteRangeAsync(genres);
 
                     if (images.Count > 0)
-                        await u.PhraseImages.DeleteRangeAsync(images);
+                        await repos.PhraseImages.DeleteRangeAsync(images);
 
-                    await u.Phrases.DeleteRangeAsync(allPhrases);
+                    await repos.Phrases.DeleteRangeAsync(allPhrases);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));

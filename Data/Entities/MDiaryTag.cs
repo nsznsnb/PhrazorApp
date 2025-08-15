@@ -11,7 +11,7 @@ public partial class MDiaryTag
     /// <summary>
     /// 日記タグID
     /// </summary>
-    public int TagId { get; set; }
+    public Guid TagId { get; set; }
 
     /// <summary>
     /// タグ名

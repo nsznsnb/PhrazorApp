@@ -28,11 +28,11 @@ namespace PhrazorApp.Services
         /// <summary>フレーズ帳一覧（件数込み）</summary>
         public Task<ServiceResult<List<PhraseBookListItemModel>>> GetPhraseBooksAsync()
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
                 var uid = _userService.GetUserId();
 
-                var list = await u.PhraseBooks.Queryable()
+                var list = await repos.PhraseBooks.Queryable()
                     .Where(b => b.UserId == uid)             // ★ 自分のブックのみ
                     .SelectList()
                     .OrderBy(x => x.Name)
@@ -45,12 +45,12 @@ namespace PhrazorApp.Services
         /// <summary>指定フレーズ帳の中身（フレーズ一覧）</summary>
         public Task<ServiceResult<List<PhraseBookItemModel>>> GetItemsAsync(Guid phraseBookId)
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
                 // そのブックに紐づくフレーズを作成日時降順で
-                var q = from bi in u.PhraseBookItems.Queryable()
+                var q = from bi in repos.PhraseBookItems.Queryable()
                         where bi.PhraseBookId == phraseBookId
-                        join p in u.Phrases.Queryable() on bi.PhraseId equals p.PhraseId
+                        join p in repos.Phrases.Queryable() on bi.PhraseId equals p.PhraseId
                         orderby (p.CreatedAt ?? DateTime.MinValue) descending
                         select p;
 
@@ -62,16 +62,16 @@ namespace PhrazorApp.Services
         /// <summary>追加候補検索（未追加のみ）</summary>
         public Task<ServiceResult<List<PhraseSuggestionModel>>> SearchPhrasesAsync(Guid phraseBookId, string? term, int take = 20)
         {
-            return _uow.ReadAsync(async u =>
+            return _uow.ReadAsync(async repos =>
             {
                 var uid = _userService.GetUserId();
                 term ??= string.Empty;
 
-                var exists = u.PhraseBookItems.Queryable()
+                var exists = repos.PhraseBookItems.Queryable()
                     .Where(x => x.PhraseBookId == phraseBookId)
                     .Select(x => x.PhraseId);
 
-                var list = await u.Phrases.Queryable()
+                var list = await repos.Phrases.Queryable()
                     .Where(p => p.UserId == uid
                                 && !exists.Contains(p.PhraseId)
                                 && (((p.Phrase ?? "").Contains(term)) || ((p.Meaning ?? "").Contains(term))))
@@ -101,10 +101,10 @@ namespace PhrazorApp.Services
 
                 var uid = _userService.GetUserId();
 
-                var newId = await _uow.ExecuteInTransactionAsync<Guid>(async u =>
+                var newId = await _uow.ExecuteInTransactionAsync<Guid>(async repos =>
                 {
                     var id = Guid.NewGuid();
-                    await u.PhraseBooks.AddAsync(new MPhraseBook
+                    await repos.PhraseBooks.AddAsync(new MPhraseBook
                     {
                         PhraseBookId = id,
                         UserId = uid,
@@ -131,10 +131,10 @@ namespace PhrazorApp.Services
                 if (ids.Count == 0)
                     return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "追加対象"));
 
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
                     // 既に入っているIDを除外
-                    var exists = await u.PhraseBookItems.Queryable()
+                    var exists = await repos.PhraseBookItems.Queryable()
                         .Where(x => x.PhraseBookId == phraseBookId)
                         .Select(x => x.PhraseId)
                         .ToListAsync();
@@ -148,7 +148,7 @@ namespace PhrazorApp.Services
                                    .ToList();
 
                     if (toAdd.Count > 0)
-                        await u.PhraseBookItems.AddRangeAsync(toAdd);
+                        await repos.PhraseBookItems.AddRangeAsync(toAdd);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -169,15 +169,15 @@ namespace PhrazorApp.Services
                 if (string.IsNullOrWhiteSpace(trimmed))
                     return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "名称"));
 
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var book = await u.PhraseBooks.Queryable()
+                    var book = await repos.PhraseBooks.Queryable()
                         .FirstOrDefaultAsync(b => b.PhraseBookId == phraseBookId);
                     if (book is null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
                     book.PhraseBookName = trimmed;
-                    await u.PhraseBooks.UpdateAsync(book);
+                    await repos.PhraseBooks.UpdateAsync(book);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -194,20 +194,20 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var items = await u.PhraseBookItems.Queryable()
+                    var items = await repos.PhraseBookItems.Queryable()
                         .Where(x => x.PhraseBookId == phraseBookId)
                         .ToListAsync();
                     if (items.Count > 0)
-                        await u.PhraseBookItems.DeleteRangeAsync(items);
+                        await repos.PhraseBookItems.DeleteRangeAsync(items);
 
-                    var book = await u.PhraseBooks.Queryable()
+                    var book = await repos.PhraseBooks.Queryable()
                         .FirstOrDefaultAsync(b => b.PhraseBookId == phraseBookId);
                     if (book is null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
-                    await u.PhraseBooks.DeleteAsync(book);
+                    await repos.PhraseBooks.DeleteAsync(book);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
@@ -228,16 +228,16 @@ namespace PhrazorApp.Services
                 if (ids.Length == 0)
                     return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
 
-                await _uow.ExecuteInTransactionAsync(async u =>
+                await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    var targets = await u.PhraseBookItems.Queryable()
+                    var targets = await repos.PhraseBookItems.Queryable()
                         .Where(x => x.PhraseBookId == phraseBookId && ids.Contains(x.PhraseId))
                         .ToListAsync();
 
                     if (targets.Count == 0)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, "フレーズ帳アイテム"));
 
-                    await u.PhraseBookItems.DeleteRangeAsync(targets);
+                    await repos.PhraseBookItems.DeleteRangeAsync(targets);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "フレーズ"));

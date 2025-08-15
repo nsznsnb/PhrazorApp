@@ -11,12 +11,17 @@ public partial class MGrade
     /// <summary>
     /// 成績ID
     /// </summary>
-    public short GradeId { get; set; }
+    public Guid GradeId { get; set; }
 
     /// <summary>
     /// 成績名
     /// </summary>
     public string GradeName { get; set; } = null!;
+
+    /// <summary>
+    /// ソート順
+    /// </summary>
+    public int OrderNo { get; set; }
 
     /// <summary>
     /// 作成日時

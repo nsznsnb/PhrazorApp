@@ -8,5 +8,7 @@ namespace PhrazorApp.Data.Repositories
     {
         public ReviewTypeRepository(EngDbContext context) : base(context) { }
 
+        public Task<MReviewType?> GetByIdAsync(Guid id)
+            => Set.FirstOrDefaultAsync(x => x.ReviewTypeId == id);
     }
 }

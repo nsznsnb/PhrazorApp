@@ -1,7 +1,89 @@
-﻿@page "/admin/settings/grades"
-@attribute [Authorize(Roles = "Admin")]
+@page "/admin/settings/grades"
+@attribute [Authorize]
+@using PhrazorApp.Models
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject GradeService Service
+@inject UiOperationRunner UiOperationRunner
 
 <MudStack Spacing="2">
-    <SectionTitle Title="成績マスタ" />
-    <BaseCard Class="pa-4">（実装予定）</BaseCard>
+    <SectionTitle HeadingLevel="2" Title="成績一覧" />
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/grades/create"))">新規追加</MudButton>
+    </ActionCard>
+    <BaseCard>
+        <TableWithToolbar TItem="GradeModel"
+                          Items="@Elements"
+                          Search="true"
+                          SearchBy="@(x => new[] { x.Name ?? string.Empty })"
+                          Pager="TablePagerMode.Auto"
+                          RowsPerPage="10"
+                          Height="500px">
+
+            <HeaderContent>
+                <MudTh>名称</MudTh>
+                <MudTh style="min-width:200px;">操作</MudTh>
+            </HeaderContent>
+
+            <RowTemplate Context="context">
+                <MudTd>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@context.Name</MudText>
+                </MudTd>
+                <MudTd style="min-width:200px;">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                                   StartIcon="@Icons.Material.TwoTone.Edit"
+                                   OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/grades/edit/{context.Id}"))">
+                            @AppConstants.LABEL_BUTTON_EDIT
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"
+                                   StartIcon="@Icons.Material.TwoTone.Delete"
+                                   OnClick="@(() => OnDeleteButtonClickedAsync(context))">
+                            @AppConstants.LABEL_BUTTON_DELETE
+                        </MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="p-4">データがありません。</MudText>
+            </NoRecordsContent>
+        </TableWithToolbar>
+    </BaseCard>
 </MudStack>
+
+@code {
+    private List<GradeModel> Elements = new();
+    private int tablePage = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = await UiOperationRunner.ReadWithOverlayAsync(
+            () => Service.GetListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_READ
+        );
+        if (list is not null)
+            Elements = list;
+    }
+
+    private async Task OnDeleteButtonClickedAsync(GradeModel item)
+    {
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DeleteConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name));
+        if (!ok) return;
+
+        var op = await UiOperationRunner.WriteAsync(
+            () => Service.DeleteAsync(item.Id),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
+        );
+        if (!op.IsSuccess) return;
+
+        var list = await UiOperationRunner.ReadAsync(() => Service.GetListAsync());
+        if (list is not null)
+        {
+            Elements = list;
+            if (tablePage != 0) tablePage = 0;
+        }
+    }
+}

@@ -14,8 +14,11 @@ namespace PhrazorApp.Data.Repositories
         protected BaseRepository(DbContext context) => _context = context;
 
 
-        // IQueryable を外に出す薄いヘルパー
-        public virtual IQueryable<TEntity> Queryable() => Set;
+        /// <summary>
+        /// 読取クエリの起点。追跡有無を選べる。
+        /// </summary>
+        public virtual IQueryable<TEntity> Queryable(bool asNoTracking = false)
+            => asNoTracking ? Set.AsNoTracking() : Set;
 
 
         public virtual Task AddAsync(TEntity entity)

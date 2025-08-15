@@ -16,7 +16,7 @@ public partial class DEnglishDiaryTag
     /// <summary>
     /// 日記タグID
     /// </summary>
-    public int DiaryTagId { get; set; }
+    public Guid DiaryTagId { get; set; }
 
     /// <summary>
     /// 作成日時

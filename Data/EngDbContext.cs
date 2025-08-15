@@ -492,6 +492,9 @@ public partial class EngDbContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("成績名")
                 .HasColumnName("grade_name");
+            entity.Property(e => e.OrderNo)
+                .HasComment("ソート順")
+                .HasColumnName("order_no");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasComment("更新日時")
