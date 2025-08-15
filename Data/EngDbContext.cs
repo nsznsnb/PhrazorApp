@@ -380,7 +380,6 @@ public partial class EngDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.IsCorrect)
-                .HasDefaultValue(false)
                 .HasComment("正解フラグ")
                 .HasColumnName("is_correct");
             entity.Property(e => e.PhraseId)

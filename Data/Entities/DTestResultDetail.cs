@@ -26,7 +26,7 @@ public partial class DTestResultDetail
     /// <summary>
     /// 正解フラグ
     /// </summary>
-    public bool? IsCorrect { get; set; }
+    public bool IsCorrect { get; set; }
 
     /// <summary>
     /// 作成日時

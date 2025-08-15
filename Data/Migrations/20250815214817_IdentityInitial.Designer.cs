@@ -12,7 +12,7 @@ using PhrazorApp.Data;
 namespace PhrazorApp.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250815150152_IdentityInitial")]
+    [Migration("20250815214817_IdentityInitial")]
     partial class IdentityInitial
     {
         /// <inheritdoc />
