@@ -6,17 +6,10 @@
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Home">
         Home
     </MudNavLink>
-
     <!-- フレーズ関連 -->
     <MudNavLink Href="phrases" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Translate">
         フレーズ一覧
     </MudNavLink>
-
-    <!-- フレーズジャンル -->
-    <MudNavLink Href="genres" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Category">
-        フレーズジャンル一覧
-    </MudNavLink>
-
     <!-- ★ 追加：フレーズ帳 -->
     <MudNavLink Href="phrasebooks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.MenuBook">
         フレーズ帳
@@ -25,6 +18,20 @@
     <MudNavLink Href="tests/setup" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.FactCheck">
         フレーズテスト
     </MudNavLink>
+    <!-- フレーズジャンル -->
+    <MudNavLink Href="genres" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.Category">
+        フレーズジャンル一覧
+    </MudNavLink>
+    <MudNavGroup Title="英語日記添削" Icon="@Icons.Material.TwoTone.RateReview">
+        <MudNavLink Href="admin/diary/calendar" Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.TwoTone.EditCalendar">
+            カレンダー
+        </MudNavLink>
+        <MudNavLink Href="admin/diary/operation-types" Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.TwoTone.Style">
+            日記タグ一覧
+        </MudNavLink>
+    </MudNavGroup>
     <!-- ★ 共通設定（Admin のみ表示） -->
     <AuthorizeView Roles="Admin">
         <MudNavGroup Title="共通設定" Icon="@Icons.Material.TwoTone.AdminPanelSettings">
@@ -46,6 +53,21 @@
             </MudNavLink>
         </MudNavGroup>
     </AuthorizeView>
+    <MudNavGroup Title="ヘルプ" Icon="@Icons.Material.TwoTone.HelpOutline">
+        <!-- 操作マニュアル -->
+        <MudNavLink Href="admin/diary/calendar" Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.TwoTone.MenuBook">
+            操作マニュアル
+        </MudNavLink>
+
+        <!-- 開発資料（管理者のみ） -->
+        <AuthorizeView Roles="Admin">
+            <MudNavLink Href="admin/diary/operation-types" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.TwoTone.Description">
+                開発資料
+            </MudNavLink>
+        </AuthorizeView>
+    </MudNavGroup>
     <AuthorizeView>
         <Authorized>
             <form action="Account/Logout" method="post" class="mt-1">
