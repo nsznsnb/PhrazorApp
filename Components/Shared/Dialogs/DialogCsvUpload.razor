@@ -1,19 +1,17 @@
-﻿@using System.Globalization
-@using CsvHelper
-@using CsvHelper.Configuration
+﻿@typeparam TItem
 @using Microsoft.AspNetCore.Components.Forms
+@using MudBlazor
 @using PhrazorApp.Utils
-@inherits DialogCsvUploadBase<PhraseEditModel>
-@inject ISnackbar Snackbar
-@inject PhraseService PhraseService
+@inherits PhrazorApp.Components.Shared.Dialogs.DialogCsvUploadBase<TItem>
 @inject UiOperationRunner UiOperationRunner
 
 <DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
-                   DialogTitle="CSV読込"
-                   ExecuteButtonText="読込"
+                   DialogTitle="@DialogTitle"
+                   ExecuteButtonText="@ExecuteButtonText"
                    CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                    ContentClass="py-5 my-1"
                    OnExecuteAsync="SubmitAsync">
+
     <MudForm Model="@model" @ref="@form" Validation="@(ValidationRules.ValidateValue)" ValidationDelay="0">
         <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
 
@@ -22,14 +20,13 @@
                            @ref="_file"
                            For="@(() => model.File)"
                            @bind-Files="model.File"
-                           Accept=".csv"
+                           Accept="@Accept"
                            MaximumFileCount="1"
                            OnFilesChanged="OnFilesChanged"
                            SuppressOnChangeWhenInvalid="true"
                            Class="my-2">
                 <ActivatorContent>
-                    <MudButton Variant="Variant.Filled"
-                               Size="@AppConstants.SIZE_BUTTON"
+                    <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
                                StartIcon="@Icons.Material.TwoTone.AttachFile">
                         @AppConstants.LABEL_BUTTON_CHOICE_FILE
                     </MudButton>
@@ -41,7 +38,6 @@
             </MudList>
         </MudStack>
 
-        @* ← ここが「ボタン直下」のエラー表示 *@
         @if (_fvFileErrors?.Any() == true)
         {
             @foreach (var msg in _fvFileErrors)
@@ -58,49 +54,40 @@
     private MudForm form = default!;
     private FileModel model = new();
     private FileModelValidator ValidationRules = new();
-    private MudFileUpload<IBrowserFile> _file;
+    private MudFileUpload<IBrowserFile> _file = default!;
     private List<string> _fvFileErrors = new();
 
-    private async Task OnFilesChanged(InputFileChangeEventArgs e)
-        => await UpdateFileValidationAsync();
+    private async Task OnFilesChanged(InputFileChangeEventArgs _) => await UpdateFileValidationAsync();
 
     private async Task UpdateFileValidationAsync()
     {
         var result = await ValidationRules.ValidateValue(model, nameof(FileModel.File));
-        _fvFileErrors = result?.ToList() ?? [];
+        _fvFileErrors = result?.ToList() ?? new();
     }
-
-    private Task ClearAsync() => _file?.ClearAsync() ?? Task.CompletedTask;
 
     private async ValueTask<bool> SubmitAsync()
     {
         await form.Validate();
-        if (!form.IsValid) return false;
+        if (!form.IsValid || model.File is null) return false;
 
-        var r = await UiOperationRunner.WriteAsync(
-            async () =>
+        var res = await UiOperationRunner.WriteAsync(async () =>
+        {
+            using var stream = model.File.OpenReadStream(MaxSizeMB * 1024 * 1024);
+            var items = await CsvUtil.ReadToListAsync<TItem>(stream);
+
+            // 任意の処理（DB反映など）を呼び出し側から注入
+            if (ProcessAsync is not null)
             {
-                using var stream = model.File.OpenReadStream(10 * 1024 * 1024);
+                var op = await ProcessAsync(items);
+                if (!op.IsSuccess) return op; // 失敗時はここで終了
+            }
 
-                // 読み込み
-                var dtos = await CsvUtil.ReadToListAsync<PhraseImportDto>(stream);
-                var phraseModels = dtos.Select(x => x.ToPhraseModel()).ToList();
+            // UI側へ通知（リロード等）
+            await RaiseCompletedAsync(items);
 
-                // まとめて登録
-                var created = await PhraseService.CreatePhrasesAsync(phraseModels);
-                if (!created.IsSuccess)
-                    return ServiceResult.Error<bool>(created.Message ?? string.Format(AppMessages.MSG_E_FAILURE_CREATE_DETAIL, "フレーズ"));
+            return ServiceResultNoContent.Success(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);
+        }, message: AppMessages.MSG_I_PROGRESS_TAKE_IN);
 
-                // 呼び出し元へ通知
-                await RaiseCompletedAsync(phraseModels);
-
-                // 成功
-                return ServiceResult.Success(true, AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);
-            },
-            message: AppMessages.MSG_I_PROGRESS_TAKE_IN
-        );
-
-        // 成功時のみ閉じる想定
-        return r.IsSuccess;
+        return res.IsSuccess;
     }
 }

@@ -1,12 +1,10 @@
 ﻿using MudBlazor;
-using PhrazorApp.Extensions;          // ToSeverity()
-using PhrazorApp.Commons;             // OverlayScope
-using PhrazorApp.Commons.Results;     // ServiceResult<T>, Unit
+using PhrazorApp.Extensions;         
 
 namespace PhrazorApp.Components.UiSupport
 {
     /// <summary>
-    /// UI操作ランナー（キャンセルなし）
+    /// UI操作ランナー
     /// 公開APIは4つのみ：
     /// 1) ReadAsync                 … 読込（オーバーレイ無し）
     /// 2) ReadWithOverlayAsync      … 読込（BodyOnly オーバーレイ）
@@ -46,6 +44,26 @@ namespace PhrazorApp.Components.UiSupport
             }
         }
 
+        // ★ 引数ありオーバーロード（名前は同じ）
+        public async Task<TOut?> ReadAsync<TIn, TOut>(
+            Func<TIn, Task<ServiceResult<TOut>>> loadData,
+            TIn arg)
+        {
+            try
+            {
+                var r = await loadData(arg);
+                if (!string.IsNullOrWhiteSpace(r.Message))
+                    _snackbar.Add(r.Message, r.ToSeverity());
+                return r.IsSuccess ? r.Data : default;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                _snackbar.Add("処理に失敗しました。", Severity.Error);
+                return default;
+            }
+        }
+
         // 2) 読込（BodyOnly オーバーレイ）
         public async Task<T?> ReadWithOverlayAsync<T>(
             Func<Task<ServiceResult<T>>> loadData,
@@ -71,8 +89,35 @@ namespace PhrazorApp.Components.UiSupport
             }
         }
 
+        // ★ 引数ありオーバーロード（名前は同じ）
+        public async Task<TOut?> ReadWithOverlayAsync<TIn, TOut>(
+            Func<TIn, Task<ServiceResult<TOut>>> loadData,
+            TIn arg,
+            string? message = null)
+        {
+            _loading.Show(message ?? DefaultMessage, indeterminate: DefaultIndeterminate, scope: OverlayScope.BodyOnly);
+            try
+            {
+                var r = await loadData(arg);
+                if (!string.IsNullOrWhiteSpace(r.Message))
+                    _snackbar.Add(r.Message, r.ToSeverity());
+                return r.IsSuccess ? r.Data : default;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                _snackbar.Add("処理に失敗しました。", Severity.Error);
+                return default;
+            }
+            finally
+            {
+                _loading.Hide();
+            }
+        }
+
         // 3) 書き込み（常に Global オーバーレイ）
-        // 戻り値不要な書込みは Unit を使う: Func<Task<ServiceResult<Unit>>>
+        // 戻り値不要な書込みは NoContent を使う: Func<Task<ServiceResult<NoContent>>>
+
         public async Task<ServiceResult<T>> WriteAsync<T>(
             Func<Task<ServiceResult<T>>> operation,
             string? message = null)
@@ -98,7 +143,7 @@ namespace PhrazorApp.Components.UiSupport
         }
 
         // 4) 書き込み → 再読込（常に Global オーバーレイ）
-        // 書き込み結果 TO は使わない場合でも Unit でOK。再読込の結果 TL を返す。
+        // 書き込み結果 TO は使わない場合でも Unit でOK。再読込の結果 TL を返す
         public async Task<TL?> WriteThenReloadAsync<TL, TO>(
             Func<Task<ServiceResult<TO>>> operation,
             Func<Task<ServiceResult<TL>>> reloadData,
@@ -108,17 +153,45 @@ namespace PhrazorApp.Components.UiSupport
             try
             {
                 var op = await operation();
-
                 if (!string.IsNullOrWhiteSpace(op.Message))
                     _snackbar.Add(op.Message, op.ToSeverity());
-
                 if (!op.IsSuccess) return default;
 
                 var load = await reloadData();
-
                 if (!string.IsNullOrWhiteSpace(load.Message))
                     _snackbar.Add(load.Message, load.ToSeverity());
+                return load.IsSuccess ? load.Data : default;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                _snackbar.Add("処理に失敗しました。", Severity.Error);
+                return default;
+            }
+            finally
+            {
+                _loading.Hide();
+            }
+        }
 
+        // ★ 引数ありオーバーロード（名前は同じ）
+        public async Task<TL?> WriteThenReloadAsync<TL, TO, TIn>(
+            Func<Task<ServiceResult<TO>>> operation,
+            Func<TIn, Task<ServiceResult<TL>>> reloadData,
+            TIn arg,
+            string? message = null)
+        {
+            _loading.Show(message ?? DefaultMessage, indeterminate: DefaultIndeterminate, scope: OverlayScope.Global);
+            try
+            {
+                var op = await operation();
+                if (!string.IsNullOrWhiteSpace(op.Message))
+                    _snackbar.Add(op.Message, op.ToSeverity());
+                if (!op.IsSuccess) return default;
+
+                var load = await reloadData(arg);
+                if (!string.IsNullOrWhiteSpace(load.Message))
+                    _snackbar.Add(load.Message, load.ToSeverity());
                 return load.IsSuccess ? load.Data : default;
             }
             catch (Exception ex)

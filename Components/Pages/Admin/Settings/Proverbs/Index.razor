@@ -1,7 +1,85 @@
 ﻿@page "/admin/settings/proverbs"
 @attribute [Authorize(Roles = "Admin")]
+@inject ProverbService ProverbService
+@inject UiOperationRunner UiRunner
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <MudStack Spacing="2">
     <SectionTitle Title="格言マスタ" />
-    <BaseCard Class="pa-4">（実装予定）</BaseCard>
+
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.TwoTone.UploadFile"
+                   OnClick="OpenCsvUploadDialog">
+            CSV取込
+        </MudButton>
+    </ActionCard>
+
+    <BaseCard>
+        <TableWithToolbar TItem="ProverbModel"
+                          Items="@_items"
+                          Search="true"
+                          SearchBy="@(x => new[] { x.Text ?? string.Empty, x.Meaning ?? string.Empty, x.Author ?? string.Empty })"
+                          Pager="TablePagerMode.Auto"
+                          RowsPerPage="10"
+                          Height="500px">
+            <HeaderContent>
+                <MudTh>格言</MudTh>
+                <MudTh>意味</MudTh>
+                <MudTh>著者</MudTh>
+                <MudTh style="min-width:160px;">操作</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>@context.Text</MudTd>
+                <MudTd>@context.Meaning</MudTd>
+                <MudTd>@context.Author</MudTd>
+                <MudTd Align="Align.Right">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                               StartIcon="@Icons.Material.TwoTone.Delete"
+                               OnClick="@(() => OnDeleteAsync(context.Id))">
+                        削除
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="p-4">データがありません。</MudText>
+            </NoRecordsContent>
+        </TableWithToolbar>
+    </BaseCard>
 </MudStack>
+
+@code {
+    private List<ProverbModel> _items = new();
+
+    protected override async Task OnInitializedAsync()
+        => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _items = await UiRunner.ReadWithOverlayAsync(
+                     () => ProverbService.GetListAsync(),
+                     "読み込み中…") ?? new();
+    }
+    private async Task OpenCsvUploadDialog()
+    {
+        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload<ProverbImportDto>, ProverbImportDto>(
+            caller: this,
+            onUploadCompleted: _ => ReloadAsync(),
+            processAsync: rows => ProverbService.ImportCsvAsync(rows), // NoContentResult
+            title: "CSV読込（格言）",
+            executeText: "取り込み");
+    }
+
+    private async Task OnDeleteAsync(Guid id)
+    {
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm, "削除します。よろしいですか？");
+        if (!ok) return;
+
+        var r = await UiRunner.WriteAsync(() => ProverbService.DeleteAsync(id), "削除中…");
+        if (r.IsSuccess) await ReloadAsync();
+    }
+}

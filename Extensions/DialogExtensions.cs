@@ -119,18 +119,34 @@ public static class DialogServiceExtensions
     /// <summary>
     /// CSVアップロードダイアログ（糖衣メソッド）
     /// </summary>
+    /// <summary>
+    /// CSVアップロードダイアログ（ジェネリック）
+    /// 必要なら DB反映などの処理を processAsync で注入できる。
+    /// </summary>
     public static Task<IDialogReference> ShowCsvUploadDialogAsync<TDialog, TItem>(
         this IDialogService dialogService,
         object caller,
         Func<List<TItem>, Task> onUploadCompleted,
-        string title = "CSV読込",
+        Func<List<TItem>, Task<ServiceResult<NoContent>>>? processAsync = null,
+        string? title = null,
+        string? executeText = null,
+        string? accept = null,
+        int? maxSizeMB = null,
         DialogOptions? options = null)
         where TDialog : DialogCsvUploadBase<TItem>, IComponent
     {
-        return dialogService.ShowWithCallbackAsync<TDialog, List<TItem>>(
-            title,
+        var values = new List<(Expression<Func<TDialog, object?>>, object?)>();
+        if (processAsync is not null) values.Add((x => x.ProcessAsync, processAsync));
+        if (title is not null) values.Add((x => x.DialogTitle, title));
+        if (executeText is not null) values.Add((x => x.ExecuteButtonText, executeText));
+        if (accept is not null) values.Add((x => x.Accept, accept));
+        if (maxSizeMB.HasValue) values.Add((x => x.MaxSizeMB, maxSizeMB.Value));
+
+        return dialogService.ShowWithParamsAndCallbackAsync<TDialog, List<TItem>>(
+            title ?? "CSV読込",
             caller,
-            x => x.OnUploadCompleted, // ★ ここが MemberExpression で解釈される
+            values.ToArray(),
+            x => x.OnUploadCompleted,
             onUploadCompleted,
             options ?? OptionsSm());
     }
