@@ -1,8 +1,8 @@
 ﻿namespace PhrazorApp.Commons.Results
 {
     /// <summary>
-    /// 戻り値不要の処理で、ジェネリックの「空」を表現するための型。
-    /// C# の void は型引数に使えないため、その代替。
+    /// 「値がない」ことを表す軽量な型（F# / Scala の Unit に相当）。<br />
+    /// - C# の void は型引数に使えないため、ジェネリック戻り値の「空」を表すために用意。
     /// </summary>
     public readonly struct Unit : IEquatable<Unit>
     {
