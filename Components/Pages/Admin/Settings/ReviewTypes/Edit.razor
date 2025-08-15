@@ -1,10 +1,10 @@
-@* @page "/admin/settings/reviewtypes/create"
-@page "/admin/settings/reviewtypes/edit/{Id:guid}"
-@using Blazored.FluentValidation
-@attribute [Authorize]
+@page "/admin/settings/review-types/create"
+@page "/admin/settings/review-types/edit/{Id:guid}"
+@attribute [Authorize(Roles = "Admin")]
+
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
-@inject PhrazorApp.Services.Settings.ReviewTypeService Service
+@inject ReviewTypeService Service
 @inject UiOperationRunner UiOperationRunner
 @inject IServiceProvider ServiceProvider
 
@@ -100,4 +100,3 @@
         return Task.CompletedTask;
     }
 }
- *@

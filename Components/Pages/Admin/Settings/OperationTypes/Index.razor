@@ -1,6 +1,6 @@
 @page "/admin/settings/operation-types"
-@attribute [Authorize]
-@using PhrazorApp.Models
+@attribute [Authorize(Roles = "Admin")]
+
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject OperationTypeService Service
@@ -9,7 +9,7 @@
 <MudStack Spacing="2">
     <SectionTitle HeadingLevel="2" Title="操作種別一覧" />
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/operationtypes/create"))">新規追加</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/operation-types/create"))">新規追加</MudButton>
     </ActionCard>
     <BaseCard>
         <TableWithToolbar TItem="OperationTypeModel"
@@ -33,7 +33,7 @@
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
                                    StartIcon="@Icons.Material.TwoTone.Edit"
-                                   OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/operationtypes/edit/{context.Id}"))">
+                                   OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/operation-types/edit/{context.Id}"))">
                             @AppConstants.LABEL_BUTTON_EDIT
                         </MudButton>
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"

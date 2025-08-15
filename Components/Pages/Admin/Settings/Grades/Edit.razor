@@ -1,10 +1,10 @@
-@* @page "/admin/settings/grades/create"
+@page "/admin/settings/grades/create"
 @page "/admin/settings/grades/edit/{Id:guid}"
 @using Blazored.FluentValidation
 @attribute [Authorize]
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
-@inject PhrazorApp.Services.Settings.GradeService Service
+@inject GradeService Service
 @inject UiOperationRunner UiOperationRunner
 @inject IServiceProvider ServiceProvider
 
@@ -100,4 +100,3 @@
         return Task.CompletedTask;
     }
 }
- *@

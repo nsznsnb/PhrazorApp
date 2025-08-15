@@ -1,6 +1,6 @@
 @page "/admin/settings/grades"
-@attribute [Authorize]
-@using PhrazorApp.Models
+@attribute [Authorize(Roles = "Admin")]
+
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject GradeService Service

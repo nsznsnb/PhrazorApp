@@ -1,10 +1,10 @@
-@* @page "/admin/settings/operationtypes/create"
-@page "/admin/settings/operationtypes/edit/{Id:guid}"
-@using Blazored.FluentValidation
-@attribute [Authorize]
+@page "/admin/settings/operation-types/create"
+@page "/admin/settings/operation-types/edit/{Id:guid}"
+@attribute [Authorize(Roles = "Admin")]
+
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
-@inject PhrazorApp.Services.Settings.OperationTypeService Service
+@inject OperationTypeService Service
 @inject UiOperationRunner UiOperationRunner
 @inject IServiceProvider ServiceProvider
 
@@ -57,7 +57,7 @@
                     </MudItem>
                     <MudItem xs="12" md="4">
                         <MudNumericField T="int"
-                                         @bind-Value="_model.Limit"
+                                         Value="_model.Limit ?? 0"
                                          Margin="Margin.Dense"
                                          Variant="Variant.Outlined"
                                          Label="操作回数上限"
@@ -103,7 +103,7 @@
             message: AppMessages.MSG_I_PROGRESS_SAVE);
 
         if (!op.IsSuccess) return;
-        NavigationManager.NavigateTo("/admin/settings/operationtypes");
+        NavigationManager.NavigateTo("/admin/settings/operation-types");
     }
 
     private void OnInvalidSubmit(EditContext editContext)
@@ -117,4 +117,3 @@
         return Task.CompletedTask;
     }
 }
- *@
