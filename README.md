@@ -1,5 +1,10 @@
 # PhrazorApp
 
+## 開発者向けドキュメント
+
+このプロジェクトの実装方針・命名・画面とサービスの役割・バリデーション方針などは  
+**[Development Guide](./DEVELOPMENT.md)** にまとめています。
+
 ## ディレクトリ概要
 
 - **Components/** … Razor コンポーネント
@@ -10,7 +15,7 @@
   - **Pages/** … ルーティングされるページ
   - **Shared/** … 再利用コンポーネント
     - **Controls/** … 見た目中心（Presentational）
-    - **Containers/** … 処理を握る（Smart/Container）
+    - **Containers/** … サービスを利用した処理まで担う（Smart/Container）
     - **Dialogs/** … モーダル（*Dialog / *DialogHost）
   - **App.razor / Routes.razor / _Imports.razor** … ルート/ルーティング/共通 using
 
@@ -47,3 +52,4 @@
 - **wwwroot/** … 静的ファイル（js/css/画像 など）
 
 - **GlobalUsings.cs** … グローバル using 定義
+
