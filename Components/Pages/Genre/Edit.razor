@@ -5,7 +5,7 @@
 <BackLink Href="/genres" />
 <SectionTitle Title="@(IsEdit ? "フレーズジャンル編集" : "フレーズジャンル新規作成")" />
 
-<GenreForm Id="Id" IsDialog="false" />
+<GenreEditor Id="Id" IsDialog="false" />
 @code {
     [Parameter] public Guid? Id { get; set; }
 
