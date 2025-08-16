@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
-using PhrazorApp.Commons.Results;
 
 namespace PhrazorApp.Components.Shared.Dialogs
 {
     /// <summary>CSVアップロードの共通基底</summary>
-    public abstract class DialogCsvUploadBase<TItem> : ComponentBase
+    public abstract class CsvUploadBaseDialog<TItem> : ComponentBase
     {
         /// <summary>アップロード完了（UI側へ通知）</summary>
         [Parameter] public EventCallback<List<TItem>> OnUploadCompleted { get; set; }

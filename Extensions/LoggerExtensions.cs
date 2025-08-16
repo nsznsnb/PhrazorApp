@@ -62,7 +62,7 @@ namespace PhrazorApp.Extensions
             this ILogger logger,
             EventId eventId,
             string message,
-            object[] args = null,
+            object[] args = null!,
             [CallerMemberName] string memberName = "",
             [CallerFilePath] string filePath = "")
         {

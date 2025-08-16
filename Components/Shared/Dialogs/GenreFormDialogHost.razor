@@ -5,11 +5,11 @@
                    ContentClass="py-5"
                    OnExecuteAsync="SubmitAsync">
 
-    <GenreForm @ref="formRef" IsDialog="true" Id="GenreId" />
+    <GenreEditor @ref="formRef" IsDialog="true" Id="GenreId" />
 </DialogBaseWrapper>
 
 @code {
-    private GenreForm? formRef;
+    private GenreEditor? formRef;
     [Parameter] public Guid? GenreId { get; set; }
 
     private async ValueTask<bool> SubmitAsync()

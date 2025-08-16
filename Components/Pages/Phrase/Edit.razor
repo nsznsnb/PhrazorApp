@@ -31,13 +31,12 @@
                                       HelperText="@(string.Format(AppMessages.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文の意味", "200"))" ShrinkLabel />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <ImageGenerator Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
+                        <ImageGeneratorContainer Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
                     </MudItem>
                     <MudItem xs="12" md="6">
-                        <ItemDropSelector @ref="_selector"
+                        <GenreSelectorContainer @ref="_selector"
                                           @bind-SelectedItems="model.SelectedDropItems"
                                           MaxSelection="3"
-                                          UnassignedLabel="カテゴリ"
                                           OnAddGenreClicked="OpenGenreDialog" />
                     </MudItem>
                     <MudItem xs="12" md="12">
@@ -62,7 +61,7 @@
     [Parameter] public Guid? Id { get; set; }
 
     private MudForm? form;
-    private ItemDropSelector? _selector;
+    private GenreSelectorContainer? _selector;
     private bool isEdit;
     private PhraseEditModel model = new();
 
@@ -125,7 +124,7 @@
 
     private async Task OpenGenreDialog()
     {
-        var dlg = await DialogService.ShowWithAsync<DialogGenreForm, Guid?>(
+        var dlg = await DialogService.ShowWithAsync<GenreFormDialogHost, Guid?>(
             title: "ジャンル登録",
             paramSelector: x => x.GenreId,
             value: null,

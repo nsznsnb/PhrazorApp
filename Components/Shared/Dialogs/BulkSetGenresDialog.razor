@@ -30,10 +30,9 @@
 
         @if (Mode != BulkGenreMode.ClearAll)
         {
-            <ItemDropSelector @ref="_selector"
+            <GenreSelectorContainer @ref="_selector"
                               @bind-SelectedItems="_selected"
                               MaxSelection="3"
-                              UnassignedLabel="カテゴリ"
                               OnAddGenreClicked="OpenGenreDialog" />
         }
         <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -52,7 +51,7 @@
     [Inject] private PhraseService PhraseService { get; set; } = default!;
     [Inject] private IDialogService DialogService { get; set; } = default!;
 
-    private ItemDropSelector? _selector;
+    private GenreSelectorContainer? _selector;
     private List<DropItemModel> _selected = new();
     private BulkGenreMode Mode = BulkGenreMode.ReplaceAll;
 
@@ -67,7 +66,7 @@
 
     private async Task OpenGenreDialog()
     {
-        var dlg = await DialogService.ShowWithAsync<DialogGenreForm, Guid?>(
+        var dlg = await DialogService.ShowWithAsync<GenreFormDialogHost, Guid?>(
             title: "ジャンル登録",
             paramSelector: x => x.GenreId,
             value: null,

@@ -66,7 +66,7 @@
     }
     private async Task OpenCsvUploadDialog()
     {
-        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload<ProverbImportDto>, ProverbImportDto>(
+        await DialogService.ShowCsvUploadDialogAsync<CsvUploadDialog<ProverbImportDto>, ProverbImportDto>(
             caller: this,
             onUploadCompleted: _ => ReloadAsync(),
             processAsync: rows => ProverbService.ImportCsvAsync(rows), // NoContentResult

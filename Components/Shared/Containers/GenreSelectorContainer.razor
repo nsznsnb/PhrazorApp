@@ -1,0 +1,42 @@
+﻿@inject GenreService GenreService
+@inject UiOperationRunner Runner
+@inject ISnackbar Snackbar
+
+<DropItemSelector Items="_items"
+                  SelectedItems="SelectedItems"
+                  SelectedItemsChanged="SelectedItemsChanged"
+                  MaxSelection="MaxSelection"
+                  UnassignedLabel="未選択のサブジャンル"
+                  TargetLabel="選択中"
+                  Height="@(Height ?? "180px")"
+                  OnAddRequested="OnAddGenreClicked">
+</DropItemSelector>
+
+@code {
+    [Parameter] public List<DropItemModel> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
+    [Parameter] public int MaxSelection { get; set; } = 3;
+    [Parameter] public string? Height { get; set; }
+    [Parameter] public EventCallback OnAddGenreClicked { get; set; } // 親で新規作成ダイアログを開く
+
+    private List<DropItemModel> _items = new();
+
+    protected override async Task OnInitializedAsync()
+        => await ReloadAsync();
+
+    public async Task ReloadAsync(List<DropItemModel>? keepSelection = null)
+    {
+        if (keepSelection is not null) SelectedItems = keepSelection;
+
+        var all = await Runner.ReadAsync(() => GenreService.GetGenreDropItemModelListAsync());
+        _items = all ?? new();
+
+        // 初期選択の適用（Key1=GenreId, Key2=SubGenreId 前提）
+        foreach (var it in _items)
+        {
+            var selected = SelectedItems.Any(sel => sel.Key1 == it.Key1 && sel.Key2 == it.Key2);
+            it.DropTarget = selected ? DropItemType.Target : DropItemType.UnAssigned;
+        }
+        StateHasChanged();
+    }
+}

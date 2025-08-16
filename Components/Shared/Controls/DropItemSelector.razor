@@ -1,0 +1,120 @@
+﻿
+<MudPaper Class="pa-2" Outlined="true" Style="@($"width:{Width ?? "100%"};")">
+    <MudDropContainer T="DropItemModel"
+                      Items="Items"
+                      ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone))"
+                      ItemDropped="HandleItemDropped"
+                      Class="d-flex flex-grow-1">
+
+        <ChildContent>
+            <MudGrid Spacing="1">
+                <MudItem xs="12">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudListSubheader>@UnassignedLabel</MudListSubheader>
+
+                        @if (ShowAddButton)
+                        {
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="@AppConstants.SIZE_BUTTON"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="() => OnAddRequested.InvokeAsync()">
+                                @AppConstants.LABEL_BUTTON_CREATE
+                            </MudButton>
+                        }
+                    </MudStack>
+
+                    <MudDropZone T="DropItemModel"
+                                 Identifier="@DropItemType.UnAssigned.ToString()"
+                                 Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
+                                 Style="@GetZoneStyle(DropItemType.UnAssigned)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudListSubheader>@TargetLabel</MudListSubheader>
+                    <MudDropZone T="DropItemModel"
+                                 Identifier="@DropItemType.Target.ToString()"
+                                 Class="rounded mud-background-gray pa-3 d-flex flex-row flex-wrap"
+                                 Style="@GetZoneStyle(DropItemType.Target)" />
+                </MudItem>
+            </MudGrid>
+        </ChildContent>
+
+        <ItemRenderer Context="ctx">
+            @if (ItemTemplate is not null)
+            {
+                @ItemTemplate(ctx)
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Default">@ctx.Name</MudChip>
+            }
+        </ItemRenderer>
+    </MudDropContainer>
+</MudPaper>
+
+@code {
+    [Parameter] public List<DropItemModel> Items { get; set; } = new();
+    [Parameter] public List<DropItemModel> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
+    [Parameter] public int MaxSelection { get; set; } = 3;
+    [Parameter] public string UnassignedLabel { get; set; } = "未分類";
+    [Parameter] public string TargetLabel { get; set; } = "選択中";
+    [Parameter] public bool ShowAddButton { get; set; } = true;
+    [Parameter] public EventCallback OnAddRequested { get; set; }
+    [Parameter] public RenderFragment<DropItemModel>? ItemTemplate { get; set; }
+    [Parameter] public string? Width { get; set; }
+    [Parameter] public string? Height { get; set; }
+
+    // 比較ロジックを差し替え可能に（既定：Key1 & Key2）
+    [Parameter] public Func<DropItemModel, DropItemModel, bool>? EqualsBy { get; set; }
+
+    private static DropItemType ParseDropItemType(string zone)
+        => Enum.TryParse<DropItemType>(zone, out var r) ? r : DropItemType.UnAssigned;
+
+    private string GetZoneStyle(DropItemType zone)
+    {
+        var baseStyle = "min-width:250px;";
+        var heightValue = Height ?? "130px";
+        return zone == DropItemType.UnAssigned
+            ? $"{baseStyle} min-height:{heightValue}; max-height:{heightValue}; overflow-y:auto;"
+            : $"{baseStyle} min-height:70px; max-height:{heightValue};";
+    }
+
+    private async Task HandleItemDropped(MudItemDropInfo<DropItemModel> drop)
+    {
+        var currentZone = ParseDropItemType(drop.DropzoneIdentifier);
+
+        if (currentZone == DropItemType.Target &&
+            Items.Count(x => x.DropTarget == DropItemType.Target) >= MaxSelection)
+        {
+            drop.Item!.DropTarget = DropItemType.UnAssigned;
+            // 警告UIは親に任せる前提（必要なら OnWarn コールバックを追加）
+            return;
+        }
+
+        drop.Item!.DropTarget = currentZone;
+
+        // EqualsBy があればそれを使う（既定は Key1 & Key2 比較）
+        bool Eq(DropItemModel a, DropItemModel b) =>
+            (EqualsBy is not null) ? EqualsBy(a,b) : (a.Key1 == b.Key1 && a.Key2 == b.Key2);
+
+        SelectedItems = Items
+            .Where(x => x.DropTarget == DropItemType.Target)
+            .GroupBy(x => x, new LambdaComparer<DropItemModel>(Eq))
+            .Select(g => g.First())
+            .ToList();
+
+        if (SelectedItemsChanged.HasDelegate)
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+
+    private sealed class LambdaComparer<T> : IEqualityComparer<T>
+    {
+        private readonly Func<T,T,bool> _eq;
+        public LambdaComparer(Func<T,T,bool> eq) => _eq = eq;
+        public bool Equals(T? x, T? y) => (x is not null && y is not null) && _eq(x,y);
+        public int GetHashCode(T obj) => 0; // グループ化用：衝突許容
+    }
+}

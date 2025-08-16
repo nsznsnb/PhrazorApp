@@ -97,12 +97,12 @@ public static class DialogServiceExtensions
         DialogConfirmType dialogPattern,
         string content)
     {
-        var parameters = new DialogParameters<DialogCommon>
+        var parameters = new DialogParameters<CommonDialog>
         {
             { x => x.DialogPattern , dialogPattern },
             { x => x.ContentText, content },
         };
-        return dialogService.ShowAsync<DialogCommon>(string.Empty, parameters, OptionsXs());
+        return dialogService.ShowAsync<CommonDialog>(string.Empty, parameters, OptionsXs());
     }
 
     public static async Task<bool> ShowConfirmAsync(
@@ -133,7 +133,7 @@ public static class DialogServiceExtensions
         string? accept = null,
         int? maxSizeMB = null,
         DialogOptions? options = null)
-        where TDialog : DialogCsvUploadBase<TItem>, IComponent
+        where TDialog : CsvUploadBaseDialog<TItem>, IComponent
     {
         var values = new List<(Expression<Func<TDialog, object?>>, object?)>();
         if (processAsync is not null) values.Add((x => x.ProcessAsync, processAsync));

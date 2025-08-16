@@ -573,7 +573,7 @@
 
     private async Task OpenCsvUploadDialog()
     {
-        await DialogService.ShowCsvUploadDialogAsync<DialogCsvUpload<PhraseImportDto>, PhraseImportDto>(
+        await DialogService.ShowCsvUploadDialogAsync<CsvUploadDialog<PhraseImportDto>, PhraseImportDto>(
             caller: this,
             onUploadCompleted: OnCsvUploadCompleted, // 成功後に一覧リロード等
             processAsync: async rows =>
@@ -637,10 +637,10 @@
             return;
         }
 
-        await DialogService.ShowWithParamsAndCallbackAsync<DialogBulkSetGenres, bool>(
+        await DialogService.ShowWithParamsAndCallbackAsync<BulkSetGenresDialog, bool>(
             title: "カテゴリ一括設定",
             caller: this,
-            values: new (Expression<Func<DialogBulkSetGenres, object?>>, object?)[] {
+            values: new (Expression<Func<BulkSetGenresDialog, object?>>, object?)[] {
                 (x => x.TargetIds, ids)
             },
             callbackSelector: x => x.OnApplied,
