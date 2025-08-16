@@ -127,6 +127,8 @@ namespace PhrazorApp
             builder.Services.AddScoped<GradeService>();
             builder.Services.AddScoped<OperationTypeService>();
             builder.Services.AddScoped<ReviewTypeService>();
+            builder.Services.AddScoped<DiaryTagService>();
+
 
             builder.Services.AddScoped<IValidator<GenreModel>, GenreModelValidator>();
             builder.Services.AddScoped<IValidator<SubGenreModel>, SubGenreModelValidator>();
