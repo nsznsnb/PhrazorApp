@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Commons.Results
+﻿namespace PhrazorApp.Common.Results
 {
     /// <summary>
     /// 「値がない」ことを表す軽量な型（F# / Scala の Unit に相当）。<br />

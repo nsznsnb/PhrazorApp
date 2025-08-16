@@ -1,8 +1,4 @@
-﻿using PhrazorApp.Commons;
-using PhrazorApp.Extensions;
-using PhrazorApp.Infrastructure;
-using System.Net.Http;
-
+﻿
 namespace PhrazorApp.Services
 {
     /// <summary>画像サービス（OpenAI 生成／Blob 保存／HTTP ダウンロード）— CT 不使用</summary>

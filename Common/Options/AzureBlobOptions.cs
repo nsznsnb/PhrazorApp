@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Commons.Settings
+﻿namespace PhrazorApp.Common.Options
 {
     /// <summary>
     /// AzureBlob設定

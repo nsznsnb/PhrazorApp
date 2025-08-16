@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Commons.Constants
+﻿namespace PhrazorApp.Common.Constants
 {
     public static class AppZIndex
     {

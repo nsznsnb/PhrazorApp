@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
 using PhrazorApp;                       // <App/>
-using PhrazorApp.Commons.Validation;   // ValidationBootstrapper
 using PhrazorApp.Components;           // App
 using PhrazorApp.Components.Account;   // Identity ヘルパ
 using PhrazorApp.Data;                 // ApplicationDbContext（Identity 用）

@@ -1,8 +1,5 @@
-﻿using Azure;
-using Microsoft.Extensions.Options;
-using PhrazorApp.Commons;
+﻿using Microsoft.Extensions.Options;
 using PhrazorApp.Extensions;
-using PhrazorApp.Services;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;

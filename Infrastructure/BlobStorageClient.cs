@@ -1,7 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
-using PhrazorApp.Commons;
+using PhrazorApp.Common;
 using PhrazorApp.Extensions;
 
 namespace PhrazorApp.Infrastructure

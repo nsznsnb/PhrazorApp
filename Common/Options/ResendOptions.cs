@@ -1,6 +1,5 @@
-﻿using PhrazorApp.Commons;
-
-namespace PhrazorApp.Commons.Settings
+﻿
+namespace PhrazorApp.Common.Options
 {
     /// <summary>
     /// メール送信設定

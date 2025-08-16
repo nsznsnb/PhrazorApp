@@ -1,7 +1,5 @@
-﻿using MudBlazor;
-using System.Buffers;
-
-namespace PhrazorApp.Commons.Results
+﻿
+namespace PhrazorApp.Common.Results
 {
     public enum ServiceStatus
     {
