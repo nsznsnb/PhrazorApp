@@ -1,0 +1,39 @@
+﻿@inject DiaryTagService DiaryTagService
+@inject UiOperationRunner Runner
+@inject ISnackbar Snackbar
+
+<DropItemSelector Items="_items"
+                  SelectedItems="SelectedItems"
+                  SelectedItemsChanged="SelectedItemsChanged"
+                  MaxSelection="MaxSelection"
+                  UnassignedLabel="未選択のタグ"
+                  TargetLabel="選択中"
+                  Height="@(Height ?? "180px")">
+</DropItemSelector>
+
+@code {
+    [Parameter] public List<DropItemModel> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
+    [Parameter] public int MaxSelection { get; set; } = 5;
+    [Parameter] public string? Height { get; set; }
+
+    private List<DropItemModel> _items = new();
+
+    protected override async Task OnInitializedAsync()
+        => await ReloadAsync();
+
+    public async Task ReloadAsync(List<DropItemModel>? keepSelection = null)
+    {
+        if (keepSelection is not null) SelectedItems = keepSelection;
+
+        var all = await Runner.ReadAsync(() => DiaryTagService.GetDiaryTagDropItemModelListAsync());
+        _items = all ?? new();
+
+        foreach (var it in _items)
+        {
+            var selected = SelectedItems.Any(sel => sel.Key1 == it.Key1); // TagはKey1だけでもOK
+            it.DropTarget = selected ? DropItemType.Target : DropItemType.UnAssigned;
+        }
+        StateHasChanged();
+    }
+}
