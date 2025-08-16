@@ -2,22 +2,21 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace PhrazorApp.Common.Validation
+namespace PhrazorApp.Common;
+
+public static class ValidationBootstrapper
 {
-    public static class ValidationBootstrapper
+    public static void Configure()
     {
-        public static void Configure()
+        ValidatorOptions.Global.DisplayNameResolver = (type, member, expression) =>
         {
-            ValidatorOptions.Global.DisplayNameResolver = (type, member, expression) =>
+            if (member != null)
             {
-                if (member != null)
-                {
-                    var disp = member.GetCustomAttribute<DisplayAttribute>();
-                    if (!string.IsNullOrWhiteSpace(disp?.Name))
-                        return disp.Name;
-                }
-                return member?.Name;
-            };
-        }
+                var disp = member.GetCustomAttribute<DisplayAttribute>();
+                if (!string.IsNullOrWhiteSpace(disp?.Name))
+                    return disp.Name;
+            }
+            return member?.Name;
+        };
     }
 }

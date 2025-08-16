@@ -113,3 +113,10 @@ public enum BulkGenreMode
 }
 
 public enum DateRangePreset { None, Today, Yesterday, Last7Days, Last30Days, Custom }
+
+public enum OperationTypeCode
+{
+    DiaryCorrection = 1,   // 英語日記の添削（OpenAI）
+                           // 例: ImageGenerate = 2, CsvImport = 3, ...
+}
+

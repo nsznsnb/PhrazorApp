@@ -1,17 +1,16 @@
-﻿namespace PhrazorApp.Common.Options
+﻿namespace PhrazorApp.Common;
+
+/// <summary>
+/// AzureBlob設定
+/// </summary>
+public class AzureBlobOptions
 {
     /// <summary>
-    /// AzureBlob設定
+    /// 接続文字列
     /// </summary>
-    public class AzureBlobOptions
-    {
-        /// <summary>
-        /// 接続文字列
-        /// </summary>
-        public string ConnectionString { get; set; } = "";
-        /// <summary>
-        /// コンテナ名
-        /// </summary>
-        public string ContainerName { get; set; } = "";
-    }
+    public string ConnectionString { get; set; } = "";
+    /// <summary>
+    /// コンテナ名
+    /// </summary>
+    public string ContainerName { get; set; } = "";
 }
