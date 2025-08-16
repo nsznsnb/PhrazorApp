@@ -1,0 +1,43 @@
+﻿@page "/docs/manuals"
+@attribute [Authorize]
+
+<MudStack Spacing="2">
+    <SectionTitle Title="操作マニュアル" />
+
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.TwoTone.Download"
+                   Href="@PdfPath" Target="_blank">
+            PDF をダウンロード
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                   StartIcon="@Icons.Material.TwoTone.Description"
+                   Href="@DocxPath" Target="_blank" Download>
+            Word (DOCX) をダウンロード
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.OpenInNew"
+                   Href="@PdfPath" Target="_blank">
+            新しいタブで開く
+        </MudButton>
+    </ActionCard>
+
+    <MudCard Elevation="AppConstants.DEFAULT_ELEVATION">
+        <MudCardContent Class="py-2">
+            <MudText Typo="Typo.subtitle1">PDFプレビュー</MudText>
+        </MudCardContent>
+        <MudCardContent Class="p-0">
+            <PdfPreview Src="@PdfPath" Height="78vh" />
+        </MudCardContent>
+    </MudCard>
+
+    <MudAlert Severity="Severity.Info" Dense="true">
+        Word (DOCX) はブラウザ内プレビューの標準対応がないため、上のボタンからダウンロードしてご覧ください。
+    </MudAlert>
+</MudStack>
+
+@code {
+    // wwwroot 配下。先頭の "/" は web ルートを指します
+    private const string PdfPath = "/docs/manuals/Phrazor_Manual.pdf";
+    private const string DocxPath = "/docs/manuals/Phrazor_Manual.docx";
+}

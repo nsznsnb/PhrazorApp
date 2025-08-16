@@ -1,0 +1,38 @@
+﻿@page "/docs/dev"
+@attribute [Authorize]
+
+<MudStack Spacing="2">
+    <SectionTitle Title="開発資料（ER 図 / a5er）" />
+
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.TwoTone.Image"
+                   Href="@PngPath" Target="_blank">
+            ER 図（PNG）を開く
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                   StartIcon="@Icons.Material.TwoTone.Download"
+                   Href="@A5erPath" Target="_blank" Download>
+            A5ER ファイルをダウンロード（.a5er）
+        </MudButton>
+    </ActionCard>
+
+    <MudCard Elevation="AppConstants.DEFAULT_ELEVATION">
+        <MudCardContent Class="py-2">
+            <MudText Typo="Typo.subtitle1">ER 図プレビュー（拡大・スクロール可）</MudText>
+        </MudCardContent>
+        <MudCardContent>
+            <ZoomableImage Src="@PngPath" Alt="Phrazor ER Diagram" Height="78vh" />
+        </MudCardContent>
+    </MudCard>
+
+    <MudAlert Severity="Severity.Info" Dense="true">
+        .a5er のブラウザ内プレビューは難しいため、画像（PNG）を拡大表示しています。
+        ER 図を更新したら、A5:SQL Mk-2 から PNG をエクスポートして同じパスに上書きしてください。
+    </MudAlert>
+</MudStack>
+
+@code {
+    private const string PngPath = "/docs/er/Phrazor_ER.png";
+    private const string A5erPath = "/docs/er/Phrazor_ER.a5er";
+}
