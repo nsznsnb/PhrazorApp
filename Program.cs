@@ -108,8 +108,6 @@ namespace PhrazorApp
             });
             builder.Services.AddSingleton<BlobStorageClient>();
 
-
-
             builder.Services.AddScoped<ReviewSession>();
             builder.Services.AddScoped<TestResultSession>();
             builder.Services.AddScoped<LoadingManager>();
