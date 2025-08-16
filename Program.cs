@@ -5,182 +5,195 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
-using PhrazorApp.Commons.Validation;
-using PhrazorApp.Components;
-using PhrazorApp.Components.Account;
-using PhrazorApp.Data;
-using PhrazorApp.Data.Repositories;
-using PhrazorApp.Data.UnitOfWork;
-using PhrazorApp.Infrastructure;
-using PhrazorApp.Models;
-using PhrazorApp.Models.Validators;
-using PhrazorApp.Services;
-using PhrazorApp.UI.Interop;
-using PhrazorApp.UI.Managers;
-using PhrazorApp.UI.State;
-using PhrazorApp.Utils;
+using PhrazorApp;                       // <App/>
+using PhrazorApp.Commons.Validation;   // ValidationBootstrapper
+using PhrazorApp.Components;           // App
+using PhrazorApp.Components.Account;   // Identity ヘルパ
+using PhrazorApp.Data;                 // ApplicationDbContext（Identity 用）
+using PhrazorApp.Data.UnitOfWork;      // UnitOfWork
+using PhrazorApp.Infrastructure;       // BlobStorageClient, Options
+using PhrazorApp.Models;               // ApplicationUser, DTO
+using PhrazorApp.Models.Validators;    // FluentValidation バリデータ
+using PhrazorApp.Services;             // ドメインサービス
+using PhrazorApp.UI.Interop;           // JsInteropManager
+using PhrazorApp.UI.Managers;          // LoadingManager, UiOperationRunner
+using PhrazorApp.UI.State;             // ReviewSession, TestResultSession, PageMessageStore
 using Resend;
 
-namespace PhrazorApp
+namespace PhrazorApp;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static async Task Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+        var cfg = builder.Configuration;
+        var env = builder.Environment;
+
+        // ─────────────────────────────────────────
+        // UI フレームワーク
+        // ─────────────────────────────────────────
+        builder.Services.AddMudServices(); // MudBlazor
+
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents(); // Blazor Server 用サービス
+        builder.Services.AddCascadingAuthenticationState();
+
+        // ─────────────────────────────────────────
+        // 認証・認可（Identity + ApplicationDbContext）
+        // ─────────────────────────────────────────
+        var identityConn = cfg.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("接続文字列 'DefaultConnection' が見つかりません。");
+
+        builder.Services.AddDbContext<ApplicationDbContext>(opt =>
+            opt.UseSqlServer(identityConn));
+
+        builder.Services.AddIdentityCore<ApplicationUser>(opt =>
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add MudBlazor services
-            builder.Services.AddMudServices();
-
-            // Add services to the container.
-            builder.Services.AddRazorComponents()
-                .AddInteractiveServerComponents();
-
-            builder.Services.AddCascadingAuthenticationState();
-            builder.Services.AddScoped<IdentityUserAccessor>();
-            builder.Services.AddScoped<IdentityRedirectManager>();
-            builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-            builder.Services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-                })
-                .AddIdentityCookies();
-
-            var connectionString = builder.Configuration.GetConnectionString("EngDbContext") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-            builder.Services.AddIdentityCore<ApplicationUser>(options =>
-            {
-                options.SignIn.RequireConfirmedAccount = true;
-                options.User.RequireUniqueEmail = true; 
-            })
+            opt.SignIn.RequireConfirmedAccount = true; // メール確認必須
+            opt.User.RequireUniqueEmail = true;        // メールアドレス一意
+        })
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddSignInManager()
             .AddErrorDescriber<JapaneseIdentityErrorDescriber>()
             .AddDefaultTokenProviders();
 
-            builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+        builder.Services.AddScoped<IdentityUserAccessor>();
+        builder.Services.AddScoped<IdentityRedirectManager>();
+        builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddScoped<UserService>();
-            builder.Services.AddDbContextFactory<EngDbContext>(opt =>
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        })
+            .AddIdentityCookies();
+
+        // ─────────────────────────────────────────
+        // 業務 DB（EngDbContext）+ UnitOfWork
+        // ─────────────────────────────────────────
+        var appConn = cfg.GetConnectionString("EngDbContext")
+            ?? throw new InvalidOperationException("接続文字列 'EngDbContext' が見つかりません。");
+
+        builder.Services.AddDbContextFactory<EngDbContext>(opt =>
+        {
+            if (env.IsDevelopment())
             {
-                if (builder.Environment.IsDevelopment())
-                {
-                    // 開発時は詳細なエラーとセンシティブデータのロギングを有効にする
-                    opt = opt.EnableSensitiveDataLogging().EnableDetailedErrors();
-                }
-                opt.UseSqlServer(
-                    builder.Configuration.GetConnectionString("EngDbContext"),
-                    sqlOptions => sqlOptions.CommandTimeout(120));
+                opt.EnableSensitiveDataLogging(); // 開発時のみ詳細ログ
+                opt.EnableDetailedErrors();
+            }
+            opt.UseSqlServer(appConn, sql => sql.CommandTimeout(120));
+        });
 
-            });
+        builder.Services.AddDatabaseDeveloperPageExceptionFilter(); // 開発時の DB 例外ページ
+        builder.Services.AddScoped<UnitOfWork>();
 
-            builder.Services.AddScoped<UnitOfWork>();
+        // ─────────────────────────────────────────
+        // クロスカット（Http, Resend, Blob, HttpContext）
+        // ─────────────────────────────────────────
+        builder.Services.AddHttpContextAccessor();
 
+        builder.Services.AddHttpClient<OpenAiClient>();
+        builder.Services.AddHttpClient<ResendClient>();
 
-            // Http関連
-            builder.Services.AddHttpClient<OpenAiClient>();
-            builder.Services.AddHttpClient<ResendClient>();
-            builder.Services.AddHttpContextAccessor();
-
-
-            // Resend関連
-            var resendApiToken = builder.Configuration["Resend:ApiKey"]!;
-            builder.Services.Configure<ResendClientOptions>(o =>
-            {
-                o.ApiToken = resendApiToken;
-            });
+        // Resend（IEmailSender）… API キーがあれば Resend、無ければ NoOp にフォールバック
+        var resendApiKey = cfg["Resend:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(resendApiKey))
+        {
+            builder.Services.Configure<ResendClientOptions>(o => o.ApiToken = resendApiKey);
             builder.Services.AddScoped<IResend, ResendClient>();
             builder.Services.AddScoped<IEmailSender<ApplicationUser>, ResendEmailSender>();
-
-            // BlobStorase関連
-            builder.Services.AddSingleton(x =>
-            {
-                var config = x.GetRequiredService<IConfiguration>();
-                var connectionString = config["AzureBlob:ConnectionString"];
-                return new BlobServiceClient(connectionString);
-            });
-            builder.Services.AddSingleton<BlobStorageClient>();
-
-            builder.Services.AddScoped<ReviewSession>();
-            builder.Services.AddScoped<TestResultSession>();
-            builder.Services.AddScoped<LoadingManager>();
-            builder.Services.AddScoped<JsInteropManager>();
-            builder.Services.AddScoped<UiOperationRunner>();
-            builder.Services.AddScoped<PageMessageStore>();
-
-            builder.Services.AddScoped<ImageService>();
-            builder.Services.AddScoped<HomeDashboardService>();
-            builder.Services.AddScoped<GenreService>();
-            builder.Services.AddScoped<PhraseService>();
-            builder.Services.AddScoped<PhraseBookService>();
-            builder.Services.AddScoped<TestService>();
-            builder.Services.AddScoped<ProverbService>();
-            builder.Services.AddScoped<GradeService>();
-            builder.Services.AddScoped<OperationTypeService>();
-            builder.Services.AddScoped<ReviewTypeService>();
-            builder.Services.AddScoped<DiaryTagService>();
-
-
-            builder.Services.AddScoped<IValidator<GenreModel>, GenreModelValidator>();
-            builder.Services.AddScoped<IValidator<SubGenreModel>, SubGenreModelValidator>();
-            builder.Services.AddScoped<IValidator<FileModel>, FileModelValidator>();
-
-
-            // オプションパターン
-            builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUser"));
-            builder.Services.Configure<AzureBlobOptions>(builder.Configuration.GetSection("AzureBlob"));
-            builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
-            builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
-
-            // FluentValidation 設定
-            ValidationBootstrapper.Configure();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseMigrationsEndPoint();
-
-                using (var scope = app.Services.CreateScope())
-                {
-                    var services = scope.ServiceProvider;
-
-                    var seedOptions = services.GetRequiredService<IOptions<SeedUserOptions>>().Value;
-
-                    await SeedUserData.InitializeAsync(services, seedOptions);
-                }
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
-
-            // CommonにHttpContextAccessorをセット
-            //var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
-            //UserUtil.SetHttpContextAccessor(httpContextAccessor);
-
-            app.UseHttpsRedirection();
-
-            app.UseAntiforgery();
-
-            app.MapStaticAssets();
-            app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
-
-            // Add additional endpoints required by the Identity /Account Razor components.
-            app.MapAdditionalIdentityEndpoints();
-
-            app.Run();
         }
+        else
+        {
+            builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+        }
+
+        // Azure Blob（接続文字列が無い場合は例外）
+        builder.Services.AddSingleton(sp =>
+        {
+            var cs = sp.GetRequiredService<IConfiguration>()["AzureBlob:ConnectionString"]
+                     ?? throw new InvalidOperationException("AzureBlob:ConnectionString が未設定です。");
+            return new BlobServiceClient(cs);
+        });
+        builder.Services.AddSingleton<BlobStorageClient>();
+
+        // ─────────────────────────────────────────
+        // UI 層（Blazor Server の Circuit 単位で状態を持つため Scoped）
+        // ─────────────────────────────────────────
+        builder.Services.AddScoped<ReviewSession>();
+        builder.Services.AddScoped<TestResultSession>();
+        builder.Services.AddScoped<LoadingManager>();
+        builder.Services.AddScoped<JsInteropManager>();
+        builder.Services.AddScoped<UiOperationRunner>();
+        builder.Services.AddScoped<PageMessageStore>();
+        // ProtectedSessionStorage を使う場合のみ有効化
+        // builder.Services.AddProtectedBrowserStorage();
+
+        // ─────────────────────────────────────────
+        // ドメインサービス（業務ロジック）
+        // ─────────────────────────────────────────
+        builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<ImageService>();
+        builder.Services.AddScoped<HomeDashboardService>();
+        builder.Services.AddScoped<GenreService>();
+        builder.Services.AddScoped<PhraseService>();
+        builder.Services.AddScoped<PhraseBookService>();
+        builder.Services.AddScoped<TestService>();
+        builder.Services.AddScoped<ProverbService>();
+        builder.Services.AddScoped<GradeService>();
+        builder.Services.AddScoped<OperationTypeService>();
+        builder.Services.AddScoped<ReviewTypeService>();
+        builder.Services.AddScoped<DiaryTagService>();
+
+        // ─────────────────────────────────────────
+        // バリデーション（FluentValidation）
+        // ─────────────────────────────────────────
+        builder.Services.AddScoped<IValidator<GenreModel>, GenreModelValidator>();
+        builder.Services.AddScoped<IValidator<SubGenreModel>, SubGenreModelValidator>();
+        builder.Services.AddScoped<IValidator<FileModel>, FileModelValidator>();
+        ValidationBootstrapper.Configure(); // アプリ共通の FluentValidation 設定
+
+        // ─────────────────────────────────────────
+        // オプション（Options パターン）
+        // ─────────────────────────────────────────
+        builder.Services.Configure<SeedUserOptions>(cfg.GetSection("SeedUser"));
+        builder.Services.Configure<AzureBlobOptions>(cfg.GetSection("AzureBlob"));
+        builder.Services.Configure<OpenAiOptions>(cfg.GetSection("OpenAI"));
+        builder.Services.Configure<ResendOptions>(cfg.GetSection("Resend"));
+
+        var app = builder.Build();
+
+        // ─────────────────────────────────────────
+        // HTTP パイプライン
+        // ─────────────────────────────────────────
+        if (env.IsDevelopment())
+        {
+            app.UseMigrationsEndPoint();
+
+            // 初期ユーザ作成（開発時のみ）
+            using var scope = app.Services.CreateScope();
+            var services = scope.ServiceProvider;
+            var seedOptions = services.GetRequiredService<IOptions<SeedUserOptions>>().Value;
+            await SeedUserData.InitializeAsync(services, seedOptions);
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts(); // 既定 30 日
+        }
+
+        app.UseHttpsRedirection();
+        app.UseAntiforgery();
+
+        app.MapStaticAssets();
+        app.MapRazorComponents<App>()
+           .AddInteractiveServerRenderMode();
+
+        // Identity の /Account エンドポイント
+        app.MapAdditionalIdentityEndpoints();
+
+        app.Run();
     }
 }
