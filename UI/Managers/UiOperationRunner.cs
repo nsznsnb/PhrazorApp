@@ -1,8 +1,8 @@
 ﻿using MudBlazor;
 using PhrazorApp.Extensions;         
 
-namespace PhrazorApp.Components.UiSupport
-{
+namespace PhrazorApp.UI.Managers
+{ 
     /// <summary>
     /// UI操作ランナー
     /// 公開APIは4つのみ：

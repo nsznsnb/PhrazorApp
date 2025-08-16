@@ -1,7 +1,5 @@
 ﻿// Services/TestService.cs
 using PhrazorApp.Data.UnitOfWork;
-using PhrazorApp.Models;
-using PhrazorApp.Components.State;
 
 namespace PhrazorApp.Services
 {

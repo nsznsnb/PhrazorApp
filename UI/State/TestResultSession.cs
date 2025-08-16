@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Components.State
+﻿namespace PhrazorApp.UI.State
 {
     public sealed class TestResultSession
     {

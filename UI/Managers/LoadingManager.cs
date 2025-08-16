@@ -1,4 +1,4 @@
-﻿namespace PhrazorApp.Components.UiSupport
+﻿namespace PhrazorApp.UI.Managers
 {
     /// <summary>ローディング状態サービス（キャンセル機能なし版）</summary>
 

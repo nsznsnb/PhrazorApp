@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
-namespace PhrazorApp.Components.UiSupport;
+namespace PhrazorApp.UI.Interop;
 
 public sealed class JsInteropManager : IAsyncDisposable
 {

@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Components.Forms;
-using PhrazorApp.Components.State;
+using PhrazorApp.UI.State;
 
 namespace PhrazorApp.Extensions
 {

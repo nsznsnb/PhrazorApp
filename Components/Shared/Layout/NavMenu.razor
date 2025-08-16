@@ -53,20 +53,9 @@
             </MudNavLink>
         </MudNavGroup>
     </AuthorizeView>
-    <MudNavGroup Title="ヘルプ" Icon="@Icons.Material.TwoTone.HelpOutline">
-        <!-- 操作マニュアル -->
-        <MudNavLink Href="admin/diary/calendar" Match="NavLinkMatch.Prefix"
-                    Icon="@Icons.Material.TwoTone.MenuBook">
-            操作マニュアル
-        </MudNavLink>
-
-        <!-- 開発資料（管理者のみ） -->
-        <AuthorizeView Roles="Admin">
-            <MudNavLink Href="admin/diary/operation-types" Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.TwoTone.Description">
-                開発資料
-            </MudNavLink>
-        </AuthorizeView>
+    <MudNavGroup Title="ドキュメント" Icon="@Icons.Material.TwoTone.MenuBook">
+        <MudNavLink Href="/docs/manuals" Icon="@Icons.Material.TwoTone.Description">操作マニュアル</MudNavLink>
+        <MudNavLink Href="/docs/dev" Icon="@Icons.Material.TwoTone.Schema">開発資料（ER図）</MudNavLink>
     </MudNavGroup>
     <AuthorizeView>
         <Authorized>

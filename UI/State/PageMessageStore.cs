@@ -1,7 +1,7 @@
 ﻿using MudBlazor;
 using System.Collections.Immutable;
 
-namespace PhrazorApp.Components.State
+namespace PhrazorApp.UI.State
 {
     /// ページ単位メッセージのストア（UIなし）
     public sealed class PageMessageStore

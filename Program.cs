@@ -8,8 +8,6 @@ using MudBlazor.Services;
 using PhrazorApp.Commons.Validation;
 using PhrazorApp.Components;
 using PhrazorApp.Components.Account;
-using PhrazorApp.Components.State;
-using PhrazorApp.Components.UiSupport;
 using PhrazorApp.Data;
 using PhrazorApp.Data.Repositories;
 using PhrazorApp.Data.UnitOfWork;
@@ -17,6 +15,9 @@ using PhrazorApp.Infrastructure;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Validators;
 using PhrazorApp.Services;
+using PhrazorApp.UI.Interop;
+using PhrazorApp.UI.Managers;
+using PhrazorApp.UI.State;
 using PhrazorApp.Utils;
 using Resend;
 
