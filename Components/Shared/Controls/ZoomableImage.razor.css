@@ -1,0 +1,18 @@
+﻿:host {
+    display: block;
+}
+
+.zoom-wrap {
+    overflow: auto;
+    border: 1px solid rgba(var(--mud-palette-lines-default-rgb), .6);
+    background: var(--mud-palette-surface);
+    border-radius: 8px;
+    padding: .5rem;
+}
+
+    .zoom-wrap img {
+        display: block;
+        user-select: none;
+        -webkit-user-drag: none;
+        image-rendering: auto; /* 高解像度推奨 */
+    }
