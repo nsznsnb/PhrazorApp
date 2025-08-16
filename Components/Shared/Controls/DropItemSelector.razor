@@ -1,6 +1,7 @@
 ﻿
 <MudPaper Class="pa-2" Outlined="true" Style="@($"width:{Width ?? "100%"};")">
     <MudDropContainer T="DropItemModel"
+                      @key="Items"
                       Items="Items"
                       ItemsSelector="@((item, zone) => item.DropTarget == ParseDropItemType(zone))"
                       ItemDropped="HandleItemDropped"
