@@ -46,7 +46,8 @@ public class Program
             ?? throw new InvalidOperationException("Ú‘±•¶š—ñ 'DefaultConnection' ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñB");
 
         builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-            opt.UseSqlServer(identityConn));
+           opt.UseSqlServer(identityConn, b => b.MigrationsHistoryTable("__EFMigrationsHistory_Identity")));
+
 
         builder.Services.AddIdentityCore<ApplicationUser>(opt =>
         {
@@ -83,6 +84,7 @@ public class Program
                 opt.EnableSensitiveDataLogging(); // ŠJ”­‚Ì‚İÚ×ƒƒO
                 opt.EnableDetailedErrors();
             }
+            opt.UseSqlServer(appConn, b => b.MigrationsHistoryTable("__EFMigrationsHistory_App"));
             opt.UseSqlServer(appConn, sql => sql.CommandTimeout(120));
         });
 
