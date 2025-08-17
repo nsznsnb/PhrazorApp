@@ -15,14 +15,12 @@
     <ToolbarContent Context="tb">
         @{
             var txt = tb.SearchText ?? string.Empty;
-            var prev = _lastSearchText;       // ★ 直前の検索文字列
+            var prev = _lastSearchText;
             _lastSearchText = txt;
 
-            // ★ 検索文字列が変わったら、検索結果を自動で全選択
+            // 検索語が変わった → レンダー後に「結果を全選択（置換）」を実行予約
             if (txt != prev)
-            {
-                AutoSelectAllForText(txt);
-            }
+                _pendingAutoSelectText = txt;
 
             var cnt = GetSelectedCountInView(txt);
             var hasRows = HasRows(txt);
@@ -36,7 +34,7 @@
                              ValueChanged="@( (bool v) => OnSelectAllChanged(v, txt) )"
                              Dense="true"
                              Disabled="@(!hasRows)"
-                             Label="@("全選択(検索結果)")" />
+                             Label="全選択(検索結果)" />
             </div>
         </MudHidden>
 
@@ -70,8 +68,7 @@
     <HeaderContent>
         <MudTh style="width:48px;text-align:center;">
             <MudHidden Breakpoint="Breakpoint.SmAndDown">
-                <MudTooltip Text="@(_selectAll ? "全解除" : "全選択")"
-                            Arrow="true" Placement="Placement.Top">
+                <MudTooltip Text="@(_selectAll ? "全解除" : "全選択")" Arrow="true" Placement="Placement.Top">
                     <MudCheckBox T="bool"
                                  Value="@_selectAll"
                                  ValueChanged="@( (bool v) => OnSelectAllChanged(v, _lastSearchText) )"
@@ -84,12 +81,13 @@
 
     <!-- Rows（左端チェック） -->
     <RowTemplate Context="row">
+        <!-- モバイル -->
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <MudTd style="width:64px;">
                 <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
                      @onclick="@(() => ToggleRow(GetId(row), !IsSelected(GetId(row))))"
                      aria-label="行を選択/解除">
-                    <MudCheckBox @key="GetId(row)" T="bool"
+                    <MudCheckBox @key="MobileKey(row)" T="bool"
                                  Size="Size.Large"
                                  Value="@IsSelected(GetId(row))"
                                  ValueChanged="@( (bool v) => ToggleRow(GetId(row), v) )"
@@ -98,11 +96,12 @@
             </MudTd>
         </MudHidden>
 
+        <!-- デスクトップ -->
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <MudTd style="width:48px;text-align:center; cursor:pointer;"
                    @onclick="@(() => ToggleRow(GetId(row), !IsSelected(GetId(row))))">
                 <div @onclick:stopPropagation="true" @onmousedown:stopPropagation="true">
-                    <MudCheckBox @key="GetId(row)" T="bool"
+                    <MudCheckBox @key="DesktopKey(row)" T="bool"
                                  Value="@IsSelected(GetId(row))"
                                  ValueChanged="@( (bool v) => ToggleRow(GetId(row), v) )" />
                 </div>
@@ -118,7 +117,7 @@
 </TableWithToolbar>
 
 @code {
-    // -------- 公開パラメータ --------
+    // -------- 公開パラメータ（必要最小限） --------
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
     [Parameter] public Func<TItem, Guid> IdSelector { get; set; } = default!;
     [Parameter] public RenderFragment? HeaderContent { get; set; }
@@ -126,7 +125,7 @@
     [Parameter] public RenderFragment? NoRecordsContent { get; set; }
 
     // 表示オプション
-    [Parameter] public string? Title { get; set; }   // ページ側で未指定ならツールバーにタイトルは出ません
+    [Parameter] public string? Title { get; set; }
     [Parameter] public string? Height { get; set; } = "500px";
     [Parameter] public TablePagerMode Pager { get; set; } = TablePagerMode.Auto;
     [Parameter] public int RowsPerPage { get; set; } = 10;
@@ -143,36 +142,65 @@
     private HashSet<Guid> _selected = new();
     private bool _selectAll;
     private string _lastSearchText = "";
-    // 追加：現在の Items セットを表す簡易シグネチャ
-    private int _itemsSignature = 0;
+
+    // レンダー後に実行する“自動全選択（置換）”の予約
+    private string? _pendingAutoSelectText;
+    // Items の参照変化を検知するために最後に見た参照を保持
+    private IEnumerable<TItem>? _lastItemsRef;
+    // Items 差替検知用（Id列だけでハッシュ）
+    private int _itemsSignature;
 
     [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
 
-    // Public: 呼び出し側から選択解除したい時に呼ぶ
+    // Public: 呼び出し側から明示的に選択解除したい時だけ使用
     public void ClearSelection()
     {
         _selected.Clear();
         _selectAll = false;
         RecalcSelectAll(_lastSearchText);
+        StateHasChanged();
     }
 
     protected override void OnParametersSet()
     {
-        PruneSelectionToExistingItems();
-        RecalcSelectAll(_lastSearchText);
+        // --- 参照変化の検知（再検索でも発火させる） ---
+        var refChanged = !ReferenceEquals(_lastItemsRef, Items);
+        if (refChanged)
+        {
+            _lastItemsRef = Items;
+            _pendingAutoSelectText = _lastSearchText;   // 描画後に「結果を全選択（置換）」を実行
+        }
 
-        // ★ ここを追加：Items が差し替わったら（＝プレビュー直後など）検索結果を全選択にする
+        // --- 既存の“内容”変化検知（同じ参照で中身だけ変わるケースの保険） ---
         var sig = ComputeItemsSignature();
         if (sig != _itemsSignature)
         {
             _itemsSignature = sig;
-            AutoSelectAllForText(_lastSearchText); // 検索語が空なら「全件」を全選択
+            _pendingAutoSelectText = _lastSearchText;   // 同じく全選択を予約
+        }
+
+        // 生存確認・全選択フラグ再計算（既存の処理のまま）
+        PruneSelectionToExistingItems();
+        RecalcSelectAll(_lastSearchText);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // 予約があれば、描画完了後にまとめて反映（置換）
+        if (_pendingAutoSelectText is not null)
+        {
+            var text = _pendingAutoSelectText;
+            _pendingAutoSelectText = null;
+
+            AutoSelectAllForText(text, replace: true);
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    // 基本ユーティリティ
+    // ---- 基本ユーティリティ ----
     private Guid GetId(TItem item) => IdSelector(item);
     private bool IsSelected(Guid id) => _selected.Contains(id);
+
     private IEnumerable<TItem> ItemsView(string text)
         => (Items ?? Enumerable.Empty<TItem>()).Where(x => Matches(x, text));
 
@@ -180,6 +208,7 @@
     {
         if (!Search || string.IsNullOrWhiteSpace(text)) return true;
         var t = text.Trim();
+
         if (SearchBy is null)
             return item?.ToString()?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false;
 
@@ -195,6 +224,7 @@
     {
         if (isChecked) _selected.Add(id); else _selected.Remove(id);
         RecalcSelectAll(_lastSearchText);
+        StateHasChanged();
     }
 
     private int ComputeItemsSignature()
@@ -218,7 +248,7 @@
     {
         var all = ItemsView(text).Select(GetId).ToList();
         _selectAll = all.Count > 0 && all.All(_selected.Contains);
-        StateHasChanged();
+        // ここでは StateHasChanged は呼ばない（呼び出し側で必要時に再描画）
     }
 
     private Task OnSelectAllChanged(bool v, string text)
@@ -230,28 +260,35 @@
         }
 
         var idsInView = ItemsView(text).Select(GetId).ToHashSet();
-        if (v) foreach (var id in idsInView) _selected.Add(id);
-        else _selected.RemoveWhere(idsInView.Contains);
+
+        if (v)
+        {
+            // 現在の結果を“すべて選択（置換）”
+            _selected.RemoveWhere(id => !idsInView.Contains(id));
+            foreach (var id in idsInView) _selected.Add(id);
+        }
+        else
+        {
+            // 現在の結果だけを選択解除（他の結果外選択は保持）
+            _selected.RemoveWhere(idsInView.Contains);
+        }
 
         RecalcSelectAll(text);
+        StateHasChanged();
         return Task.CompletedTask;
     }
 
-    // 検索文字列の変更に追随して、検索結果を自動で全選択する
-    private void AutoSelectAllForText(string text)
+    // 検索結果（または全件）を“全選択”。replace=true で結果に置換、false で加算。
+    private void AutoSelectAllForText(string text, bool replace)
     {
         var idsInView = ItemsView(text).Select(GetId).ToHashSet();
-        if (idsInView.Count == 0)
-        {
-            _selectAll = false; // ヒット無し→全選択状態は解除
-            return;
-        }
 
-        // "検索結果は全選択" を満たすように、結果セットを選択に取り込む（既存選択は保持）
-        foreach (var id in idsInView)
-            _selected.Add(id);
+        if (replace)
+            _selected.RemoveWhere(id => !idsInView.Contains(id)); // 結果外を落とす
 
-        RecalcSelectAll(text); // _selectAll の見た目も更新
+        foreach (var id in idsInView) _selected.Add(id);
+
+        RecalcSelectAll(text);
     }
 
     private int GetSelectedCountInView(string text)
@@ -265,6 +302,10 @@
            .Select(GetId)
            .Where(_selected.Contains)
            .ToHashSet();
+
+    // @key 用（補間文字列を使わない）
+    private object MobileKey(TItem item) => new { Kind = "m", Id = GetId(item) };
+    private object DesktopKey(TItem item) => new { Kind = "d", Id = GetId(item) };
 
     // ツールバーに渡すコンテキスト
     public readonly record struct SelectableTableToolbarContext(

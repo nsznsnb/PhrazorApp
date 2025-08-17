@@ -140,7 +140,7 @@
                         クリア
                     </MudButton>
 
-                    <MudText Color="Color.Secondary">表示件数: @_filtered.Count</MudText>
+                    <MudText Color="Color.Default">表示件数: @_filtered.Count</MudText>
                 </MudStack>
             </MudHidden>
 
@@ -177,25 +177,25 @@
 
                 <!-- 既存の詳細条件 -->
                 <MudGrid Spacing="2">
-<MudItem xs="12" md="4">
-    <MudSelect T="string"
-               Label="フレーズ帳（複数選択）"
-               Variant="Variant.Outlined"
-               Margin="Margin.Dense"
-               MultiSelection="true"
-               Clearable="true"
-               SelectedValues="_qPhraseBooks"
-               SelectedValuesChanged="@( (IEnumerable<string> vs) =>
-                   { _qPhraseBooks = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
-                                      ?? new(StringComparer.OrdinalIgnoreCase);
-                     StateHasChanged();
-                   })">
-        @foreach (var opt in _phraseBookOptions)
-        {
-            <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
-        }
-    </MudSelect>
-</MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudSelect T="string"
+                                   Label="フレーズ帳（複数選択）"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   MultiSelection="true"
+                                   Clearable="true"
+                                   SelectedValues="_qPhraseBooks"
+                                   SelectedValuesChanged="@( (IEnumerable<string> vs) =>
+                                       { _qPhraseBooks = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                                                          ?? new(StringComparer.OrdinalIgnoreCase);
+                                         StateHasChanged();
+                                       })">
+                            @foreach (var opt in _phraseBookOptions)
+                            {
+                                <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
                     <MudItem xs="12" md="4">
                         <MudDateRangePicker Label="作成日（範囲）"
                                             @bind-DateRange="_qCreatedRange"
@@ -560,7 +560,6 @@ if (_qPhraseBooks.Any())
 
         _filtered = q.ToList();
 
-        _table?.ClearSelection(); // 安全側
         StateHasChanged();
     }
 
@@ -701,7 +700,6 @@ if (_qPhraseBooks.Any())
             ApplyFilter();
         }
 
-        _table?.ClearSelection();
     }
 
     private async Task OpenBulkGenreDialog(HashSet<Guid> ids)

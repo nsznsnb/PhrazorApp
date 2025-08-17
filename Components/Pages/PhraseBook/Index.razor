@@ -371,8 +371,6 @@
         _selectedBook = _books.FirstOrDefault(x => x.Id == newId) ?? _books.FirstOrDefault();
 
         await RefreshBookAndListAsync();
-        _candidatesTable?.ClearSelection();
-        _bookTable?.ClearSelection();
     }
 
     private async Task OnDeleteBookAsync(PhraseBookListItemModel b)
@@ -394,8 +392,6 @@
             _selectedBook = _books.FirstOrDefault();
             _bookItems.Clear();
             _bookItemIdSet.Clear();
-            _candidatesTable?.ClearSelection();
-            _bookTable?.ClearSelection();
 
             if (_selectedBook is not null)
                 await LoadBookItemsAsync();
@@ -407,8 +403,6 @@
     private async Task OnBookSelectedAsync(PhraseBookListItemModel? b)
     {
         _selectedBook = b;
-        _candidatesTable?.ClearSelection();
-        _bookTable?.ClearSelection();
 
         await LoadBookItemsAsync();
         ApplyFilters();
