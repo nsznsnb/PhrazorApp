@@ -8,6 +8,7 @@
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 @inject UiOperationRunner UiRunner
+@inject JsInteropManager JS
 
 <MudStack Spacing="2">
     <SectionTitle Title="テスト設定" />
@@ -170,6 +171,8 @@
             @* ▼ プレビュー（全件） + 選択して絞り込み *@
             @if (_hasPreview)
             {
+                <!-- ▼ スクロール先アンカー -->
+                <div id="@PreviewAnchorId"></div>
                 <SelectableTable TItem="PhraseListItemModel"
                                  @ref="_previewTable"
                                  Items="@_preview"
@@ -221,7 +224,7 @@
 </MudStack>
 
 @code {
-    private readonly int[] _limitOptions = new[] { 10, 20, 30, 50, 100, 200, 500 };
+    private readonly int[] _limitOptions = new[] { 10, 20, 30, 50, 100 };
 
     private TestFilterModel _f = new();
     private SelectableTable<PhraseListItemModel>? _previewTable;
@@ -234,6 +237,8 @@
     private Guid? _openGenreId;
     private bool _hasPreview;
     private bool _isDateRangeValid = true;
+    private const string PreviewAnchorId = "setup-preview-anchor";
+    private bool _pendingScrollToPreview;
 
     private string _genreFilter = string.Empty;
 
@@ -245,6 +250,15 @@
 
         _genres = await UiRunner.ReadAsync(() => GenreService.GetGenreViewModelListAsync()) ?? new();
         _books  = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingScrollToPreview)
+        {
+            _pendingScrollToPreview = false;
+            await JS.ScrollToIdAsync(PreviewAnchorId, smooth: true);
+        }
     }
 
     private void InvalidatePreview()
@@ -332,7 +346,6 @@
         InvalidatePreview();
     }
 
-    // ---- プレビュー＆開始 ----
     private async Task PreviewAsync()
     {
         if (_f.DatePreset == DateRangePreset.Custom)
@@ -351,8 +364,16 @@
 
         _hasPreview = _preview.Count > 0;
 
-        if (!_hasPreview)
+        if (_hasPreview)
+        {
+            // ▼ テーブル描画完了後にスクロールするためフラグを立てて再描画
+            _pendingScrollToPreview = true;
+            StateHasChanged();
+        }
+        else
+        {
             Snackbar.Add("該当データがありません。条件を見直してください。", Severity.Warning);
+        }
     }
 
     private void StartFromSelection(HashSet<Guid> selectedIds, bool review)
@@ -376,7 +397,7 @@
         }
         items = items.Take(Math.Clamp(_f.Limit, 1, int.MaxValue)).ToList();
 
-        ReviewSession.Set(items, x => x.Phrase, x => x.Meaning);
+        ReviewSession.Set(items, x => x.Id, x => x.Phrase, x => x.Meaning);
         Nav.NavigateTo(review ? "/phrases/review" : "/phrases/writing");
     }
 
