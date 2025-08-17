@@ -1,82 +1,63 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
-    const isFocusable = (el) => {
-        return el &&
-            el.tabIndex >= 0 &&
-            !el.disabled &&
-            !el.readOnly &&
-            el.offsetParent !== null;
-    };
+﻿// --- Enter フォーカス移動（全体適用） ------------------------------
+
+// 一度だけ初期化
+(function enableEnterFocusNav() {
+    if (window.__phrazor_enter_nav__) return;
+    window.__phrazor_enter_nav__ = true;
+
+    const isFocusable = (el) =>
+        el &&
+        el.tabIndex >= 0 &&
+        !el.disabled &&
+        !el.readOnly &&
+        el.offsetParent !== null;
 
     const getFocusableElements = () => {
         return Array.from(document.querySelectorAll(`
-            input:not([type="hidden"]),
-            select,
-            [tabindex]:not([tabindex="-1"])
-        `)).filter(isFocusable);
+      input:not([type="hidden"]),
+      select,
+      [tabindex]:not([tabindex="-1"])
+    `)).filter(isFocusable);
     };
 
     const moveFocus = (current, reverse = false) => {
         const focusable = getFocusableElements();
         const index = focusable.indexOf(current);
-
         if (index === -1) return;
-
         const nextIndex = reverse ? index - 1 : index + 1;
-        if (focusable[nextIndex]) {
-            focusable[nextIndex].focus();
-        }
+        if (focusable[nextIndex]) focusable[nextIndex].focus();
     };
 
     document.addEventListener('keydown', (e) => {
+        // 他で preventDefault 済みなら何もしない（Blazor側で制御可能に）
+        if (e.defaultPrevented) return;
+
         const tag = e.target.tagName.toLowerCase();
         const type = e.target.getAttribute('type');
 
-        // Enter キー: submit を除く input, select でフォーカス移動
+        // Enter: submit以外の input/select でフォーカス移動
         if (e.key === 'Enter') {
             if (['input', 'select'].includes(tag) && type !== 'submit') {
                 e.preventDefault();
                 moveFocus(e.target);
             }
         }
-
     });
-});
-
-window.busyGuard = (function () {
-    let enabled = false;
-
-    function isAllowed(target) {
-        // data-allow-while-busy が付いている祖先要素があれば許可
-        return !!target?.closest?.('[data-allow-while-busy]');
-    }
-
-    function onClick(e) {
-        if (!enabled) return;
-        if (isAllowed(e.target)) return;
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    function onKeydown(e) {
-        if (!enabled) return;
-        // ボタン/リンクのキーボード起動もブロック
-        if (e.key === 'Enter' || e.key === ' ') {
-            if (isAllowed(e.target)) return;
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-
-    return {
-        init() {
-            // キャプチャ段階で先取りブロック
-            document.addEventListener('click', onClick, true);
-            document.addEventListener('keydown', onKeydown, true);
-        },
-        setEnabled(v) {
-            enabled = !!v;
-            // 視覚的なヒント（任意）：マウスカーソル
-            document.documentElement.classList.toggle('busy-cursor', enabled);
-        }
-    };
 })();
+
+// --- JsInteropManager から呼ぶユーティリティ（ES Module） ---------
+
+export function focusElementById(id) {
+    try {
+        const el = id && document.getElementById(id);
+        if (el) el.focus({ preventScroll: true });
+    } catch { /* no-op */ }
+}
+
+export function scrollToId(id, smooth = true) {
+    try {
+        const el = id && document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start', inline: 'nearest' });
+    } catch { /* no-op */ }
+}

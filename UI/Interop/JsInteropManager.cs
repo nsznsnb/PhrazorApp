@@ -15,11 +15,11 @@ public sealed class JsInteropManager : IAsyncDisposable
         _logger = logger;
     }
 
-    // JS モジュールを読み込んでキャッシュ
+    // site.js を ES Module として読み込み
     private async ValueTask<IJSObjectReference> GetModuleAsync(CancellationToken ct = default)
     {
         if (_module is null)
-            _module = await _js.InvokeAsync<IJSObjectReference>("import", ct, "./js/focusHelper.js");
+            _module = await _js.InvokeAsync<IJSObjectReference>("import", ct, "./js/site.js");
         return _module;
     }
 
@@ -27,7 +27,13 @@ public sealed class JsInteropManager : IAsyncDisposable
     public async ValueTask HandleKeyDownToFocusAsync(KeyboardEventArgs e, string targetElementId, CancellationToken ct = default)
     {
         if (e.Key != "Enter" || string.IsNullOrWhiteSpace(targetElementId)) return;
+        await FocusByIdAsync(targetElementId, ct);
+    }
 
+    /// <summary>ID 指定でフォーカス移動</summary>
+    public async ValueTask FocusByIdAsync(string targetElementId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(targetElementId)) return;
         try
         {
             var mod = await GetModuleAsync(ct);
@@ -39,19 +45,18 @@ public sealed class JsInteropManager : IAsyncDisposable
         }
     }
 
-    /// <summary>ID 指定でフォーカス移動（イベントに依らず実行）</summary>
-    public async ValueTask FocusByIdAsync(string targetElementId, CancellationToken ct = default)
+    /// <summary>ID 指定でスムーズスクロール（Home遷移しない）</summary>
+    public async ValueTask ScrollToIdAsync(string targetElementId, bool smooth = true, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(targetElementId)) return;
-
         try
         {
             var mod = await GetModuleAsync(ct);
-            await mod.InvokeVoidAsync("focusElementById", ct, targetElementId);
+            await mod.InvokeVoidAsync("scrollToId", ct, targetElementId, smooth);
         }
         catch (JSException ex)
         {
-            _logger.LogWarning(ex, "JS focusElementById 失敗: {Id}", targetElementId);
+            _logger.LogWarning(ex, "JS scrollToId 失敗: {Id}", targetElementId);
         }
     }
 
