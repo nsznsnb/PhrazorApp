@@ -68,7 +68,7 @@
     private async Task OnDeleteButtonClickedAsync(OperationTypeModel item)
     {
         var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.DeleteConfirm,
+            DialogConfirmType.DangerConfirm,
             string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name));
         if (!ok) return;
 

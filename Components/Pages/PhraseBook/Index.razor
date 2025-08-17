@@ -377,7 +377,7 @@
 
     private async Task OnDeleteBookAsync(PhraseBookListItemModel b)
     {
-        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm,
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm,
             $"「{b.Name}」を削除します。よろしいですか？");
         if (!ok) return;
 
@@ -468,7 +468,7 @@
         if (_selectedBook is null || ids.Count == 0) return;
 
         var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.RegisterConfirm,
+            DialogConfirmType.InfoConfirm,
             $"選択中の {ids.Count} 件を「{_selectedBook.Name}」へ追加します。よろしいですか？");
         if (!ok) return;
 
@@ -503,7 +503,7 @@
     {
         if (_selectedBook is null || ids.Count == 0) return;
 
-        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm,
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm,
             $"「{_selectedBook.Name}」から選択中 {ids.Count} 件を削除します。よろしいですか？");
         if (!ok) return;
 

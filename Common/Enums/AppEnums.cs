@@ -4,15 +4,18 @@
 /// 確認ダイアログタイプ
 /// </summary>
 public enum DialogConfirmType
-{
-    /// <summary>
-    /// 削除確認
+{   /// <summary>
+    /// Info確認
     /// </summary>
-    DeleteConfirm,
+    InfoConfirm,
     /// <summary>
-    /// 登録確認
+    /// Warning確認
     /// </summary>
-    RegisterConfirm,
+    WarningConfirm,
+    /// <summary>
+    /// Danger確認
+    /// </summary>
+    DangerConfirm,
 }
 
 /// <summary>

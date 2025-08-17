@@ -107,7 +107,7 @@
     private async Task OnClickCorrectAsync()
     {
         var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.RegisterConfirm,
+            DialogConfirmType.InfoConfirm,
             "添削と同時に作成した日記が登録されます。よろしいですか"
         );
         if (!ok) return;

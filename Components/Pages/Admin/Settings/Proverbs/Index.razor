@@ -88,7 +88,7 @@
 
     private async Task OnDeleteAsync(Guid id)
     {
-        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm, "削除します。よろしいですか？");
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm, "削除します。よろしいですか？");
         if (!ok) return;
 
         var r = await UiRunner.WriteAsync(() => ProverbService.DeleteAsync(id), "削除中…");

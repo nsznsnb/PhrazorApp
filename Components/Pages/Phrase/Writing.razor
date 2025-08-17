@@ -47,7 +47,7 @@
         <MudButton Variant="Variant.Outlined" Color="Color.Error"
                    StartIcon="@Icons.Material.TwoTone.StopCircle"
                    OnClick="CancelAsync">
-            キャンセル
+            テスト中止
         </MudButton>
     </ActionCard>
 
@@ -412,7 +412,7 @@
 
     private async Task CancelAsync()
     {
-        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm, "テストを中止しますか？");
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm, "テストを中止しますか？", "テスト中止確認", "中止");
         if (!ok) return;
 
         if (!string.IsNullOrEmpty(Return))

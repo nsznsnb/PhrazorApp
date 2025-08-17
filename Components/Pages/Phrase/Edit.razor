@@ -106,7 +106,7 @@
         if (!form.IsValid) return;
 
         var ok = await DialogService.ShowConfirmAsync(
-            DialogConfirmType.RegisterConfirm,
+            DialogConfirmType.InfoConfirm,
             string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase));
         if (!ok) return;
 

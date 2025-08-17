@@ -96,12 +96,16 @@ public static class DialogServiceExtensions
     private static Task<IDialogReference> ShowDialogCommonAsync(
         this IDialogService dialogService,
         DialogConfirmType dialogPattern,
-        string content)
+        string content,
+        string title = "",
+        string executeButtonText = "")
     {
         var parameters = new DialogParameters<CommonDialog>
         {
             { x => x.DialogPattern , dialogPattern },
             { x => x.ContentText, content },
+            { x => x.TitleText, title },
+            { x => x.ExecuteButtonText, executeButtonText },
         };
         return dialogService.ShowAsync<CommonDialog>(string.Empty, parameters, OptionsXs());
     }
@@ -109,9 +113,11 @@ public static class DialogServiceExtensions
     public static async Task<bool> ShowConfirmAsync(
         this IDialogService dialogService,
         DialogConfirmType type,
-        string message)
+        string message,
+        string title = "",
+        string executeButtonText = "")
     {
-        var dialog = await dialogService.ShowDialogCommonAsync(type, message);
+        var dialog = await dialogService.ShowDialogCommonAsync(type, message, title, executeButtonText);
         var result = await dialog.Result;
         // OK → true / Cancel or Close → false
         return !(result?.Canceled ?? true);

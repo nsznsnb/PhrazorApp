@@ -12,7 +12,9 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public DialogConfirmType DialogPattern { get; set; }
+    [Parameter] public string TitleText { get; set; } = string.Empty;
     [Parameter] public string ContentText { get; set; } = string.Empty;
+    [Parameter] public string ExecuteButtonText { get; set; } = string.Empty;
 
     private DialogAlertType _alertType = DialogAlertType.Info;
     private string titleText = string.Empty;
@@ -22,13 +24,18 @@
     {
         switch (DialogPattern)
         {
-            case DialogConfirmType.DeleteConfirm:
+            case DialogConfirmType.DangerConfirm:
                 _alertType = DialogAlertType.Error;
                 titleText = AppConstants.LABEL_DIALOG_TITLE_DELETE_CONFIRM;
                 executeButtonText = AppConstants.LABEL_BUTTON_DELETE;
                 break;
-            case DialogConfirmType.RegisterConfirm:
+            case DialogConfirmType.InfoConfirm:
                 _alertType = DialogAlertType.Info;
+                titleText = AppConstants.LABEL_DIALOG_TITLE_REGISTER_CONFIRM;
+                executeButtonText = AppConstants.LABEL_BUTTON_REGISTER;
+                break;
+            case DialogConfirmType.WarningConfirm:
+                _alertType = DialogAlertType.Warning;
                 titleText = AppConstants.LABEL_DIALOG_TITLE_REGISTER_CONFIRM;
                 executeButtonText = AppConstants.LABEL_BUTTON_REGISTER;
                 break;
@@ -38,6 +45,19 @@
                 executeButtonText = "OK";
                 break;
         }
+
+        // 外部から指定されれば上書き
+        if (!string.IsNullOrEmpty(TitleText))
+        {
+            titleText = TitleText;
+        }
+        if (!string.IsNullOrEmpty(ExecuteButtonText))
+        {
+            executeButtonText = ExecuteButtonText;
+        }
+
+
+
     }
 
     private ValueTask<bool> SubmitAsync() => ValueTask.FromResult(true); // 実行処理は親でハンドリングされるためここでは何もしない

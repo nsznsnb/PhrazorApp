@@ -27,6 +27,7 @@ public class AppConstants
 
     // ダイアログタイトル
     public const string LABEL_DIALOG_TITLE_REGISTER_CONFIRM = "登録確認";
+    public const string LABEL_DIALOG_TITLE_WARNING_CONFIRM = "警告";
     public const string LABEL_DIALOG_TITLE_DELETE_CONFIRM = "削除確認";
 
     // テーブルタイトル
