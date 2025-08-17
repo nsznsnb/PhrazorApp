@@ -1,0 +1,126 @@
+﻿@page "/diaries/edit/{date}"
+@attribute [Authorize]
+
+@inject EnglishDiaryService DiaryService
+@inject IDialogService DialogService
+@inject UiOperationRunner UiOperationRunner
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>英語日記 添削</PageTitle>
+
+<MudStack Spacing="2">
+    <SectionTitle Title="@($"英語日記 添削 ({DateUtil.Format(_model.CreatedAt)})")" />
+
+    <EditForm Model="_model">
+        <MudForm @ref="_form">
+
+            <BaseCard>
+                <MudCardContent Class="pb-0">
+                    <MudTextField T="string"
+                                  @bind-Value="_model.Title"
+                                  Label="タイトル"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true" />
+                </MudCardContent>
+
+                <MudCardContent>
+                    <MudTextField T="string"
+                                  @bind-Value="_model.Content"
+                                  Label="日記"
+                                  Lines="8"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  Placeholder="今日の出来事や感想などを英語で書いてください" />
+                </MudCardContent>
+
+                <MudCardContent>
+                    <MudTextField T="string"
+                                  @bind-Value="_model.Note"
+                                  Label="添削をより正確にするための補足情報"
+                                  Lines="4"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  Placeholder="背景、意図、ニュアンス、固有名詞 など" />
+                </MudCardContent>
+
+                <MudCardContent>
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">日記タグ</MudText>
+                    <DiaryTagSelectorContainer @bind-SelectedTagIds="_model.TagIds" />
+                </MudCardContent>
+
+                <MudCardContent>
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="OnClickCorrectAsync">
+                            添削（登録）
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   OnClick="@(() => Nav.NavigateTo("/diaries/calendar"))">
+                            カレンダーへ戻る
+                        </MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </BaseCard>
+
+            @if (!string.IsNullOrWhiteSpace(_model.Correction))
+            {
+                <BaseCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.subtitle1">添削結果</MudText>
+                        <MudPaper Class="pa-3 mt-2" Outlined="true">
+                            <MudText Preline="true">@_model.Correction</MudText>
+                        </MudPaper>
+                    </MudCardContent>
+                </BaseCard>
+            }
+        </MudForm>
+    </EditForm>
+</MudStack>
+
+@code {
+    [Parameter] public DateTime date { get; set; }
+
+    private MudForm? _form;
+    private EnglishDiaryModel _model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var target = DateOnly.FromDateTime(date);
+
+        var loaded = await UiOperationRunner.ReadAsync(
+            () => DiaryService.GetByDateAsync(target)
+        );
+
+        _model = loaded ?? new EnglishDiaryModel
+        {
+            Id = Guid.NewGuid(),
+            Title = string.Empty,
+            Content = string.Empty,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
+
+    private async Task OnClickCorrectAsync()
+    {
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.RegisterConfirm,
+            "添削と同時に作成した日記が登録されます。よろしいですか"
+        );
+        if (!ok) return;
+
+        var op = await UiOperationRunner.WriteAsync(
+            () => DiaryService.CorrectAndUpsertAsync(_model),
+            message: "添削しています…"
+        );
+
+        if (!op.IsSuccess) return;
+
+        // 成功時：返ってきたモデルでUI反映
+        if (op.Data is not null)
+            _model = op.Data;
+    }
+}

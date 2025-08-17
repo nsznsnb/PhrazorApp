@@ -18,5 +18,7 @@ namespace PhrazorApp.Extensions
 
             return attribute?.Name ?? value.ToString();
         }
+
+        public static string ToCodeString(this OperationTypeCode code) => code.ToString();
     }
 }

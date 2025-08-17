@@ -1,0 +1,44 @@
+﻿@page "/diaries/calendar"
+@attribute [Authorize]
+
+@inject EnglishDiaryService DiaryService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject UiOperationRunner UiOperationRunner
+
+<MudStack Spacing="2">
+    <SectionTitle Title="英語日記カレンダー" />
+
+    <BaseCard>
+        <MudCalendar T="DiaryCalendarItem" Items="_items">
+            <CellTemplate Context="item">
+                <MudChip T="string" Variant="Variant.Outlined"
+                         Color="Color.Primary"
+                         Size="Size.Small"
+                         Class="w-100 text-start"
+                         OnClick="@(() => GoToDate(DateOnly.FromDateTime(item.Start)))">
+                    @item.Title
+                </MudChip>
+            </CellTemplate>
+        </MudCalendar>
+    </BaseCard>
+</MudStack>
+
+@code {
+    private List<DiaryCalendarItem> _items = new();
+    private DateOnly _month = DateOnly.FromDateTime(DateTime.Today);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = await UiOperationRunner.ReadAsync(
+            () => DiaryService.GetMonthlyItemsAsync(_month)
+        );
+
+        _items = list ?? new();
+    }
+
+    private void GoToDate(DateOnly d)
+    {
+        Nav.NavigateTo($"/diaries/edit/{d:yyyy-MM-dd}");
+    }
+}
