@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Mappings;
@@ -11,6 +12,12 @@ namespace PhrazorApp.Services
         private const string MSG_PREFIX = "成績";
 
         public GradeService(UnitOfWork uow) => _uow = uow;
+
+        // 既定の判定ルール（S/A/B/D）
+        private static readonly (string Name, int MinPct)[] DefaultRules =
+        {
+            ("S", 90), ("A", 75), ("B", 60), ("D", 0)
+        };
 
         // 変更：並び順で取得
         public Task<ServiceResult<List<GradeModel>>> GetListAsync()
@@ -33,6 +40,51 @@ namespace PhrazorApp.Services
                 var e = await repos.Grades.GetByIdAsync(id);
                 return ServiceResult.Success(e?.ToModel(), message: "");
             });
+        }
+
+        /// <summary>テーブルが空なら S/A/B/D を作成</summary>
+        public async Task EnsureDefaultsAsync()
+        {
+            await _uow.ExecuteInTransactionAsync(async repos =>
+            {
+                var any = await repos.Grades.Queryable().AnyAsync(); // 既存APIのみ
+                if (any) return;
+
+                var now = DateTime.UtcNow;
+                int order = 1;
+                foreach (var (name, _) in DefaultRules)
+                {
+                    var e = new MGrade
+                    {
+                        GradeId = Guid.NewGuid(),
+                        GradeName = name,
+                        OrderNo = order++,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
+                    await repos.Grades.AddAsync(e);
+                }
+            });
+        }
+
+        /// <summary>成績名（"S"/"A"/"B"/"D"）で取得</summary>
+        public async Task<MGrade?> GetByNameAsync(string name)
+        {
+            return await _uow.ReadAsync(async u =>
+            {
+                return await u.Grades.Queryable()
+                    .FirstOrDefaultAsync(x => x.GradeName == name);
+            });
+        }
+
+        /// <summary>正答率から Grade を決定（必要なら既定作成）</summary>
+        public async Task<MGrade?> ResolveByRateAsync(double rate)
+        {
+            await EnsureDefaultsAsync();
+
+            var pct = (int)Math.Round(rate * 100.0, MidpointRounding.AwayFromZero);
+            var symbol = DefaultRules.First(x => pct >= x.MinPct).Name;
+            return await GetByNameAsync(symbol);
         }
 
         // 変更：作成時に OrderNo を末尾に付与

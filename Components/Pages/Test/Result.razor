@@ -1,29 +1,38 @@
 ﻿@page "/tests/result"
 @attribute [Authorize]
+
 @inject TestResultSession TestResult
 @inject ReviewSession ReviewSession
-@inject GenreService GenreService   // 成績マスタ MGrade を使うなら GradeService を注入
+@inject TestResultService TestResultService
+@inject GradeService GradeService
+@inject UiOperationRunner UiRunner
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject JsInteropManager JS
 
 <MudStack Spacing="3" AlignItems="AlignItems.Center">
-    <!-- トップ：月桂冠風のバッジ -->
-    <img src="/images/laurel.svg" alt="Result" style="width:120px;height:120px;" />
 
-    <!-- 右上：グレード -->
-    <div style="position:absolute; top:16px; right:16px;">
+    <!-- ヘッダ：バッジ + 成績チップ（レスポンシブ配置） -->
+    <MudStack Spacing="1" AlignItems="AlignItems.Center">
+        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+            <img src="/images/laurel.svg" alt="Result" style="width:120px;height:120px;" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <img src="/images/laurel.svg" alt="Result" style="width:96px;height:96px;" />
+        </MudHidden>
+
         <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large">
-            成績：@GetGrade(TestResult.Rate())
+            成績：@(_gradeName ?? LocalGradeSymbol)
         </MudChip>
-    </div>
-
-    <!-- 概要 -->
-    <MudText Typo="Typo.h5">テスト結果</MudText>
-    <MudText Typo="Typo.subtitle1">
-        正解 @TestResult.Correct / 合計 @TestResult.Total（正答率 @((int)(TestResult.Rate() * 100))%）
-    </MudText>
+        <MudText Typo="Typo.h5">テスト結果</MudText>
+        <MudText Typo="Typo.subtitle1">
+            正解 @TestResult.Correct / 合計 @TestResult.Total（正答率 @((int)(TestResult.Rate() * 100))%）
+        </MudText>
+    </MudStack>
 
     <!-- 明細 -->
     <BaseCard>
-        <MudTable Items="TestResult.Items" Dense="true" Hover="true">
+        <MudTable Items="TestResult.Items" Dense="true" Hover="true" Bordered="false" Striped="true" Breakpoint="Breakpoint.Md">
             <HeaderContent>
                 <MudTh>結果</MudTh>
                 <MudTh>英作文（Front）</MudTh>
@@ -37,7 +46,6 @@
                     }
                     else
                     {
-
                         <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
                     }
                 </MudTd>
@@ -47,32 +55,78 @@
         </MudTable>
     </BaseCard>
 
-    <!-- ボタン -->
-    <MudStack Row="true" Spacing="2">
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong">
-            不正解だけ再テスト
-        </MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll">
-            すべて再テスト
-        </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => NavToPhrases())">
-            終了
-        </MudButton>
+    <!-- ボタン（Sm以下で縦積み） -->
+    <MudStack Row="true" Spacing="2" Class="w-100">
+        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
+                    不正解だけ再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
+                    すべて再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
+                    終了
+                </MudButton>
+            </MudStack>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudStack Spacing="2" Class="w-100">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
+                    不正解だけ再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
+                    すべて再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
+                    終了
+                </MudButton>
+            </MudStack>
+        </MudHidden>
     </MudStack>
 </MudStack>
 
 @code {
-    [Inject] NavigationManager Nav { get; set; } = default!;
+    private bool _saved;
+    private string? _gradeName;
+    private int _wrongCount => TestResult.Total - TestResult.Correct;
 
-    private string GetGrade(double rate)
+    // ローカル推定（S/A/B/D）— DBが未解決でも見た目が崩れないように
+    private string LocalGradeSymbol
     {
-        // TODO: MGrade を参照する実装に差し替え（閾値例: S≥90, A≥75, B≥60, D<60）
-        var pct = rate * 100;
-        if (pct >= 90) return "S";
-        if (pct >= 75) return "A";
-        if (pct >= 60) return "B";
-        return "D";
+        get
+        {
+            var pct = (int)(TestResult.Rate() * 100);
+            if (pct >= 90) return "S";
+            if (pct >= 75) return "A";
+            if (pct >= 60) return "B";
+            return "D";
+        }
     }
+
+    // Result.razor の OnAfterRenderAsync 内（_saved ガードのままでOK）
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _saved) return;
+
+        // ここを UiRunner.WriteAsync に変更（T は Guid）
+        var res = await UiRunner.WriteAsync<Guid>(
+            () => TestResultService.SaveAsync(TestResult, ReviewSession.Items));
+
+        if (res.IsSuccess)
+        {
+            _saved = true;
+            _gradeName = LocalGradeSymbol; // 表示は即時反映
+            Snackbar.Add("テスト結果を保存しました。", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add(res.Message ?? "保存に失敗しました。", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
 
     private void RetestWrong()
     {
@@ -87,5 +141,9 @@
         Nav.NavigateTo("/phrases/writing");
     }
 
-    private void NavToPhrases() => Nav.NavigateTo("/phrases");
+    private async Task FinishAsync()
+    {
+        // JS の履歴戻り（fallback: /phrases）
+        await JS.HistoryBackAsync("/phrases");
+    }
 }

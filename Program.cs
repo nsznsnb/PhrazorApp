@@ -145,7 +145,7 @@ public class Program
         builder.Services.AddScoped<GenreService>();
         builder.Services.AddScoped<PhraseService>();
         builder.Services.AddScoped<PhraseBookService>();
-        builder.Services.AddScoped<TestService>();
+        builder.Services.AddScoped<TestResultService>();
         builder.Services.AddScoped<ProverbService>();
         builder.Services.AddScoped<GradeService>();
         builder.Services.AddScoped<OperationTypeService>();
