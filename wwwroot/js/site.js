@@ -61,3 +61,15 @@ export function scrollToId(id, smooth = true) {
         el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start', inline: 'nearest' });
     } catch { /* no-op */ }
 }
+
+export function historyBack(fallbackUrl) {
+    try {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else if (fallbackUrl) {
+            window.location.assign(fallbackUrl);
+        }
+    } catch {
+        if (fallbackUrl) window.location.assign(fallbackUrl);
+    }
+}

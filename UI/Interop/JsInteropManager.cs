@@ -60,6 +60,19 @@ public sealed class JsInteropManager : IAsyncDisposable
         }
     }
 
+    public async ValueTask HistoryBackAsync(string? fallbackUrl = null, CancellationToken ct = default)
+    {
+        try
+        {
+            var mod = await GetModuleAsync(ct);
+            await mod.InvokeVoidAsync("historyBack", ct, fallbackUrl);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS historyBack 失敗");
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_module is not null)
