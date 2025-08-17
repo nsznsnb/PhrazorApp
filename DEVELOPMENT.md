@@ -1,3 +1,4 @@
+ありがとうございます。ご要望を反映し、「用語」に **JsInteropManager** の説明を追加、また **`Services/JsInteropManager.cs` → `UI/Interop/JsInteropManager.cs`** へと記載を修正しました。最新版の **Development.md** をそのまま置き換えてください。
 
 ---
 
@@ -24,6 +25,9 @@ Development.md
 * **Validator（バリデーションファイル）**
   **FluentValidation を用いて、Model の「単項目」および「項目間の関連」バリデーションを定義する場所**です。
   例：必須・文字数・形式・リスト重複など。**DB を参照するチェックは扱いません**（サービス側で行います）。
+
+* **JsInteropManager**
+  **Blazor で JavaScript（ES Modules）を安全・限定的に呼び出すための統合窓口**です。
 
 * **PageMessageStore**
   **ページ上部へのメッセージ表示**を担います。ページ全体（モデル全体）に関わるエラーをまとめて見せたいときに使います。
@@ -64,7 +68,107 @@ var ok = await DialogService.ShowConfirmAsync(
 if (!ok) return;
 ```
 
-## 1-3. バリデーション（EditContext + FluentValidation + PageMessageStore）
+## 1-3. Blazor における JavaScript の使用について
+
+> Blazor は **C# と HTML で完結できる**のが醍醐味です。
+> ただし一部の DOM 操作・ブラウザ API で **JavaScript が必要な場合**は、**ES Module 方式で `/wwwroot/js/site.js` に実装**し、**`/UI/Interop/JsInteropManager.cs` 経由で呼び出す**規約とします。
+
+**(1) `site.js`（ES Module）に記述**
+
+```js
+// /wwwroot/js/site.js
+// ESM: 必要な関数を export する
+export function scrollToId(id, smooth = true) {
+  try {
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({
+      behavior: smooth ? 'smooth' : 'auto',
+      block: 'start',
+      inline: 'nearest'
+    });
+  } catch { /* no-op */ }
+}
+```
+
+**(2) `/UI/Interop/JsInteropManager.cs` に呼び出しメソッドを追加**
+
+```csharp
+// /UI/Interop/JsInteropManager.cs
+using Microsoft.JSInterop;
+using Microsoft.Extensions.Logging;
+
+namespace PhrazorApp.UI.Interop;
+
+public sealed class JsInteropManager
+{
+    private readonly IJSRuntime _js;
+    private readonly ILogger<JsInteropManager> _logger;
+    private IJSObjectReference? _module;
+
+    public JsInteropManager(IJSRuntime js, ILogger<JsInteropManager> logger)
+    {
+        _js = js;
+        _logger = logger;
+    }
+
+    private async ValueTask<IJSObjectReference> GetModuleAsync(CancellationToken ct = default)
+    {
+        _module ??= await _js.InvokeAsync<IJSObjectReference>("import", ct, "/js/site.js");
+        return _module;
+    }
+
+    /// <summary>ID 指定でスムーズスクロール（Home遷移しない）</summary>
+    public async ValueTask ScrollToIdAsync(string targetElementId, bool smooth = true, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(targetElementId)) return;
+        try
+        {
+            var mod = await GetModuleAsync(ct);
+            await mod.InvokeVoidAsync("scrollToId", ct, targetElementId, smooth);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS scrollToId 失敗: {Id}", targetElementId);
+        }
+    }
+}
+```
+
+**(3) ページ／コンポーネントでの利用**
+
+```razor
+@inject PhrazorApp.UI.Interop.JsInteropManager Js
+
+<MudButton OnClick="HandleClick">Scroll</MudButton>
+
+@code {
+    [Parameter] public string? TargetElementId { get; set; }
+    [Parameter] public bool Smooth { get; set; } = true;
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private async Task HandleClick()
+    {
+        if (OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(TargetElementId))
+            await Js.ScrollToIdAsync(TargetElementId!, Smooth);
+    }
+}
+```
+
+> 備考
+>
+> * **JS を直接 Razor に書かない**（`<script>` 直書き禁止）。
+> * **グローバル関数は作らず、ESM の `export` を使用**。
+> * **処理はまず C# で代替可能か検討**し、JS 依存を最小化する。
+> * 例外は `JsInteropManager` 側で握り、**UI 例外を発生させない**。
+
+## 1-4. バリデーション（EditContext + FluentValidation + PageMessageStore）
 
 * **役割分担**
 
@@ -139,7 +243,7 @@ private void OnInvalidSubmit(EditContext editContext)
 }
 ```
 
-## 1-4. UiOperationRunner（4 つの API）
+## 1-5. UiOperationRunner（4 つの API）
 
 > **サービスを用いてアプリ固有の処理を実行**しながら、**進捗（オーバーレイ）・Snackbar・例外処理**まで担当します。
 > 画面側は最小限のコードで結果の反映に集中できます。
@@ -337,6 +441,7 @@ public static class MyModelMapper
   * **MudBlazor**: **8.\***（**マイナーは浮動**）。**コード例は MudBlazor 8.0 時点で存在する API のみ**を使用してください（8.1+ 以降で追加された API は使わない）。
   * ※ MudBlazor 8.x ではジェネリック推論が外れやすいため、**`MudSelect<T>` などジェネリックの型引数 `T` を明示**してください。
 * 上記に反する、新しめのマイナー機能をどうしても使う場合は、**その旨を明記**し、**8.0/9.0 相当の代替コード**も併記してください。
+* * **スタイル方針**：**独自 CSS の適用はなるべく控え**、まず **MudBlazor のコンポーネント／プロパティで表現**してください（それで賄えない箇所のみ、限定的に CSS を用いる）。
 * 以降のチャットは、**ソースコードと実装方針が学習済み**である前提とします。
 
 </small>
