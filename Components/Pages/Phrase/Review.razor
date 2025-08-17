@@ -1,8 +1,6 @@
 ﻿@page "/phrases/review"
 @page "/tests/review"
 
-@using MudBlazor
-@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @attribute [Authorize]
 
@@ -15,26 +13,11 @@
     <SectionTitle Title="フレーズ復習" />
 
     <ActionCard>
-        <!-- ループは保存しつつ切替 -->
-        <MudSwitch T="bool"
-                   Checked="_loop"
-                   CheckedChanged="OnLoopChanged"
-                   Color="Color.Primary"
-                   Label="ループ" />
-
         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
                    Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Shuffle"
                    Disabled="@(_count <= 1)" OnClick="Reshuffle">
             シャッフル
         </MudButton>
-
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
-                   Color="Color.Default" StartIcon="@Icons.Material.TwoTone.RestartAlt"
-                   OnClick="ResetPosition">
-            先頭へ
-        </MudButton>
-
-        <MudSpacer />
 
         <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
                    Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.PlayArrow"
@@ -45,60 +28,103 @@
 
     <BaseCard>
         <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="py-4">
-            <!-- 進捗スライダー：1 ～ _count -->
-            <MudSlider T="int"
-                       Min="1"
-                       Max="_count"
-                       Step="1"
-                       Value="_sliderValue"
-                       ValueChanged="OnSliderChanged"
-                       ValueLabel="true"
-                       Disabled="@(_count <= 1)"
-                       Color="Color.Primary"
-                       Style="width: min(92vw, 800px);" />
+
+            <MudGrid Justify="Justify.Center">
+                <MudItem xs="12" sm="10" md="8" lg="7" xl="6">
+                    <MudSlider T="int"
+                               Min="1"
+                               Max="_count"
+                               Step="1"
+                               Value="_sliderValue"
+                               ValueChanged="OnSliderChanged"
+                               ValueLabel="true"
+                               Disabled="@(_count <= 1)"
+                               Color="Color.Primary"
+                               Style="width:100%;" />
+                </MudItem>
+            </MudGrid>
 
             <MudText Typo="Typo.subtitle2">
                 @(_count == 0 ? "（データなし）" : $"{_index + 1} / {_count}")
             </MudText>
 
-            <!-- キー入力は子divで受ける（preventDefault もここで） -->
-            <MudCard Elevation="12" Class="p-8 text-center">
-                <div tabindex="0"
-                     @onkeydown="HandleKey"
-                     @onkeydown:preventDefault="true"
-                     style="outline:none">
-                    <MudCardContent @onclick="Flip">
-                        <MudText Typo="Typo.h5">@(_count == 0 ? "" : _display)</MudText>
-                        @if (_count > 0)
-                        {
-                            <MudText Typo="Typo.caption" Class="mt-2">
-                                @(_isBack ? "クリック / Space: 表へ" : "クリック / Space: 裏へ")
-                            </MudText>
-                        }
-                    </MudCardContent>
-                </div>
-            </MudCard>
+            <!-- カード -->
+            <MudGrid Justify="Justify.Center">
+                <MudItem xs="12" sm="10" md="8" lg="7" xl="6">
+                    <MudCard Elevation="12"
+                             Class="w-100 p-6"
+                             Style="height:clamp(240px, 36vh, 420px); cursor:pointer;"
+                             @onclick="Flip">
+                        <div tabindex="0"
+                             @onkeydown="HandleKey"
+                             @onkeydown:preventDefault="true"
+                             style="outline:none;height:100%;display:flex;flex-direction:column;">
 
-            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
-                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
-                           StartIcon="@Icons.Material.TwoTone.ChevronLeft"
-                           Disabled="@(!_canPrev)" OnClick="Prev">
-                    前へ
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
-                           StartIcon="@Icons.Material.TwoTone.Sync"
-                           OnClick="Flip">
-                    表/裏
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
-                           EndIcon="@Icons.Material.TwoTone.ChevronRight"
-                           Disabled="@(!_canNext)" OnClick="Next">
-                    次へ
-                </MudButton>
-            </MudStack>
+                            <!-- 本文 -->
+                            <div style="flex:1 1 auto;display:flex;align-items:center;justify-content:center;overflow:auto;">
+                                <MudCardContent Class="w-100">
+                                    <MudText Typo="Typo.h5"
+                                             Style="word-break:break-word;overflow-wrap:anywhere;">
+                                        @(_count == 0 ? "" : _display)
+                                    </MudText>
+                                </MudCardContent>
+                            </div>
+
+                            <!-- クリック指示：幅100%＋Stackで中央寄せ -->
+                            <div class="mt-2" style="flex:0 0 auto;min-height:1.5rem;width:100%;">
+                                @if (_count > 0)
+                                {
+                                    <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.caption">
+                                            @(_isBack ? "クリック / Space: 表へ" : "クリック / Space: 裏へ")
+                                        </MudText>
+                                    </MudStack>
+                                }
+                            </div>
+                        </div>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- ナビ -->
+            <MudGrid Justify="Justify.Center">
+                <MudItem xs="12" sm="10" md="8" lg="7" xl="6">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                                   StartIcon="@Icons.Material.TwoTone.FirstPage"
+                                   Disabled="@(_count <= 0 || _index == 0)" OnClick="GoFirst">
+                            先頭へ
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                                   StartIcon="@Icons.Material.TwoTone.ChevronLeft"
+                                   Disabled="@(!_canPrev)" OnClick="Prev">
+                            前へ
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                                   StartIcon="@Icons.Material.TwoTone.Sync"
+                                   Disabled="@(_count == 0)" OnClick="Flip">
+                            表/裏
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                                   EndIcon="@Icons.Material.TwoTone.ChevronRight"
+                                   Disabled="@(!_canNext)" OnClick="Next">
+                            次へ
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                                   EndIcon="@Icons.Material.TwoTone.LastPage"
+                                   Disabled="@(_count <= 0 || _index == _count - 1)" OnClick="GoLast">
+                            最後へ
+                        </MudButton>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
 
             <MudText Typo="Typo.caption" Class="mt-2">
-                ← / → : 前・次　/　↑ / ↓・Space・Enter : 表裏切替
+                ← / → : 前・次　/　Space・Enter : 表裏切替
             </MudText>
         </MudStack>
     </BaseCard>
@@ -106,40 +132,42 @@
 
 @code {
     [Parameter, SupplyParameterFromQuery] public bool? Shuffle { get; set; }
-    [Parameter, SupplyParameterFromQuery] public bool? Loop { get; set; }
     [Parameter, SupplyParameterFromQuery] public int? Start { get; set; }
 
     private List<ReviewSession.Card> _items = new();
     private int _index;
     private bool _isBack;
-    private bool _loop;
     private int _count;
 
     private string _display => _isBack ? _items[_index].Back : _items[_index].Front;
-    private bool _canPrev => _count > 0 && (_loop || _index > 0);
-    private bool _canNext => _count > 0 && (_loop || _index < _count - 1);
-    private int _sliderValue; // 1-based 表示用
+    private bool _canPrev => _count > 0 && _index > 0;
+    private bool _canNext => _count > 0 && _index < _count - 1;
+    private int _sliderValue;
 
     protected override void OnParametersSet()
     {
         _items = new List<ReviewSession.Card>(ReviewSession.Items);
         _count = _items.Count;
-        if (_count == 0) { Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning); NavigationManager.NavigateTo("/phrases"); return; }
+        if (_count == 0)
+        {
+            Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
+            NavigationManager.NavigateTo("/phrases");
+            return;
+        }
 
-        _loop = Loop ?? false;
         _index = Math.Clamp(Start ?? 0, 0, _count - 1);
 
-        if ((Shuffle ?? false) && _count > 1) ShuffleInPlace(_items, null);
+        if ((Shuffle ?? false) && _count > 1)
+            ShuffleInPlace(_items, null);
 
         _isBack = false;
-        UpdateSlider(); // ← 追加
+        UpdateSlider();
     }
 
-    // スライダー変更時：カードを切替
     private void OnSliderChanged(int value)
     {
         if (_count == 0) return;
-        var newIndex = Math.Clamp(value - 1, 0, _count - 1); // 1-based → 0-based
+        var newIndex = Math.Clamp(value - 1, 0, _count - 1);
         if (newIndex != _index)
         {
             _index = newIndex;
@@ -152,14 +180,6 @@
     {
         if (!firstRender) return;
 
-        // ループ状態の復元（クエリ指定がなければ）
-        if (!Loop.HasValue)
-        {
-            var rLoop = await PSS.GetAsync<bool>("review.loop");
-            if (rLoop.Success) _loop = rLoop.Value;
-        }
-
-        // 直近シャッフルしたかの復元（クエリ指定がなければ）
         if (!Shuffle.HasValue)
         {
             var rShuf = await PSS.GetAsync<bool>("review.shufflePref");
@@ -168,33 +188,16 @@
                 ShuffleInPlace(_items, null);
                 _index = 0;
                 _isBack = false;
+                UpdateSlider();
+                StateHasChanged();
             }
         }
-
-        StateHasChanged();
     }
 
-    private async Task OnLoopChanged(bool value)
-    {
-        _loop = value;
-        await PSS.SetAsync("review.loop", _loop);
-    }
-
-    private void Prev()
-    {
-        if (_index == 0) _index = _loop ? _count - 1 : 0;
-        else _index--;
-        _isBack = false;
-        UpdateSlider(); // ← 追加
-    }
-
-    private void Next()
-    {
-        if (_index == _count - 1) _index = _loop ? 0 : _count - 1;
-        else _index++;
-        _isBack = false;
-        UpdateSlider(); // ← 追加
-    }
+    private void Prev() { if (_index > 0) _index--; _isBack = false; UpdateSlider(); }
+    private void Next() { if (_index < _count - 1) _index++; _isBack = false; UpdateSlider(); }
+    private void GoFirst() { _index = 0; _isBack = false; UpdateSlider(); }
+    private void GoLast() { if (_count == 0) return; _index = _count - 1; _isBack = false; UpdateSlider(); }
 
     private async void Reshuffle()
     {
@@ -202,19 +205,10 @@
         ShuffleInPlace(_items, null);
         _index = 0;
         _isBack = false;
-        UpdateSlider(); // ← 追加
+        UpdateSlider();
         await PSS.SetAsync("review.shufflePref", true);
     }
 
-    private async void ResetPosition()
-    {
-        _index = 0;
-        _isBack = false;
-        UpdateSlider(); // ← 追加
-        await PSS.SetAsync("review.shufflePref", false);
-    }
-
-    // ユーティリティ
     private void UpdateSlider() => _sliderValue = _index + 1;
     private void Flip() => _isBack = !_isBack;
     private void GoWritingTest() => NavigationManager.NavigateTo("/phrases/writing");
@@ -235,9 +229,6 @@
         {
             case "ArrowLeft": Prev(); break;
             case "ArrowRight": Next(); break;
-            // ▼ ここを追加：上下で表裏切替
-            case "ArrowUp":
-            case "ArrowDown":
             case " ":
             case "Enter":
                 Flip(); break;
