@@ -1,5 +1,3 @@
-以下、末尾に「細目」を追記した最新版です。
-
 ---
 
 Development.md
@@ -7,7 +5,6 @@ Development.md
 # Development Guide
 
 > このドキュメントは **ChatGPT に実装方針を学習させるためのドキュメント**です。
-> 本ドキュメント自体もChatGPTで作成されています。
 
 ---
 
@@ -259,15 +256,14 @@ var saved = await _uow.ExecuteInTransactionAsync(async repos =>
 
 * **ユーザーごとの出し分けが必要なエンティティは、読み込み時に自動で現在のユーザーにフィルタ**されます。
   そのため、通常は `UserId` 条件を追加しません（管理用途で全件が必要なときのみフィルタを外します）。
-
+* **`CreatedAt` / `UpdatedAt` は保存時に自動設定**されます。
+  画面やサービスで個別に設定する必要はありません。
 
 ## 3-4. Repository とは
 
 * 単一テーブル（Entity）を扱うための小さなユーティリティです。
-  各レポジトリにはBaseRepositoryを継承させてください(BaseRepositoryには作成・更新・削除メソッドが揃っています)。
-* BaseRepositoryの保存系メソッド使用時には**`CreatedAt` / `UpdatedAt` が自動設定**されます。
-  画面やサービスで個別に設定する必要はありません。
-* UnitOfWork から複数の Repository を取り出して連携させます。
+  代表メソッド：`Queryable(asNoTracking)`, `AddAsync`, `UpdateAsync`, `DeleteAsync` など。
+  UnitOfWork から複数の Repository を取り出して連携させます。
 
 ## 3-5. マッピングファイルの書き方（ModelMapper）
 
@@ -307,7 +303,7 @@ public static class MyModelMapper
 
 ---
 
-# 付記
+# 付記（細目）
 
 * **Common フォルダの役割**
   Common フォルダには、アプリ全体で横断的に使用する定義（定数・Enum・設定）を格納します。**既存の定義をなるべく再利用**してください。
@@ -320,3 +316,18 @@ public static class MyModelMapper
 
 * **Components/Shared の共通 UI**
   **Components/Shared** には共通 UI コンポーネントが配置されています。ページ実装ではこれらを活用し、**個別ページの重複コードを減らす**方針です（例：`SectionTitle`、`ActionCard`、`TableWithToolbar` など）。
+
+* **共通処理・コンポーネント作成の第一原則**
+  **シンプルに利用できることを最優先**とします。**外部に公開する API は極力絞り（引数は少なく）**、必要になった時点で段階的に公開・拡張する方針とします。
+
+---
+
+#### <small>ChatGptへのプロンプト</small>
+
+<small>
+
+* Zipファイル「**PhrazorApp.zip**」を展開し、本アプリのソースコードを学習してください。
+* プロジェクトルートにある **README.md** と **DEVELOPMENT.md** にはフォルダ構成と実装方針が記載されています。**コード提供の際にはその方針に従ってください**。
+* 以降のチャットは、**ソースコードと実装方針が学習済み**であることを前提に行います。
+
+</small>
