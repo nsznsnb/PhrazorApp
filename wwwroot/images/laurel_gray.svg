@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Laurel Wreath - Gray">
+  <defs>
+    <path id="leaf" d="M0,-18 C11,-16 16,-6 16,0 C16,6 11,16 0,18 C-11,16 -16,6 -16,0 C-16,-6 -11,-16 0,-18 Z"/>
+    <linearGradient id="leafGradX" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#EEEEEE"/>
+      <stop offset="55%" stop-color="#BDBDBD"/>
+      <stop offset="100%" stop-color="#757575"/>
+    </linearGradient>
+    <linearGradient id="edgeGradX" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#616161"/>
+      <stop offset="100%" stop-color="#424242"/>
+    </linearGradient>
+    <linearGradient id="ribGradX" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#B0BEC5"/>
+      <stop offset="100%" stop-color="#78909C"/>
+    </linearGradient>
+    <linearGradient id="ribEdgeX" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#455A64"/>
+      <stop offset="100%" stop-color="#37474F"/>
+    </linearGradient>
+    <radialGradient id="medalGradX" cx="50%" cy="40%" r="60%">
+      <stop offset="0%"  stop-color="#EEEEEE" stop-opacity=".18"/>
+      <stop offset="70%" stop-color="#BDBDBD" stop-opacity=".08"/>
+      <stop offset="100%" stop-color="#757575" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadowX" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".20"/>
+    </filter>
+  </defs>
+
+  <circle cx="256" cy="252" r="156" fill="url(#medalGradX)"/>
+
+  <g transform="translate(256,260)" filter="url(#softShadowX)">
+    <g transform="translate(-140,110)">
+      <g fill="url(#leafGradX)" stroke="url(#edgeGradX)" stroke-width="1.2">
+        <use href="#leaf" transform="rotate(-118) scale(1.18)"/>
+        <use href="#leaf" transform="translate(-16,-26) rotate(-126) scale(1.15)"/>
+        <use href="#leaf" transform="translate(-28,-52) rotate(-134) scale(1.12)"/>
+        <use href="#leaf" transform="translate(-36,-78) rotate(-142) scale(1.08)"/>
+        <use href="#leaf" transform="translate(-40,-104) rotate(-150) scale(1.05)"/>
+        <use href="#leaf" transform="translate(-40,-132) rotate(-158) scale(1.02)"/>
+        <use href="#leaf" transform="translate(-36,-160) rotate(-166) scale(1.00)"/>
+        <use href="#leaf" transform="translate(-28,-188) rotate(-174) scale(0.98)"/>
+        <use href="#leaf" transform="translate(-16,-214) rotate(-182) scale(0.96)"/>
+        <use href="#leaf" transform="translate(0,-238)  rotate(-190) scale(0.94)"/>
+        <use href="#leaf" transform="translate(20,-260) rotate(-198) scale(0.92)"/>
+        <use href="#leaf" transform="translate(42,-280) rotate(-206) scale(0.90)"/>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(256,260) scale(-1,1)" filter="url(#softShadowX)">
+    <g transform="translate(-140,110)">
+      <g fill="url(#leafGradX)" stroke="url(#edgeGradX)" stroke-width="1.2">
+        <use href="#leaf" transform="rotate(-118) scale(1.18)"/>
+        <use href="#leaf" transform="translate(-16,-26) rotate(-126) scale(1.15)"/>
+        <use href="#leaf" transform="translate(-28,-52) rotate(-134) scale(1.12)"/>
+        <use href="#leaf" transform="translate(-36,-78) rotate(-142) scale(1.08)"/>
+        <use href="#leaf" transform="translate(-40,-104) rotate(-150) scale(1.05)"/>
+        <use href="#leaf" transform="translate(-40,-132) rotate(-158) scale(1.02)"/>
+        <use href="#leaf" transform="translate(-36,-160) rotate(-166) scale(1.00)"/>
+        <use href="#leaf" transform="translate(-28,-188) rotate(-174) scale(0.98)"/>
+        <use href="#leaf" transform="translate(-16,-214) rotate(-182) scale(0.96)"/>
+        <use href="#leaf" transform="translate(0,-238)  rotate(-190) scale(0.94)"/>
+        <use href="#leaf" transform="translate(20,-260) rotate(-198) scale(0.92)"/>
+        <use href="#leaf" transform="translate(42,-280) rotate(-206) scale(0.90)"/>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(256,376)" filter="url(#softShadowX)">
+    <path d="M-72,10 C-88,20 -92,34 -86,62 L-62,50 C-66,34 -66,20 -60,12 Z"
+          fill="url(#ribGradX)" stroke="url(#ribEdgeX)" stroke-width="1"/>
+    <path d="M72,10 C88,20 92,34 86,62 L62,50 C66,34 66,20 60,12 Z"
+          fill="url(#ribGradX)" stroke="url(#ribEdgeX)" stroke-width="1"/>
+    <path d="M-78,0 Q0,22 78,0 L72,-18 Q0,6 -72,-18 Z"
+          fill="url(#ribGradX)" stroke="url(#ribEdgeX)" stroke-width="1"/>
+    <ellipse cx="0" cy="-6" rx="14" ry="10" fill="#CFD8DC" opacity=".55"/>
+  </g>
+</svg>
