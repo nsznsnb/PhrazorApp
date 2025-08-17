@@ -482,6 +482,12 @@ public static class MyModelMapper
     * **MudCheckBox**: `Value` / `ValueChanged` / `@bind-Value`
     * **MudDatePicker**：`Date : DateTime?` / `DateChanged` / `@bind-Date`
 
+  * **JS利用時の方針**
+    * **JS は `/wwwroot/js/site.js` の ES Modules に追加し、`JsInteropManager` の**型付きメソッド\*\*経由で呼ぶ（1-3項）
+    * **ページ内 `<script>` と `IJSRuntime.Invoke…` 直呼びは避ける**
+    * DOM イベント購読（`scroll`/`input` 等）も **site.js（ESM）側に集約**
+    * 既存 API に無ければ **`JsInteropManager` に薄いラッパー**を追加してから使う
+
 * 以降のチャットは、**ソースコードと実装方針が学習済み**である前提とします。
 
 </small>
