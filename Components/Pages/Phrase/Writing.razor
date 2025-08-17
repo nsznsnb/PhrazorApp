@@ -5,18 +5,19 @@
 
 @using System.Text
 @using System.Text.RegularExpressions
+@using Microsoft.JSInterop
 
+@inject IJSRuntime JS
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ReviewSession ReviewSession
 @inject TestResultSession TestResultSession
 
-
 <MudStack Spacing="2">
     <SectionTitle Title="英作文テスト" />
 
-    <!-- 上部アクション -->
+    <!-- アクション -->
     <ActionCard>
         <MudText Typo="Typo.subtitle2">
             @(_count == 0 ? "（データなし）" : $"{_index + 1} / {_count}")
@@ -46,122 +47,164 @@
     <BaseCard>
         <MudStack Spacing="3" AlignItems="AlignItems.Center" Class="py-4">
 
-            <!-- 進捗 -->
-            <MudProgressLinear Value="@ProgressPercent" Rounded="true" />
+            <!-- 進捗（レスポンシブ幅） -->
+            <MudGrid Justify="Justify.Center">
+                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
+                    <MudProgressLinear Value="@ProgressPercent" Rounded="true" />
+                </MudItem>
+            </MudGrid>
 
-            <!-- 出題（日本語：Back） -->
-            <MudCard Elevation="10" Class="p-6 text-center">
-                <MudText Typo="Typo.h6">@_current.Back</MudText>
-            </MudCard>
+            <!-- 出題（No 左上） -->
+            <MudGrid Justify="Justify.Center">
+                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
+                    <MudCard Elevation="10" Class="p-6">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.overline" Align="Align.Left">No. @_indexPlus1</MudText>
+                            <MudText Typo="Typo.h6" Align="Align.Center">@_current.Back</MudText>
+                        </MudStack>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
 
-            <!-- 回答フォーム -->
-            <EditForm Model="_form" OnValidSubmit="SubmitAsync">
-                <MudStack Spacing="2" AlignItems="AlignItems.Stretch">
+            <!-- 回答（上=入力 / 下=入力補助：どちらも MudTextField） -->
+            <MudGrid Justify="Justify.Center">
+                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
+                    <EditForm Model="_form" OnValidSubmit="SubmitAsync">
+                        <MudStack Spacing="1" AlignItems="AlignItems.Stretch">
 
-                    <!-- 上：入力可（アイコン=EditNote / 同じフォント） -->
-                    <MudTextField T="string"
-                                  @bind-Value="_form.Answer"
-                                  Variant="Variant.Text"
-                                  FullWidth="true"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.TwoTone.EditNote"
-                                  Immediate="true"
-                                  InputStyle="@ProportionalInputStyle" />
+                            <!-- 入力欄（等幅） -->
+                            <MudTextField T="string"
+                                          @bind-Value="Answer"
+                                          Variant="Variant.Text"
+                                          FullWidth="true"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.TwoTone.EditNote"
+                                          Immediate="true"
+                                          Class="mono-input" />
 
-                    <!-- 下：ガイド（Mudの入力レイアウトを流用し、同じアイコン＆同じフォントで揃える） -->
-                    <MudPaper Class="mud-input mud-input-root answer-guide" Elevation="0">
-                        <div class="mud-input-adornment mud-input-adornment-start">
-                            <MudIcon Icon="@Icons.Material.TwoTone.EditNote" Size="Size.Medium" />
-                        </div>
-                        <div class="mud-input-slot" style="@ProportionalInputStyle">@GuideHtml</div>
-                    </MudPaper>
+                            <!-- 入力補助（等幅・同じTextField・読み取り専用） -->
+                            <MudTextField T="string"
+                                          Value="@_assistText"
+                                          ReadOnly="true"
+                                          Variant="Variant.Text"
+                                          FullWidth="true"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.TwoTone.EditNote"
+                                          Class="mono-input assist-input" />
 
-                    <!-- ボタンと集計 -->
-                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Justify="Justify.FlexStart">
-                        <MudButton ButtonType="ButtonType.Submit"
-                                   Variant="Variant.Filled" Color="Color.Primary"
-                                   StartIcon="@Icons.Material.TwoTone.CheckCircle">
-                            解答
-                        </MudButton>
+                            <!-- ボタン＆集計（詰めて並べ、必要時のみ折返し） -->
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
+                                      AlignItems="AlignItems.Center" Justify="Justify.Center"
+                                      Class="mt-2">
 
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                                   StartIcon="@Icons.Material.TwoTone.RestartAlt"
-                                   OnClick="ClearInput">
-                            クリア
-                        </MudButton>
+                                <MudButton ButtonType="ButtonType.Submit"
+                                           Variant="Variant.Filled" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.TwoTone.CheckCircle">
+                                    解答
+                                </MudButton>
 
-                        <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
-                            残り試行 @_attemptsLeft / 5
-                        </MudChip>
-                        <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">
-                            正解 @_correctCount
-                        </MudChip>
-                        <MudChip T="string" Color="Color.Error" Variant="Variant.Outlined">
-                            不正解 @_wrongCount
-                        </MudChip>
-                    </MudStack>
-                </MudStack>
-            </EditForm>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                                           StartIcon="@Icons.Material.TwoTone.SkipNext"
+                                           OnClick="SkipAsWrongAsync">
+                                    次へ（×扱い）
+                                </MudButton>
 
-            @if (_peek)
-            {
-                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Elevation="0">
-                    解答（チラ見）：@_current.Front
-                </MudAlert>
-            }
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                           StartIcon="@Icons.Material.TwoTone.RestartAlt"
+                                           OnClick="ClearInput">
+                                    クリア
+                                </MudButton>
+
+                                <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
+                                    残り試行 @_attemptsLeft / 5
+                                </MudChip>
+                                <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">
+                                    正解 @_correctCount
+                                </MudChip>
+                                <MudChip T="string" Color="Color.Error" Variant="Variant.Outlined">
+                                    不正解 @_wrongCount
+                                </MudChip>
+                            </MudStack>
+                        </MudStack>
+                    </EditForm>
+
+                    @if (_peek)
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Elevation="0" Class="mt-2">
+                            解答（チラ見）：@_current.Front
+                        </MudAlert>
+                    }
+                </MudItem>
+            </MudGrid>
         </MudStack>
     </BaseCard>
 </MudStack>
+
 <style>
-    /* Writing.razor.css など */
-    .answer-guide {
-        color: var(--mud-palette-text-secondary, rgba(0,0,0,.6));
+    /* 入力と補助を等幅で完全一致させる */
+    :root {
+        --mono-font-stack: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", "Source Code Pro", "Noto Sans Mono", "Liberation Mono", monospace;
+        --mono-size: 1rem;
+        --mono-line: 1.5rem;
     }
 
-        /* 下線だけ見せる“ゴースト文字” */
-        .answer-guide .ghost {
-            color: transparent; /* 文字は透明 */
-            border-bottom: 1px solid black; /* 下線色 = 親の color */
-        }
+    /* MudTextField 内 input 要素に適用 */
+    .mono-input .mud-input-slot input {
+        font-family: var(--mono-font-stack) !important;
+        font-size: var(--mono-size) !important;
+        line-height: var(--mono-line) !important;
+        letter-spacing: 0 !important;
+        font-variant-ligatures: none !important;
+    }
 
-        /* （任意）ヒントで公開した文字を少し強調したい場合 */
-        .answer-guide .reveal {
-            font-weight: 600;
-        }
+    /* 下の補助欄：色を薄く、アイコンは非表示（幅は保持） */
+    .assist-input .mud-input-slot input {
+        color: rgba(0,0,0,.54);
+        caret-color: transparent; /* キャレットを見せない */
+    }
+
+    .assist-input .mud-input-adornment-start {
+        visibility: hidden;
+    }
 </style>
+
 @code {
-    // 入力欄とガイド欄で共通のタイポ（BIZ UDPGothic）
-    private const string ProportionalInputStyle =
-        "font-family:'BIZ UDPGothic',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans JP',sans-serif;" +
-        "font-weight:400;font-size:1rem;line-height:1.5rem;";
+    [Parameter, SupplyParameterFromQuery] public string? Return { get; set; }
+
     // データ
     private List<ReviewSession.Card> _items = new();
     private int _index;
     private int _count;
-    private ReviewSession.Card _current;
-    private readonly List<TestResultSession.Row> _rows = new();
-
-    // フォーム
-    private AnswerForm _form = new();
-    private sealed class AnswerForm { public string Answer { get; set; } = string.Empty; }
-
-    // ヒント管理
-    private HashSet<int> _revealed = new(); // Front の公開済みインデックス
-    private bool _peek;
-
-    // 試行回数（各問題）
-    private int _attemptsLeft = 5;
+    private int _indexPlus1 => _index + 1;
+    private ReviewSession.Card _current = new(Guid.Empty, "", "");
 
     // 集計
+    private readonly List<TestResultSession.Row> _rows = new();
+    private int _attemptsLeft = 5;
     private int _answeredCount;
     private int _correctCount;
     private int _wrongCount;
-
-    private bool _canHint => RemainingLetterIndices().Count > 0;
     private double ProgressPercent => _count == 0 ? 0 : (_answeredCount * 100.0 / _count);
 
-    // ガイドHTML（現行フォントの幅に一致する“下線のみ”を描画）
-    private MarkupString GuideHtml => BuildGuideHtml(_current.Front, _revealed);
+    // 入力モデル（副作用は setter へ）
+    private sealed class AnswerForm { public string Answer { get; set; } = string.Empty; }
+    private AnswerForm _form = new();
+    private string Answer
+    {
+        get => _form.Answer;
+        set { _form.Answer = value ?? string.Empty; RebuildAssist(); }
+    }
+
+    // 単語ヒント
+    private static readonly Regex WordRegex = new(@"[A-Za-z0-9'’]+", RegexOptions.Compiled);
+    private List<(int start, int length)> _wordSpans = new();
+    private HashSet<int> _revealedWords = new(); // 単語インデックス（0-based）
+    private bool _canHint => _wordSpans.Count > _revealedWords.Count;
+
+    // 入力補助の文字列（未公開＆未正答は '·'）
+    private string _assistText = string.Empty;
+
+    private bool _peek;
 
     protected override void OnInitialized()
     {
@@ -184,77 +227,90 @@
         _current = _items[_index];
         _form.Answer = string.Empty;
         _attemptsLeft = 5;
-        _revealed.Clear();
+        _revealedWords.Clear();
         _peek = false;
-        StateHasChanged();
+
+        _wordSpans = new();
+        foreach (Match m in WordRegex.Matches(_current.Front))
+            _wordSpans.Add((m.Index, m.Length));
+
+        RebuildAssist();
     }
 
-    // 英数字のインデックスのみ対象
-    private static List<int> LetterIndices(string s)
-        => s.Select((ch, i) => (ch, i))
-            .Where(t => char.IsLetterOrDigit(t.ch))
-            .Select(t => t.i).ToList();
-
-    private List<int> RemainingLetterIndices()
+    private List<int> RemainingWordIndices()
     {
-        var all = LetterIndices(_current.Front);
-        all.RemoveAll(i => _revealed.Contains(i));
-        return all;
+        var list = new List<int>();
+        for (int i = 0; i < _wordSpans.Count; i++)
+            if (!_revealedWords.Contains(i)) list.Add(i);
+        return list;
     }
 
-    // “ゴースト文字の下線”をHTML化：英数字→下線のみ、公開済みは実文字を表示。記号と空白はそのまま表示。
-    private static MarkupString BuildGuideHtml(string text, HashSet<int> reveals)
+    // ヒント：単語を1つ公開 → 入力は触らず → 補助欄のみ更新
+    private void GiveHint()
     {
-        var sb = new StringBuilder(text.Length * 16);
-        for (int i = 0; i < text.Length; i++)
+        var remain = RemainingWordIndices();
+        if (remain.Count == 0) return;
+
+        var rnd = new Random();
+        var pick = remain[rnd.Next(remain.Count)];
+        _revealedWords.Add(pick);
+
+        RebuildAssist();
+
+        Snackbar.Add("ヒントを表示しました（単語を1つ公開）。", Severity.Info);
+    }
+
+    // 入力補助の再構築（公開 or 正しく入力 → 実文字／それ以外 → 中黒）
+    private void RebuildAssist()
+    {
+        var t = _current.Front ?? string.Empty;
+        var u = _form.Answer ?? string.Empty;
+
+        var sb = new StringBuilder(t.Length);
+        for (int i = 0; i < t.Length; i++)
         {
-            var ch = text[i];
-            if (char.IsLetterOrDigit(ch))
+            char expected = t[i];
+            char disp = NormalizeAsciiPunct(expected);
+
+            if (IsWordChar(expected))
             {
-                if (reveals.Contains(i))
-                {
-                    // ヒントで公開済み：実文字を表示
-                    sb.Append("<span class=\"reveal\">")
-                      .Append(System.Net.WebUtility.HtmlEncode(ch.ToString()))
-                      .Append("</span>");
-                }
-                else
-                {
-                    // ゴースト：文字は透明、ボーダーで下線だけ見せる
-                    sb.Append("<span class=\"ghost\">")
-                      .Append(System.Net.WebUtility.HtmlEncode(ch.ToString()))
-                      .Append("</span>");
-                }
-            }
-            else if (ch == ' ')
-            {
-                sb.Append("&nbsp;"); // 空白はそのまま空間を確保
+                bool hinted = IsInRevealedWord(i);
+                bool typedOk = i < u.Length &&
+                               char.ToLowerInvariant(NormalizeAsciiPunct(u[i])) ==
+                               char.ToLowerInvariant(disp);
+
+                sb.Append((hinted || typedOk) ? disp : '·');
             }
             else
             {
-                // 記号は先に見せる
-                sb.Append(System.Net.WebUtility.HtmlEncode(ch.ToString()));
+                sb.Append(disp);
             }
         }
-        return new MarkupString(sb.ToString());
+        _assistText = sb.ToString();
+        StateHasChanged();
     }
 
-    private void GiveHint()
+    private bool IsInRevealedWord(int charIndex)
     {
-        var remain = RemainingLetterIndices();
-        if (remain.Count == 0) return;
-
-        int revealCount = Math.Clamp(remain.Count / 5, 1, 5); // 残りの約20%を目安
-        var rnd = new Random();
-        for (int n = 0; n < revealCount && remain.Count > 0; n++)
+        for (int wi = 0; wi < _wordSpans.Count; wi++)
         {
-            var pick = remain[rnd.Next(remain.Count)];
-            _revealed.Add(pick);
-            remain.Remove(pick);
+            var (s, len) = _wordSpans[wi];
+            if (charIndex >= s && charIndex < s + len)
+                return _revealedWords.Contains(wi);
         }
-
-        Snackbar.Add("ヒントを表示しました。", Severity.Info);
+        return false;
     }
+
+    private static bool IsWordChar(char ch)
+        => char.IsLetterOrDigit(ch) || ch == '\'' || ch == '’';
+
+    private static char NormalizeAsciiPunct(char ch) => ch switch
+    {
+        '’' or '‘' => '\'',
+        '“' or '”' => '"',
+        '–' or '—' => '-',
+        _ => ch
+    };
 
     private async Task SubmitAsync()
     {
@@ -265,8 +321,8 @@
             return;
         }
 
-        var user = Normalize(input);
-        var expected = Normalize(_current.Front);
+        var user = NormalizeForJudge(input);
+        var expected = NormalizeForJudge(_current.Front);
 
         if (user == expected)
         {
@@ -285,20 +341,40 @@
             }
             else
             {
-                _wrongCount++;
-                _answeredCount++;
-                _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false));
-
-                Snackbar.Add("不正解。次の問題に進みます。", Severity.Error);
-                await NextAsync();
+                await ProceedWrongAsync(); // 正答表示 → 次へ
             }
         }
     }
 
-    private void ClearInput() => _form.Answer = string.Empty;
+    // 「次へ（×扱い）」：即座に不正解として進む
+    private async Task SkipAsWrongAsync() => await ProceedWrongAsync();
 
-    // 正規化：記号無視・空白圧縮・大小無視
-    private static string Normalize(string s)
+    // 不正解の記録 → 正答を表示 → 次へ
+    private async Task ProceedWrongAsync()
+    {
+        _wrongCount++;
+        _answeredCount++;
+        _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false));
+
+        var html =
+            "<div style='white-space:pre-wrap'>" +
+            System.Net.WebUtility.HtmlEncode(_current.Front) +
+            "</div>" +
+            "<p style='margin-top:12px;color:rgba(0,0,0,.6)'>不正解として記録しました。正答を確認して次へ進みます。</p>";
+
+        await DialogService.ShowMessageBox("正答", (MarkupString)html, yesText: "次へ");
+
+        await NextAsync();
+    }
+
+    private void ClearInput()
+    {
+        _form.Answer = string.Empty;
+        RebuildAssist();
+    }
+
+    // 採点用正規化：記号無視・空白圧縮・大小無視
+    private static string NormalizeForJudge(string s)
     {
         var onlyLettersSpaces = new string(s.Where(ch => char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch)).ToArray());
         var collapsed = Regex.Replace(onlyLettersSpaces, "\\s+", " ").Trim();
@@ -319,9 +395,28 @@
         await Task.CompletedTask;
     }
 
+    // JSなしで戻る
     private async Task CancelAsync()
     {
-        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm, "テストを中止して一覧に戻りますか？");
-        if (ok) Navigation.NavigateTo("/phrases");
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm, "テストを中止しますか？");
+        if (!ok) return;
+
+        // 明示の戻り先があれば優先
+        if (!string.IsNullOrEmpty(Return))
+        {
+            Navigation.NavigateTo(Return);
+            return;
+        }
+
+        // 履歴で直前のページへ
+        try
+        {
+            await JS.InvokeVoidAsync("history.back");
+        }
+        catch
+        {
+            // 念のためのフォールバック
+            Navigation.NavigateTo("/phrases");
+        }
     }
 }
