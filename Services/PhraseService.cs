@@ -34,11 +34,10 @@ namespace PhrazorApp.Services
                 // 並び順は安定化
                 list = list.OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue).ToList();
 
-                // ▼ ここから追記：一覧に含まれるフレーズIDだけで、所属フレーズ帳名を一括取得して埋める
+                // ▼ 一覧に含まれるフレーズIDだけで、所属フレーズ帳名を一括取得して埋める
                 var phraseIds = list.Select(x => x.Id).Distinct().ToArray();
                 if (phraseIds.Length > 0)
                 {
-                    // DB から該当ペアだけ取得してメモリ側で集約
                     var pairs = await (
                         from bi in repos.PhraseBookItems.Queryable(asNoTracking: true)
                         join b in repos.PhraseBooks.Queryable(asNoTracking: true)
@@ -80,24 +79,34 @@ namespace PhrazorApp.Services
             });
         }
 
-
-        // Services/PhraseService.cs
+        /// <summary>
+        /// テスト候補の抽出（画面のプレビュー／開始で使用）
+        /// - 絞り込みは Repository レイヤーに委譲（DbContext のユーザーフィルタもそちらで適用）
+        /// - 並び替えは Shuffle 指定時のみメモリでランダム
+        /// - Limit は 1〜500 に丸め
+        /// </summary>
         public Task<ServiceResult<List<PhraseListItemModel>>> BuildCandidatesAsync(TestFilterModel filter)
         {
             return _uow.ReadAsync(async repos =>
             {
                 var uid = _userService.GetUserId();
+
+                // ★ 重要：Repository 側で SubGenreIds / PhraseBookIds / 期間 / UntestedOnly を解釈する
+                //   （UI 変更に合わせ「GenreIds 依存」は不要。SubGenreIds 優先の実装にしておく）
                 var list = await repos.Phrases.GetListByFilterProjectedAsync(uid, filter);
 
+                // シャッフル（SQL依存を避けメモリ側で）
                 if (filter.Shuffle && list.Count > 1)
                     list = list.OrderBy(_ => Guid.NewGuid()).ToList();
+
+                // 上限丸め
+                var take = Math.Clamp(filter.Limit <= 0 ? 20 : filter.Limit, 1, 500);
+                if (list.Count > take)
+                    list = list.Take(take).ToList();
 
                 return ServiceResult.Success(list, "");
             });
         }
-
-
-
 
         /// <summary>作成</summary>
         public async Task<ServiceResult<Unit>> CreatePhraseAsync(PhraseEditModel model)

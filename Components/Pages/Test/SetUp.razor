@@ -11,63 +11,80 @@
 
 <SectionTitle Title="テスト設定" />
 
-<!-- ★ アクションは共通の ActionCard に集約 -->
 <ActionCard>
     <MudButton Variant="Variant.Outlined" Color="Color.Default"
-               StartIcon="@Icons.Material.TwoTone.Visibility" OnClick="PreviewAsync">
-        プレビュー
-    </MudButton>
+               StartIcon="@Icons.Material.TwoTone.Visibility"
+               OnClick="PreviewAsync">プレビュー</MudButton>
 
     <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
-               StartIcon="@Icons.Material.TwoTone.Style" Disabled="@(!_hasPreview)" OnClick="StartReviewAsync">
-        復習してから開始
-    </MudButton>
+               StartIcon="@Icons.Material.TwoTone.Style"
+               Disabled="@(!_hasPreview)"
+               OnClick="StartReviewAsync">復習してから開始</MudButton>
 
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
-               StartIcon="@Icons.Material.TwoTone.PlayArrow" Disabled="@(!_hasPreview)" OnClick="StartTestAsync">
-        テスト開始
-    </MudButton>
+               StartIcon="@Icons.Material.TwoTone.PlayArrow"
+               Disabled="@(!_hasPreview)"
+               OnClick="StartTestAsync">テスト開始</MudButton>
+
+    <MudSpacer />
+
+    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+               StartIcon="@Icons.Material.TwoTone.RestartAlt"
+               OnClick="ResetFilters">条件クリア</MudButton>
 </ActionCard>
 
 <BaseCard Class="pa-4" Style="min-height: 400px;">
-
-    <!-- ★ 縦並び（大画面でも列分けしない） -->
     <MudStack Spacing="2" Class="mt-2">
 
-        <!-- フレーズ帳：複数選択 -->
-@*         <MudSelect T="Guid"
+        <MudText Typo="Typo.subtitle2">出題範囲</MudText>
+
+        <!-- フレーズ帳（複数選択：@bind不使用） -->
+        <MudText Typo="Typo.caption">フレーズ帳</MudText>
+        <MudSelect T="Guid"
+                   Label="フレーズ帳を選択"
                    MultiSelection="true"
-                   @bind-SelectedValues="_f.PhraseBookIds">
+                   SelectedValues="_f.PhraseBookIds"
+                   SelectedValuesChanged="@EventCallback.Factory.Create(this, (IEnumerable<Guid> ids) => OnPhraseBookIdsChanged(ids))"
+                   Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
             @foreach (var b in _books)
             {
                 <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>
             }
-        </MudSelect> *@
+        </MudSelect>
 
+        <!-- ジャンル／サブジャンル（ネスト＋複数選択：@bind不使用） -->
+        <MudText Typo="Typo.caption" Class="mt-2">ジャンル／サブジャンル（複数選択）</MudText>
+        <MudPaper Outlined="true" Elevation="0" Square="true" Class="pa-1" Style="max-height:320px; overflow:auto;">
+            <MudList T="Guid"
+                     SelectionMode="SelectionMode.MultiSelection"
+                     SelectedValues="_f.SubGenreIds"
+                     SelectedValuesChanged="@EventCallback.Factory.Create(this, (object? e) => OnSubGenreIdsChanged(ToSet(e)))"
+                     Dense="true" CheckBoxColor="Color.Primary">
+                <MudListSubheader>ジャンル / サブジャンル</MudListSubheader>
 
-        <!-- ジャンル（MudList：単一選択） -->
-        <MudText Typo="Typo.caption">ジャンル</MudText>
-        <MudList T="Guid?" Hover="true" Dense="true" @bind-SelectedValue="GenreId">
-            <MudListItem T="Guid?" Value="@((Guid?)null)">（未選択）</MudListItem>
-            @foreach (var g in _genres)
-            {
-                <MudListItem T="Guid?" Value="@((Guid?)g.Id)">@g.Name</MudListItem>
-            }
-        </MudList>
+                @foreach (var g in _genres)
+                {
+                    <MudListItem OnClick="@(() => ToggleGenreAll(g))">
+                        <ChildContent>@g.Name</ChildContent>
+                        <NestedList>
+                            @foreach (var sg in g.SubGenres?.OrderBy(x => x.OrderNo) ?? Enumerable.Empty<SubGenreModel>())
+                            {
+                                <MudListItem T="Guid" Value="@sg.Id">
+                                    <ChildContent>@sg.Name</ChildContent>
+                                </MudListItem>
+                            }
+                        </NestedList>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
 
-        <!-- サブジャンル（MudList：単一選択） -->
-        <MudText Typo="Typo.caption">サブジャンル</MudText>
-        <MudList T="Guid?" Hover="true" Dense="true" @bind-SelectedValue="_f.SubGenreId" Disabled="@(!_subGenres.Any())">
-            <MudListItem T="Guid?" Value="@((Guid?)null)">（未選択）</MudListItem>
-            @foreach (var sg in _subGenres)
-            {
-                <MudListItem T="Guid?" Value="@((Guid?)sg.Id)">@sg.Name</MudListItem>
-            }
-        </MudList>
-
-        <!-- 期間 -->
+        <!-- 期間（@bind不使用） -->
+        <MudText Typo="Typo.subtitle2" Class="mt-2">期間</MudText>
         <MudSelect T="DateRangePreset" Label="期間"
-                   @bind-Value="_f.DatePreset" Margin="Margin.Dense" Variant="Variant.Outlined" Dense="true">
+                   Value="_f.DatePreset"
+                   ValueChanged="OnDatePresetChanged"
+                   Margin="Margin.Dense" Variant="Variant.Outlined" Dense="true">
             <MudSelectItem Value="DateRangePreset.None">指定なし</MudSelectItem>
             <MudSelectItem Value="DateRangePreset.Today">今日</MudSelectItem>
             <MudSelectItem Value="DateRangePreset.Yesterday">昨日</MudSelectItem>
@@ -78,25 +95,52 @@
 
         @if (_f.DatePreset == DateRangePreset.Custom)
         {
-            <MudDatePicker Label="開始日" @bind-Date="_f.DateFrom"
+            <MudDatePicker Label="開始日"
+                           Date="_f.DateFrom"
+                           DateChanged="OnDateFromChanged"
                            Margin="Margin.Dense" Variant="Variant.Outlined" />
-            <MudDatePicker Label="終了日" @bind-Date="_f.DateTo"
+            <MudDatePicker Label="終了日"
+                           Date="_f.DateTo"
+                           DateChanged="OnDateToChanged"
                            Margin="Margin.Dense" Variant="Variant.Outlined" />
+            @if (!_isDateRangeValid)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Variant="Variant.Outlined" Elevation="0">
+                    期間の指定が不正です。開始日は終了日以前にしてください。
+                </MudAlert>
+            }
         }
 
-        <!-- オプション -->
-        <MudSwitch T="bool" Label="テスト未実施のみ" @bind-Checked="_f.UntestedOnly" Color="Color.Primary" />
-        <MudNumericField T="int" Label="出題数" @bind-Value="_f.Limit" Min="1" Max="500"
-                         Margin="Margin.Dense" Variant="Variant.Outlined" />
-        <MudSwitch T="bool" Label="シャッフル" @bind-Checked="_f.Shuffle" Color="Color.Primary" />
+        <!-- オプション（MudSwitch<T> は Value/ValueChanged を使う） -->
+        <MudText Typo="Typo.subtitle2" Class="mt-2">オプション</MudText>
 
-        <!-- プレビュー（あれば下部に縦で表示） -->
+        <MudSwitch T="bool" Label="テスト未実施のみ"
+                   Value="_f.UntestedOnly"
+                   ValueChanged="OnUntestedOnlyChanged"
+                   Color="Color.Primary" />
+
+        <MudSelect T="int" Label="出題数"
+                   Value="_f.Limit"
+                   ValueChanged="OnLimitChanged"
+                   Margin="Margin.Dense" Variant="Variant.Outlined" Dense="true">
+            @foreach (var n in _limitOptions)
+            {
+                <MudSelectItem T="int" Value="@n">@n</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSwitch T="bool" Label="シャッフル"
+                   Value="_f.Shuffle"
+                   ValueChanged="OnShuffleChanged"
+                   Color="Color.Primary" />
+
+        <!-- プレビュー -->
         @if (_hasPreview)
         {
             <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Elevation="0" Class="mt-2">
                 対象件数：@_preview.Count 件（先頭10件）
             </MudAlert>
-            <MudTable Items="_preview.Take(10)" Dense="true" Hover="true">
+            <MudTable T="PhraseListItemModel" Items="_preview.Take(10)" Dense="true" Hover="true">
                 <HeaderContent>
                     <MudTh>フレーズ</MudTh>
                     <MudTh>意味</MudTh>
@@ -111,41 +155,113 @@
 </BaseCard>
 
 @code {
+    private readonly int[] _limitOptions = new[] { 10, 20, 30, 50, 100, 200, 500 };
+
     private TestFilterModel _f = new();
+
     private List<GenreModel> _genres = new();
-    private List<SubGenreModel> _subGenres = new();
     private List<PhraseBookListItemModel> _books = new();
     private List<PhraseListItemModel> _preview = new();
-    private bool _hasPreview;
 
-    // ★ MudList単一選択のバインド先。setterでサブジャンルを更新（ValueChangedの二重回避）
-    private Guid? GenreId
+    private bool _hasPreview;
+    private bool _isDateRangeValid = true;
+
+    // --- ハンドラ ---
+    private void OnPhraseBookIdsChanged(IEnumerable<Guid> ids)
     {
-        get => _f.GenreId;
-        set
+        _f.PhraseBookIds = ids?.ToHashSet() ?? new HashSet<Guid>();
+        InvalidatePreview();
+    }
+
+    private void OnSubGenreIdsChanged(HashSet<Guid> ids)
+    {
+        _f.SubGenreIds = ids ?? new HashSet<Guid>();
+        InvalidatePreview();
+    }
+
+    private void OnDatePresetChanged(DateRangePreset preset)
+    {
+        if (_f.DatePreset == preset) return;
+        _f.DatePreset = preset;
+        if (preset != DateRangePreset.Custom)
         {
-            _f.GenreId = value;
-            _subGenres = _genres.FirstOrDefault(x => x.Id == value)?.SubGenres?
-                            .OrderBy(x => x.OrderNo).ToList() ?? new();
-            _f.SubGenreId = null;
-            StateHasChanged();
+            _f.DateFrom = null;
+            _f.DateTo = null;
+            _isDateRangeValid = true;
         }
+        InvalidatePreview();
+    }
+
+    private void OnDateFromChanged(DateTime? from)
+    {
+        _f.DateFrom = from;
+        _isDateRangeValid = CheckDateRange();
+        InvalidatePreview();
+    }
+
+    private void OnDateToChanged(DateTime? to)
+    {
+        _f.DateTo = to;
+        _isDateRangeValid = CheckDateRange();
+        InvalidatePreview();
+    }
+
+    private void OnUntestedOnlyChanged(bool v)
+    {
+        if (_f.UntestedOnly == v) return;
+        _f.UntestedOnly = v;
+        InvalidatePreview();
+    }
+
+    private void OnShuffleChanged(bool v)
+    {
+        if (_f.Shuffle == v) return;
+        _f.Shuffle = v;
+        InvalidatePreview();
+    }
+
+    private void OnLimitChanged(int v)
+    {
+        if (_f.Limit == v) return;
+        _f.Limit = v;
+        InvalidatePreview();
+    }
+
+    // 親ジャンルクリックで配下を全選択/解除
+    private void ToggleGenreAll(GenreModel g)
+    {
+        var ids = g.SubGenres?.Select(x => x.Id) ?? Enumerable.Empty<Guid>();
+        var allSelected = ids.Any() && ids.All(id => _f.SubGenreIds.Contains(id));
+        if (allSelected) _f.SubGenreIds.RemoveWhere(id => ids.Contains(id));
+        else _f.SubGenreIds.UnionWith(ids);
+        InvalidatePreview();
     }
 
     protected override async Task OnInitializedAsync()
     {
         _genres = await UiRunner.ReadAsync(() => GenreService.GetGenreViewModelListAsync()) ?? new();
-        _books  = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
+        _books = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
     }
 
     private async Task PreviewAsync()
     {
+        if (_f.DatePreset == DateRangePreset.Custom)
+        {
+            _isDateRangeValid = CheckDateRange();
+            if (!_isDateRangeValid)
+            {
+                Snackbar.Add("期間の指定が不正です。開始日と終了日を確認してください。", Severity.Warning);
+                return;
+            }
+        }
+
         _preview = await UiRunner.ReadWithOverlayAsync(
-                     () => PhraseService.BuildCandidatesAsync(_f),
-                     "対象を抽出中…") ?? new();
+            () => PhraseService.BuildCandidatesAsync(_f),
+            "対象を抽出中…") ?? new();
 
         _hasPreview = _preview.Count > 0;
-        if (!_hasPreview) Snackbar.Add("該当データがありません。条件を見直してください。", Severity.Warning);
+        if (!_hasPreview)
+            Snackbar.Add("該当データがありません。条件を見直してください。", Severity.Warning);
     }
 
     private async Task EnsurePreviewAsync()
@@ -158,7 +274,6 @@
     {
         await EnsurePreviewAsync();
         if (!_hasPreview) return;
-
         ReviewSession.Set(_preview, x => x.Phrase, x => x.Meaning);
         Nav.NavigateTo("/phrases/review");
     }
@@ -167,8 +282,32 @@
     {
         await EnsurePreviewAsync();
         if (!_hasPreview) return;
-
         ReviewSession.Set(_preview, x => x.Phrase, x => x.Meaning);
         Nav.NavigateTo("/phrases/writing");
+    }
+
+    // ヘルパー
+    private static HashSet<Guid> ToSet(object? e)
+        => e switch
+        {
+            HashSet<Guid> hs => hs,
+            IEnumerable<Guid> en => en.ToHashSet(),
+            _ => new HashSet<Guid>()
+        };
+
+    private bool CheckDateRange()
+        => !(_f.DateFrom.HasValue && _f.DateTo.HasValue && _f.DateFrom.Value.Date > _f.DateTo.Value.Date);
+
+    private void ResetFilters()
+    {
+        _f = new TestFilterModel();
+        InvalidatePreview();
+    }
+
+    private void InvalidatePreview()
+    {
+        _hasPreview = false;
+        _preview.Clear();
+        StateHasChanged();
     }
 }

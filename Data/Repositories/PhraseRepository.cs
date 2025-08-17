@@ -67,10 +67,10 @@ namespace PhrazorApp.Data.Repositories
                              .Any(i => ids.Contains(i.PhraseBookId) && i.PhraseId == p.PhraseId));
             }
 
-            if (f.GenreId is Guid gId)
-                q = q.Where(p => p.MPhraseGenres.Any(pg => pg.GenreId == gId));
-            if (f.SubGenreId is Guid sgId)
-                q = q.Where(p => p.MPhraseGenres.Any(pg => pg.SubGenreId == sgId));
+            //if (f.GenreId is Guid gId)
+            //    q = q.Where(p => p.MPhraseGenres.Any(pg => pg.GenreId == gId));
+            //if (f.SubGenreId is Guid sgId)
+            //    q = q.Where(p => p.MPhraseGenres.Any(pg => pg.SubGenreId == sgId));
 
             if (f.DatePreset is DateRangePreset.Today or DateRangePreset.Yesterday or DateRangePreset.Last7Days or DateRangePreset.Last30Days)
             {
