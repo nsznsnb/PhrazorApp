@@ -573,16 +573,15 @@
 
     private async Task OpenCsvUploadDialog()
     {
-        await DialogService.ShowCsvUploadDialogAsync<CsvUploadDialog<PhraseImportDto>, PhraseImportDto>(
+        await DialogService.ShowCsvUploadDialogAsync<PhraseImportDto>(
             caller: this,
-            onUploadCompleted: OnCsvUploadCompleted, // 成功後に一覧リロード等
+            onUploadCompleted: OnCsvUploadCompleted,
+            schema: CsvSchemas.PhraseImport,                 
             processAsync: async rows =>
             {
                 var models = rows.Select(x => x.ToPhraseModel()).ToList();
-                return await PhraseService.CreatePhrasesAsync(models); // NoContentResult を返す想定
-            },
-            title: "CSV読込（フレーズ）",
-            executeText: "取り込み");
+                return await PhraseService.CreatePhrasesAsync(models);
+            });
     }
 
     private async Task OnCsvUploadCompleted(List<PhraseImportDto> _)
