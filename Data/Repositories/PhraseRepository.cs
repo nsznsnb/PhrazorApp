@@ -54,12 +54,13 @@ namespace PhrazorApp.Data.Repositories
                 .ToListAsync();
         }
 
-
         public Task<List<PhraseListItemModel>> GetListByFilterProjectedAsync(string userId, TestFilterModel f)
         {
-            var q = _context.Set<DPhrase>().Where(p => p.UserId == userId);
+            var q = _context.Set<DPhrase>()
+                .AsNoTracking()
+                .Where(p => p.UserId == userId);
 
-            // ★フレーズ帳：複数対応
+            // フレーズ帳：複数対応
             if (f.PhraseBookIds is { Count: > 0 })
             {
                 var ids = f.PhraseBookIds.ToArray();
@@ -67,12 +68,16 @@ namespace PhrazorApp.Data.Repositories
                              .Any(i => ids.Contains(i.PhraseBookId) && i.PhraseId == p.PhraseId));
             }
 
-            //if (f.GenreId is Guid gId)
-            //    q = q.Where(p => p.MPhraseGenres.Any(pg => pg.GenreId == gId));
-            //if (f.SubGenreId is Guid sgId)
-            //    q = q.Where(p => p.MPhraseGenres.Any(pg => pg.SubGenreId == sgId));
+            // サブジャンル：複数対応（空ならジャンル条件なし）
+            if (f.SubGenreIds is { Count: > 0 })
+            {
+                var sgIds = f.SubGenreIds.ToArray();
+                q = q.Where(p => p.MPhraseGenres.Any(pg => sgIds.Contains(pg.SubGenreId)));
+            }
 
-            if (f.DatePreset is DateRangePreset.Today or DateRangePreset.Yesterday or DateRangePreset.Last7Days or DateRangePreset.Last30Days)
+            // 期間
+            if (f.DatePreset is DateRangePreset.Today or DateRangePreset.Yesterday
+                or DateRangePreset.Last7Days or DateRangePreset.Last30Days)
             {
                 var today = DateTime.Today;
                 var (from, to) = f.DatePreset switch
@@ -92,19 +97,24 @@ namespace PhrazorApp.Data.Repositories
                 q = q.Where(p => p.CreatedAt >= from && p.CreatedAt < toEx);
             }
 
+            // テスト未実施のみ
             if (f.UntestedOnly)
             {
                 q = q.Where(p => !_context.Set<DTestResultDetail>()
-                            .Any(d => d.PhraseId == p.PhraseId && d.Test!.UserId == userId));
+                    .Any(d => d.PhraseId == p.PhraseId && d.Test!.UserId == userId));
             }
 
+            // 安定順（サービス側でシャッフルする想定）
             q = q.OrderByDescending(p => p.CreatedAt);
 
             var projected = q.Select(PhraseModelMapper.ListProjection);
+
+            // 必要ならここで上限を掛ける（サービス側で再度 Take しても問題なし）
             if (f.Limit > 0) projected = projected.Take(f.Limit);
 
             return projected.ToListAsync();
         }
+
 
 
 
