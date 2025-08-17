@@ -3,97 +3,146 @@
 @inject UiOperationRunner UiOperationRunner
 @inject HomeDashboardService DashboardService
 
-<MudGrid GutterSize="3">
+<style>
+    /* チャートカード：軸・グラフが潰れないように全面に広げる */
+    .chart-card {
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+    @@media (min-width: 960px) {
+        .chart-card
 
-    <!-- KPI: 登録フレーズ -->
-    <MudItem xs="12" sm="6" md="4">
+    {
+        height: 320px;
+    }
+
+    }
+
+    .chart-fill {
+        flex: 1;
+        min-height: 0;
+    }
+    /* ← これが無いと中身が縮むことがある */
+
+    /* MudChart は凡例のON/OFF APIがないため、必要時だけ最小CSSで隠す */
+    .hide-legend .mud-chart-legend {
+        display: none;
+    }
+</style>
+
+<MudGrid>
+
+    <!-- 1行目：必須KPI 3枚 -->
+    <!-- 登録フレーズ数 -->
+    <MudItem xs="12" sm="6" md="4" lg="4" xl="4">
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
             <MudStack Spacing="1" Style="height:100%;">
                 <MudText Typo="Typo.subtitle2" Style="opacity:.75;">登録フレーズ数</MudText>
-                <MudText Typo="Typo.h3">@(_vm?.RegisteredPhraseCount ?? 0)</MudText>
-                <MudText Color="Color.Info" Style="margin-top:auto;">
-                    <MudIcon Icon="@Icons.Material.TwoTone.LibraryBooks" Style="margin-right:4px;" /> My Phrases
+                <MudText Typo="Typo.h3" Style="font-size:clamp(1.75rem,6vw,2.5rem);">
+                    @(_vm?.RegisteredPhraseCount ?? 0)
                 </MudText>
+
+                <!-- モチベ指標：今週新規 + 先週比 -->
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top:auto;">
+                    <MudIcon Icon="@Icons.Material.TwoTone.TrendingUp" />
+                    <MudText Typo="Typo.caption" Color="Color.Info">
+                        今週新規 @ThisWeekNewPhrases 件（先週比 @WeekDeltaSign@Math.Abs(WeekDeltaPercent)%）
+                    </MudText>
+                </MudStack>
             </MudStack>
         </MudPaper>
     </MudItem>
 
-    <!-- KPI: 習得フレーズ -->
-    <MudItem xs="12" sm="6" md="4">
+    <!-- 習得フレーズ数 -->
+    <MudItem xs="12" sm="6" md="4" lg="4" xl="4">
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
             <MudStack Spacing="1" Style="height:100%;">
-                <MudText Typo="Typo.subtitle2" Style="opacity:.75;">習得フレーズ数（暫定）</MudText>
-                <MudText Typo="Typo.h3">@(_vm?.LearnedPhraseCount ?? 0)</MudText>
-                <MudText Color="Color.Success" Style="margin-top:auto;">
-                    <MudIcon Icon="@Icons.Material.TwoTone.Verified" Style="margin-right:4px;" /> Learned
+                <MudText Typo="Typo.subtitle2" Style="opacity:.75;">習得フレーズ数</MudText>
+                <MudText Typo="Typo.h3" Style="font-size:clamp(1.75rem,6vw,2.5rem);">
+                    @(_vm?.LearnedPhraseCount ?? 0)
                 </MudText>
+
+                <!-- モチベ指標：連続学習日数 -->
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top:auto;">
+                    <MudIcon Icon="@Icons.Material.TwoTone.Bolt" />
+                    <MudText Typo="Typo.caption" Color="Color.Success">
+                        連続学習 @StudyStreakDays 日
+                    </MudText>
+                </MudStack>
             </MudStack>
         </MudPaper>
     </MudItem>
 
     <!-- 今日の格言 -->
-    <MudItem xs="12" sm="12" md="4">
+    <MudItem xs="12" sm="12" md="4" lg="4" xl="4">
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
-            <MudStack Spacing="1">
+            <MudStack Spacing="1" Style="height:100%;">
                 <MudText Typo="Typo.subtitle2" Style="opacity:.75;">今日のフレーズ（格言）</MudText>
+
                 @if (_vm?.TodayProverb is not null)
                 {
                     <MudText Typo="Typo.h6" MaxLines="2">“@_vm.TodayProverb.Text”</MudText>
                     <MudText Typo="Typo.body2" Style="opacity:.8;">— @_vm.TodayProverb.Author</MudText>
                     @if (!string.IsNullOrWhiteSpace(_vm.TodayProverb.Meaning))
                     {
-                        <MudText Typo="Typo.caption" Style="opacity:.7; margin-top:4px;">@_vm.TodayProverb.Meaning</MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:.7; margin-top:4px;" MaxLines="2">
+                            @_vm.TodayProverb.Meaning
+                        </MudText>
                     }
                 }
                 else
                 {
                     <MudText Typo="Typo.body2" Style="opacity:.7;">格言データがありません。</MudText>
                 }
+
+                <span style="margin-top:auto;"></span>
             </MudStack>
         </MudPaper>
     </MudItem>
 
+    <!-- 2行目：グラフ 2枚（凡例はヘッダ右に表示。下の凡例は隠す） -->
     <!-- 直近14日 レビュー回数（Bar） -->
-    <MudItem xs="12" sm="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:220px;">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">直近14日 レビュー回数</MudText>
-            <MudChart ChartType="ChartType.Bar"
-                      ChartSeries="@DailySeries"
-                      XAxisLabels="@DailyLabels" />
+    <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl chart-card">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                <MudText Typo="Typo.subtitle1">直近14日 レビュー回数</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Default">@DailyLegendText</MudText>
+            </MudStack>
+
+            <div class="chart-fill">
+                <MudChart ChartType="ChartType.Bar"
+                          Class="hide-legend"
+                          ChartSeries="@DailySeries"
+                          XAxisLabels="@DailyLabels"
+                          AxisChartOptions="@_axisChartOptions"
+                          Style="height:100%; width:100%;" />
+            </div>
         </MudPaper>
     </MudItem>
 
     <!-- 直近テスト 正答率（Line） -->
-    <MudItem xs="12" sm="6">
-        <MudPaper Elevation="2" Class="pa-4  rounded-xl" Style="height:220px;">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">直近テスト 正答率</MudText>
-            <MudChart ChartType="ChartType.Line"
-                      ChartSeries="@AccuracySeries"
-                      XAxisLabels="@AccuracyLabels" />
-        </MudPaper>
-    </MudItem>
+    <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl chart-card">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                <MudText Typo="Typo.subtitle1">直近テスト 正答率</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    @if (AvgAccuracy.HasValue)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Info">平均 @AvgAccuracy.Value.ToString("0.#")%</MudText>
+                    }
+                    <MudText Typo="Typo.caption" Color="Color.Default">@AccuracyLegendText</MudText>
+                </MudStack>
+            </MudStack>
 
-    <!-- 直近8週間 新規フレーズ（Bar） -->
-    <MudItem xs="12" sm="6" md="8">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">直近8週間 新規フレーズ</MudText>
-            <MudChart ChartType="ChartType.Bar"
-                      ChartSeries="@WeeklySeries"
-                      XAxisLabels="@WeeklyLabels"
-                      AxisChartOptions="@_axisChartOptions" />
-        </MudPaper>
-    </MudItem>
-
-    <!-- レビュー種別 内訳（Donut） -->
-    <MudItem xs="12" sm="6" md="4">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">レビュー種別 内訳</MudText>
-            <MudChart ChartType="ChartType.Donut"
-                      ChartSeries="@BreakdownSeries"
-                      XAxisLabels="@BreakdownLabels" 
-                      AxisChartOptions="@_axisChartOptions"
-                      Height="160px"
-                      Width="80%"/>
+            <div class="chart-fill">
+                <MudChart ChartType="ChartType.Line"
+                          Class="hide-legend"
+                          ChartSeries="@AccuracySeries"
+                          XAxisLabels="@AccuracyLabels"
+                          AxisChartOptions="@_axisChartOptions"
+                          Style="height:100%; width:100%;" />
+            </div>
         </MudPaper>
     </MudItem>
 
@@ -101,8 +150,12 @@
 
 @code {
     private HomeDashboardModel? _vm;
-    private AxisChartOptions _axisChartOptions = new AxisChartOptions() {MatchBoundsToSize = true };
 
+    // ★ MudBlazor 8.0 の AxisChartOptions（8.1+ APIは使用しない）
+    private AxisChartOptions _axisChartOptions = new AxisChartOptions()
+    {
+        MatchBoundsToSize = true
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,32 +165,106 @@
         ) ?? new HomeDashboardModel();
     }
 
-    // ---- chart helpers (MudBlazor v7+) ----
-    private string[] DailyLabels
-        => _vm?.DailyReviews.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    // === モチベ系（今週新規/先週比/連続学習） ===
+    private int ThisWeekNewPhrases =>
+        (int)(_vm?.WeeklyNewPhrases?.LastOrDefault()?.Value ?? 0);
+
+    private int PrevWeekNewPhrases =>
+        (int)(_vm?.WeeklyNewPhrases?.SkipLast(1).LastOrDefault()?.Value ?? 0);
+
+    private int WeekDelta => ThisWeekNewPhrases - PrevWeekNewPhrases;
+
+    private int WeekDeltaPercent =>
+        PrevWeekNewPhrases <= 0
+            ? (ThisWeekNewPhrases > 0 ? 100 : 0)
+            : (int)Math.Round((double)WeekDelta / PrevWeekNewPhrases * 100);
+
+    private string WeekDeltaSign => WeekDelta >= 0 ? "+" : "-";
+
+    private int StudyStreakDays => CalcStreak(_vm?.DailyReviews?.Select(x => (double)x.Value) ?? Enumerable.Empty<double>());
+
+    private static int CalcStreak(IEnumerable<double> counts)
+    {
+        var streak = 0;
+        foreach (var c in counts.Reverse())
+        {
+            if (c > 0d) streak++;
+            else break;
+        }
+        return streak;
+    }
+
+    // === データがなくても “本来の姿” が分かるようにプレースホルダを用意 ===
+    private static string[] Placeholder14Labels =>
+        Enumerable.Range(0, 14)
+            .Select(i => DateTime.Today.AddDays(i - 13).ToString("M/d"))
+            .ToArray();
+
+    private static readonly double[] Placeholder14Data =
+        new double[] { 0, 2, 1, 3, 2, 4, 3, 2, 5, 4, 3, 4, 2, 3 };
+
+    private static string[] Placeholder10Labels =>
+        Enumerable.Range(0, 10)
+            .Select(i => DateTime.Today.AddDays(i - 9).ToString("M/d"))
+            .ToArray();
+
+    private static readonly double[] PlaceholderAccData =
+        new double[] { 60, 62, 65, 63, 68, 70, 72, 74, 73, 75 };
+
+    private static bool HasPositive(IEnumerable<double>? seq)
+        => seq != null && seq.Any(v => v > 0);
+
+    // === 直近14日 レビュー（Bar） ===
+    private bool HasDailyData =>
+        HasPositive(_vm?.DailyReviews?.Select(x => (double)x.Value));
+
+    private string[] DailyLabels =>
+        HasDailyData
+            ? _vm!.DailyReviews.Select(x => x.Label).ToArray()
+            : Placeholder14Labels;
+
     private List<ChartSeries> DailySeries => new()
     {
-        new ChartSeries { Name = "レビュー", Data = _vm?.DailyReviews.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
+        new ChartSeries
+        {
+            // 凡例をヘッダ側に出すため、ここは空文字にして下部凡例を抑制
+            Name = string.Empty,
+            Data = HasDailyData
+                ? _vm!.DailyReviews.Select(x => (double)x.Value).ToArray()
+                : Placeholder14Data
+        }
     };
 
-    private string[] WeeklyLabels
-        => _vm?.WeeklyNewPhrases.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
-    private List<ChartSeries> WeeklySeries => new()
-    {
-        new ChartSeries { Name = "新規", Data = _vm?.WeeklyNewPhrases.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
-    };
+    private string DailyLegendText => HasDailyData ? "レビュー" : "サンプル";
 
-    private string[] BreakdownLabels
-        => _vm?.ReviewTypeBreakdown.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
-    private List<ChartSeries> BreakdownSeries => new()
-    {
-        new ChartSeries { Name = "内訳", Data = _vm?.ReviewTypeBreakdown.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
-    };
+    // === 正答率（Line） ===
+    private bool HasAccuracyData =>
+        HasPositive(_vm?.TestAccuracyTimeline?.Select(x => (double)x.Value));
 
-    private string[] AccuracyLabels
-        => _vm?.TestAccuracyTimeline.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    private string[] AccuracyLabels =>
+        HasAccuracyData
+            ? _vm!.TestAccuracyTimeline.Select(x => x.Label).ToArray()
+            : Placeholder10Labels;
+
     private List<ChartSeries> AccuracySeries => new()
     {
-        new ChartSeries { Name = "正答率(%)", Data = _vm?.TestAccuracyTimeline.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>() }
+        new ChartSeries
+        {
+            Name = string.Empty, // 下部凡例を抑制
+            Data = HasAccuracyData
+                ? _vm!.TestAccuracyTimeline.Select(x => (double)x.Value).ToArray()
+                : PlaceholderAccData
+        }
     };
+
+    private string AccuracyLegendText => HasAccuracyData ? "正答率(%)" : "サンプル";
+
+    private double? AvgAccuracy
+    {
+        get
+        {
+            var vals = _vm?.TestAccuracyTimeline?.Select(x => (double)x.Value).ToArray();
+            return (vals is { Length: > 0 }) ? vals.Average() : null;
+        }
+    }
 }
