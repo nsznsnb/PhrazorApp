@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MudBlazor;
 using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
@@ -56,35 +57,6 @@ namespace PhrazorApp.Services
 
                 var rows = await q.SelectItems().ToListAsync();
                 return ServiceResult.Success(rows, message: "");
-            });
-        }
-
-        /// <summary>追加候補検索（未追加のみ）</summary>
-        public Task<ServiceResult<List<PhraseSuggestionModel>>> SearchPhrasesAsync(Guid phraseBookId, string? term, int take = 20)
-        {
-            return _uow.ReadAsync(async repos =>
-            {
-                var uid = _userService.GetUserId();
-                term ??= string.Empty;
-
-                var exists = repos.PhraseBookItems.Queryable()
-                    .Where(x => x.PhraseBookId == phraseBookId)
-                    .Select(x => x.PhraseId);
-
-                var list = await repos.Phrases.Queryable()
-                    .Where(p => p.UserId == uid
-                                && !exists.Contains(p.PhraseId)
-                                && (((p.Phrase ?? "").Contains(term)) || ((p.Meaning ?? "").Contains(term))))
-                    .OrderByDescending(p => p.CreatedAt)
-                    .Select(p => new PhraseSuggestionModel
-                    {
-                        Id = p.PhraseId,
-                        Label = (p.Phrase ?? "") + "  —  " + (p.Meaning ?? "")
-                    })
-                    .Take(take)
-                    .ToListAsync();
-
-                return ServiceResult.Success(list, message: "");
             });
         }
 

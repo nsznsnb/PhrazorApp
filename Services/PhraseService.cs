@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
@@ -28,9 +29,41 @@ namespace PhrazorApp.Services
             return _uow.ReadAsync(async repos =>
             {
                 var uid = _userService.GetUserId();
-                var list = await repos.Phrases.GetListProjectedAsync(uid); // ★ Repo 経由
-                // 並び順は Repo 側で済ませても良いが、ここで念のため再度安定化しておく
+                var list = await repos.Phrases.GetListProjectedAsync(uid);
+
+                // 並び順は安定化
                 list = list.OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue).ToList();
+
+                // ▼ ここから追記：一覧に含まれるフレーズIDだけで、所属フレーズ帳名を一括取得して埋める
+                var phraseIds = list.Select(x => x.Id).Distinct().ToArray();
+                if (phraseIds.Length > 0)
+                {
+                    // DB から該当ペアだけ取得してメモリ側で集約
+                    var pairs = await (
+                        from bi in repos.PhraseBookItems.Queryable(asNoTracking: true)
+                        join b in repos.PhraseBooks.Queryable(asNoTracking: true)
+                            on bi.PhraseBookId equals b.PhraseBookId
+                        where phraseIds.Contains(bi.PhraseId)
+                        select new { bi.PhraseId, b.PhraseBookName }
+                    ).ToListAsync();
+
+                    var phraseIdToBookNames = pairs
+                        .GroupBy(x => x.PhraseId)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(x => x.PhraseBookName)
+                                  .Where(n => !string.IsNullOrWhiteSpace(n))
+                                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                                  .OrderBy(n => n)
+                                  .ToList()
+                        );
+
+                    foreach (var row in list)
+                        if (phraseIdToBookNames.TryGetValue(row.Id, out var names))
+                            row.PhraseBookNames = names;
+                }
+                // ▲ 追記ここまで
+
                 return ServiceResult.Success(list, message: "");
             });
         }

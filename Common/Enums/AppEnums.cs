@@ -112,6 +112,18 @@ public enum BulkGenreMode
     ClearAll = 2
 }
 
+public enum BulkPhrasebookMode
+{
+    /// <summary>
+    /// 既存のフレーズ帳に追加（重複は無視）
+    /// </summary>
+    AddToExisting,
+    /// <summary>
+    ///  新規フレーズ帳を作成して追加
+    /// </summary>
+    CreateNew        
+}
+
 public enum DateRangePreset { None, Today, Yesterday, Last7Days, Last30Days, Custom }
 
 public enum OperationTypeCode

@@ -135,7 +135,11 @@ public class Program
         // ─────────────────────────────────────────
         // ドメインサービス（業務ロジック）
         // ─────────────────────────────────────────
+        // 優先度高
         builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<OperationLimitService>();
+
+        // 以下の間のサービス間のDIは禁止
         builder.Services.AddScoped<ImageService>();
         builder.Services.AddScoped<HomeDashboardService>();
         builder.Services.AddScoped<GenreService>();
@@ -147,6 +151,8 @@ public class Program
         builder.Services.AddScoped<OperationTypeService>();
         builder.Services.AddScoped<ReviewTypeService>();
         builder.Services.AddScoped<DiaryTagService>();
+        builder.Services.AddScoped<EnglishDiaryService>();
+
 
         // ─────────────────────────────────────────
         // バリデーション（FluentValidation）

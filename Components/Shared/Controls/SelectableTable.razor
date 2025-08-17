@@ -61,7 +61,6 @@
     <!-- Header（左端：選択チェック。デスクトップのみ） -->
     <HeaderContent>
         <MudTh style="width:48px;text-align:center;">
-
             <MudHidden Breakpoint="Breakpoint.SmAndDown">
                 <MudTooltip Text="@(_selectAll ? "全解除" : "全選択")"
                             Arrow="true" Placement="Placement.Top">
@@ -119,7 +118,7 @@
     [Parameter] public RenderFragment? NoRecordsContent { get; set; }
 
     // 表示オプション
-    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Title { get; set; }   // ページ側で未指定ならツールバーにタイトルは出ません
     [Parameter] public string? Height { get; set; } = "500px";
     [Parameter] public TablePagerMode Pager { get; set; } = TablePagerMode.Auto;
     [Parameter] public int RowsPerPage { get; set; } = 10;

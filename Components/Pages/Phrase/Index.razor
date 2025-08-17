@@ -41,37 +41,41 @@
 
         <MudCardContent Class="pt-0">
 
-            <!-- 主要条件（常時表示） -->
+            <!-- 主要条件（フレーズは常時表示。意味/カテゴリは md↑のみ常時表示） -->
             <MudGrid Spacing="2" Class="mb-2">
+                <!-- フレーズ：常時表示 -->
                 <MudItem xs="12" md="4">
                     <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   @bind-Value="_qPhrase" Immediate="true" Clearable="true" />
                 </MudItem>
 
-                <MudItem xs="12" md="4">
-                    <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  @bind-Value="_qMeaning" Immediate="true" Clearable="true" />
-                </MudItem>
+                <!-- 意味・カテゴリ：md↑のみ表示 -->
+                <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                    <MudItem md="4">
+                        <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      @bind-Value="_qMeaning" Immediate="true" Clearable="true" />
+                    </MudItem>
 
-                <MudItem xs="12" md="4">
-                    <MudSelect T="string"
-                               Label="カテゴリ（複数選択）"
-                               Variant="Variant.Outlined"
-                               Margin="Margin.Dense"
-                               MultiSelection="true"
-                               Clearable="true"
-                               SelectedValues="_qCategories"
-                               SelectedValuesChanged="@( (IEnumerable<string> vs) =>
-                                   { _qCategories = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
-                                                      ?? new(StringComparer.OrdinalIgnoreCase);
-                                     StateHasChanged();
-                                   })">
-                        @foreach (var opt in _categoryOptions)
-                        {
-                            <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
+                    <MudItem md="4">
+                        <MudSelect T="string"
+                                   Label="カテゴリ（複数選択）"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   MultiSelection="true"
+                                   Clearable="true"
+                                   SelectedValues="_qCategories"
+                                   SelectedValuesChanged="@((IEnumerable<string> vs) =>
+                                       { _qCategories = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                                                          ?? new(StringComparer.OrdinalIgnoreCase);
+                                         StateHasChanged();
+                                       })">
+                            @foreach (var opt in _categoryOptions)
+                            {
+                                <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudHidden>
             </MudGrid>
 
             <!-- 詳細条件＋検索/クリア（md↑は左:ボタン群/右:件数。sm↓はFullWidth） -->
@@ -142,12 +146,56 @@
 
             <!-- 詳細条件（折りたたみ） -->
             <MudCollapse Expanded="@_showAdvanced" Class="mt-2">
+                <!-- sm↓では「意味」「カテゴリ」をここに収納 -->
+                <MudHidden Breakpoint="@Breakpoint.MdAndUp">
+                    <MudGrid Spacing="2" Class="mb-2">
+                        <MudItem xs="12">
+                            <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          @bind-Value="_qMeaning" Clearable="true" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudSelect T="string"
+                                       Label="カテゴリ（複数選択）"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       MultiSelection="true"
+                                       Clearable="true"
+                                       SelectedValues="_qCategories"
+                                       SelectedValuesChanged="@((IEnumerable<string> vs) =>
+                                           { _qCategories = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                                                              ?? new(StringComparer.OrdinalIgnoreCase);
+                                             StateHasChanged();
+                                           })">
+                                @foreach (var opt in _categoryOptions)
+                                {
+                                    <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudHidden>
+
+                <!-- 既存の詳細条件 -->
                 <MudGrid Spacing="2">
-                    <MudItem xs="12" md="4">
-                        <MudTextField T="string" Label="フレーズ帳" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      @bind-Value="_qPhrasebook" Clearable="true"
-                                      HelperText="※ モデル拡張後にフィルタ適用予定" />
-                    </MudItem>
+<MudItem xs="12" md="4">
+    <MudSelect T="string"
+               Label="フレーズ帳（複数選択）"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense"
+               MultiSelection="true"
+               Clearable="true"
+               SelectedValues="_qPhraseBooks"
+               SelectedValuesChanged="@( (IEnumerable<string> vs) =>
+                   { _qPhraseBooks = vs?.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                                      ?? new(StringComparer.OrdinalIgnoreCase);
+                     StateHasChanged();
+                   })">
+        @foreach (var opt in _phraseBookOptions)
+        {
+            <MudSelectItem T="string" Value="@opt">@opt</MudSelectItem>
+        }
+    </MudSelect>
+</MudItem>
                     <MudItem xs="12" md="4">
                         <MudDateRangePicker Label="作成日（範囲）"
                                             @bind-DateRange="_qCreatedRange"
@@ -165,12 +213,10 @@
                                              @bind-Value="_qReviewMin" Clearable="true" Style="min-width:120px;" />
                             <MudText Class="pb-2">〜</MudText>
                             <MudNumericField T="int?" Label="復習回数(終了)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Step="1"
-                                            InputMode="InputMode.numeric"
+                                             InputMode="InputMode.numeric"
                                              @bind-Value="_qReviewMax" Clearable="true" Style="min-width:120px;" />
                         </MudStack>
                     </MudItem>
-
-
                 </MudGrid>
             </MudCollapse>
 
@@ -193,8 +239,8 @@
             <ExtraToolbar Context="tb">
                 @{
                     var selView = tb.SelectedCountInView;                // 表示中の選択数
-                    var selAll  = tb.GetSelectedIdsAll()?.Count ?? 0;    // 全体選択数
-                    var hasAnyAll  = selAll  > 0;
+                    var selAll  = tb.GetSelectedIdsAll()?.Count ?? 0;   // 全体選択数
+                    var hasAnyAll  = selAll > 0;
                 }
 
                 @if (tb.IsMdUp)
@@ -235,7 +281,7 @@
                         フレーズ帳に追加
                     </MudButton>
 
-                    <!-- ★ 右端の「一括削除」にだけバッジ（右上） -->
+                    <!-- 右端の「一括削除」にだけバッジ（右上） -->
                     <MudBadge Content="@selAll"
                               Max="99999"
                               Overlap
@@ -268,7 +314,7 @@
 
                         <MudMenu Dense="true" OffsetY="true">
                             <ActivatorContent>
-                                <!-- ★ モバイルは常時表示の右端「その他」ボタンにバッジ（右上） -->
+                                <!-- モバイルは常時表示の右端「その他」ボタンにバッジ -->
                                 <MudBadge Content="@selAll"
                                           Max="99999"
                                           Overlap
@@ -283,7 +329,6 @@
                                 </MudBadge>
                             </ActivatorContent>
                             <ChildContent>
-                                <!-- 未選択時は Default 色 -->
                                 <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.PlayArrow"
@@ -423,7 +468,7 @@
 </MudStack>
 
 @code {
-    private const Size BtnSize = Size.Small; // このページは Small を採用（他ページは Medium）
+    private const Size BtnSize = Size.Small; // このページは Small を採用
 
     private readonly CultureInfo _ja = new("ja-JP");
     private SelectableTable<PhraseListItemModel>? _table;
@@ -438,7 +483,7 @@
     // 検索モデル
     private string? _qPhrase;
     private string? _qMeaning;
-    private string? _qPhrasebook; // TODO: モデル拡張後に適用
+    private string? _qPhrasebook;
     private int? _qReviewMin;
     private int? _qReviewMax;
     private DateRange? _qCreatedRange;
@@ -446,6 +491,10 @@
     // カテゴリ（候補 & 選択）
     private List<string> _categoryOptions = new();
     private HashSet<string> _qCategories = new(StringComparer.OrdinalIgnoreCase);
+
+    // フレーズ帳（候補 & 選択）
+    private List<string> _phraseBookOptions = new();
+    private HashSet<string> _qPhraseBooks = new(StringComparer.OrdinalIgnoreCase);
 
     // 詳細条件の開閉
     private bool _showAdvanced = false;
@@ -465,6 +514,7 @@
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
 
             RebuildCategoryOptions();
+            RebuildPhraseBookOptions(); 
             ApplyFilter();
         }
     }
@@ -488,11 +538,13 @@
             );
         }
 
-        // フレーズ帳（TODO）
-        if (!string.IsNullOrWhiteSpace(_qPhrasebook))
-        {
-            // 例: q = q.Where(x => x.PhraseBookNames.Any(n => n.Contains(_qPhrasebook.Trim(), StringComparison.OrdinalIgnoreCase)));
-        }
+// フレーズ帳（OR マッチ）
+if (_qPhraseBooks.Any())
+{
+    q = q.Where(x => x.PhraseBookNames != null
+                     && x.PhraseBookNames.Any(n => !string.IsNullOrWhiteSpace(n)
+                                                   && _qPhraseBooks.Contains(n)));
+}
 
         // ★ 復習回数：範囲正規化（min > max の場合は入れ替え）
         int? min = _qReviewMin, max = _qReviewMax;
@@ -514,13 +566,14 @@
 
     private void ClearFilter()
     {
-        _qPhrase = _qMeaning = _qPhrasebook = null;
+        // フレーズは残す（必要ならクリアへ変更可）
+        _qMeaning = _qPhrasebook = null;
         _qCategories.Clear();
+        _qPhraseBooks.Clear();
         _qReviewMin = _qReviewMax = null;
 
         // クリア後も直近1か月に戻す
         _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
-            // ★ 詳細条件を閉じる
         _showAdvanced = false;
 
         ApplyFilter();
@@ -538,10 +591,22 @@
             .ToList();
     }
 
+    private void RebuildPhraseBookOptions()
+{
+    _phraseBookOptions = Elements
+        .Where(e => e.PhraseBookNames is not null)
+        .SelectMany(e => e.PhraseBookNames!)
+        .Where(n => !string.IsNullOrWhiteSpace(n))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(n => n)
+        .ToList();
+}
+
     // --- Toolbar actions ---
     private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
     private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");
 
+    // ★ テスト開始：選択行（表示中ページ内）→ Writing へ
     private void StartTest(HashSet<Guid> idsInView)
     {
         if (idsInView.Count == 0)
@@ -549,9 +614,19 @@
             Snackbar.Add("テスト対象が選択されていません。", Severity.Warning);
             return;
         }
-        Snackbar.Add($"テスト開始: {idsInView.Count} 件", Severity.Info);
+
+        var selected = _filtered.Where(x => idsInView.Contains(x.Id)).ToList();
+        if (selected.Count == 0)
+        {
+            Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
+            return;
+        }
+
+        ReviewSession.Set(selected, x => x.Phrase, x => x.Meaning);
+        NavigationManager.NavigateTo("/phrases/writing?from=list");
     }
 
+    // ★ 選択して復習：全体選択 → Review へ
     private void StartReviewSelected(HashSet<Guid> selectedIds)
     {
         if (selectedIds.Count == 0)
@@ -576,7 +651,7 @@
         await DialogService.ShowCsvUploadDialogAsync<PhraseImportDto>(
             caller: this,
             onUploadCompleted: OnCsvUploadCompleted,
-            schema: CsvSchemas.PhraseImport,                 
+            schema: CsvSchemas.PhraseImport,
             processAsync: async rows =>
             {
                 var models = rows.Select(x => x.ToPhraseModel()).ToList();
@@ -591,6 +666,7 @@
         {
             Elements = list;
             RebuildCategoryOptions();
+            RebuildPhraseBookOptions(); 
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
             ApplyFilter();
         }
@@ -620,7 +696,7 @@
         {
             Elements = list;
             RebuildCategoryOptions();
-
+            RebuildPhraseBookOptions(); 
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
             ApplyFilter();
         }
@@ -650,7 +726,7 @@
                 {
                     Elements = list;
                     RebuildCategoryOptions();
-
+                    RebuildPhraseBookOptions(); 
                     _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
                     ApplyFilter();
                 }
@@ -660,22 +736,43 @@
         );
     }
 
-    private Task OpenBulkPhrasebookDialog(HashSet<Guid> ids)
+private async Task OpenBulkPhrasebookDialog(HashSet<Guid> ids)
+{
+    if (ids.Count == 0)
     {
-        if (ids.Count == 0)
-        {
-            Snackbar.Add("対象が選択されていません。", Severity.Warning);
-            return Task.CompletedTask;
-        }
-
-        Snackbar.Add("フレーズ帳への一括追加は未実装です。", Severity.Info);
-        return Task.CompletedTask;
+        Snackbar.Add("対象が選択されていません。", Severity.Warning);
+        return;
     }
+
+    await DialogService.ShowWithParamsAndCallbackAsync<BulkAddToPhrasebookDialog, bool>(
+        title: "フレーズ帳に追加",
+        caller: this,
+        values: new (Expression<Func<BulkAddToPhrasebookDialog, object?>>, object?)[] {
+            (x => x.TargetIds, ids)
+        },
+        callbackSelector: x => x.OnApplied,
+        handler: async _ =>
+        {
+            var list = await UiOperationRunner.ReadAsync(() => PhraseService.GetPhraseListAsync());
+            if (list is not null)
+            {
+                Elements = list;
+                RebuildCategoryOptions();
+                RebuildPhraseBookOptions(); 
+                _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+                ApplyFilter();
+            }
+            Snackbar.Add("フレーズ帳へ追加しました。", Severity.Success);
+        },
+        options: DialogServiceExtensions.OptionsSm()
+    );
+}
+
 
     // 個別削除
     private async Task OnDeleteButtonClickedAsync(PhraseListItemModel item)
     {
-        var suffix = item.Phrase.Length > 50 ? "...": "";
+        var suffix = item.Phrase.Length > 50 ? "..." : "";
         var targetPhrase = $"{item.Phrase.Substring(0, Math.Min(item.Phrase.Length, 50))}{suffix}";
 
         var ok = await DialogService.ShowConfirmAsync(
@@ -693,7 +790,7 @@
         {
             Elements = list;
             RebuildCategoryOptions();
-
+            RebuildPhraseBookOptions(); 
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
             ApplyFilter();
         }

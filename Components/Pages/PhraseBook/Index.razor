@@ -1,11 +1,13 @@
 ﻿@page "/phrasebooks"
 @attribute [Authorize]
 
+@using Microsoft.AspNetCore.Components.Web
 @inject PhraseBookService PhraseBookService
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject PhrazorApp.UI.Interop.JsInteropManager Js
 
 <SectionTitle HeadingLevel="2" Title="フレーズ帳" />
 
@@ -15,7 +17,9 @@
         <BaseCard>
             <MudCardContent>
                 <MudStack Spacing="1">
-                    <MudTextField @bind-Value="_newBookName"
+                    <MudTextField T="string"
+                                  Value="_newBookName"
+                                  ValueChanged="@((string? v) => _newBookName = v ?? string.Empty)"
                                   Placeholder="新しいブック名"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
@@ -31,7 +35,6 @@
 
                 <MudDivider Class="my-2" />
 
-                <!-- @bind-SelectedValue は使わず、SelectedValue/SelectedValueChanged に統一 -->
                 <MudList T="PhraseBookListItemModel"
                          Dense="true"
                          SelectedValue="_selectedBook"
@@ -48,12 +51,60 @@
                         {
                             <MudListItem T="PhraseBookListItemModel" Value="@b">
                                 <MudIcon Icon="@Icons.Material.TwoTone.MenuBook" Class="mr-2" />
-                                <MudText>@b.Name</MudText>
+
+                                @if (_renamingBookId == b.Id)
+                                {
+                                    <!-- インライン・リネーム入力 -->
+                                    <MudTextField T="string"
+                                                  Id="@($"rename-{b.Id}")"
+                                                  Class="mr-2"
+                                                  Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense"
+                                                  Immediate="true"
+                                                  MaxLength="60"
+                                                  Value="@_renameText"
+                                                  ValueChanged="@((string? v) => _renameText = v ?? string.Empty)"
+                                                  OnKeyDown="@(e => OnRenameKeyDown(e, b))"
+                                                  Placeholder="新しい名称" />
+                                }
+                                else
+                                {
+                                    <MudText>@b.Name</MudText>
+                                }
+
                                 <MudSpacer />
-                                <MudBadge Content="@b.Count" Color="Color.Primary" />
-                                <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
-                                               Color="Color.Error"
-                                               OnClick="@(() => OnDeleteBookAsync(b))" />
+
+                                <!-- 末尾アクション（重なり防止の inline-flex + gap） -->
+                                <MudStack Row AlignItems="AlignItems.Center" Class="book-list-trailing">
+                                    @if (_renamingBookId == b.Id)
+                                    {
+                                        <!-- 保存／キャンセル -->
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                       Color="Color.Primary"
+                                                       Disabled="@string.IsNullOrWhiteSpace((_renameText ?? string.Empty).Trim())"
+                                                       OnClick="@(() => SaveRenameAsync(b))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                       Color="Color.Default"
+                                                       OnClick="@CancelRename" />
+                                    }
+                                    else
+                                    {
+                                        <!-- 編集（リネーム開始） -->
+                                        <MudIconButton Icon="@Icons.Material.TwoTone.Edit"
+                                                       Color="Color.Default"
+                                                       OnClick="@(() => BeginRename(b))" />
+
+                                        <!-- 件数 -->
+                                        <MudChip Color="Color.Primary" Variant="Variant.Filled" Label="true">
+                                            @((b.Count > 99999) ? "99999+" : b.Count.ToString())
+                                        </MudChip>
+
+                                        <!-- 削除 -->
+                                        <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => OnDeleteBookAsync(b))" />
+                                    }
+                                </MudStack>
                             </MudListItem>
                         }
                     }
@@ -63,30 +114,18 @@
     </MudItem>
 
     <!-- 右：候補検索＋一覧 と ブックの中身 -->
-    <MudItem xs="12" md="8" lg="9">
-        <!-- 候補検索 -->
+    <MudItem xs="12" md="8" lg="9" Class="fi-safe-area">
+
+        <!-- 候補（フィルタ） -->
         <BaseCard>
             <MudCardHeader>
                 <CardHeaderContent>
-                    <SectionTitle HeadingLevel="3" Title="フレーズ選択" />
+                    <SectionTitle HeadingLevel="3" Title="フレーズ選択（候補）" />
                 </CardHeaderContent>
             </MudCardHeader>
 
             <MudCardContent>
                 <MudStack Row Wrap="Wrap.Wrap" AlignItems="AlignItems.End" Spacing="2" Class="mb-2">
-                    <!-- 検索テキストは @bind-Value + OnDebouncedValueChanged（重複なし） -->
-                    <MudTextField @bind-Value="_search"
-                                  Placeholder="検索（英語・意味）"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Immediate="true"
-                                  DebounceInterval="200"
-                                  OnDebouncedValueChanged="OnSearchDebounced"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.TwoTone.Search"
-                                  Style="min-width:260px" />
-
-                    <!-- 期間セレクトは Value/ValueChanged に統一（@bind 併用しない） -->
                     <MudSelect T="PeriodFilter"
                                Label="期間"
                                Variant="Variant.Outlined"
@@ -99,38 +138,40 @@
                         <MudSelectItem Value="@PeriodFilter.All">すべて</MudSelectItem>
                     </MudSelect>
 
-                    <!-- チェックボックスは @bind-Value のみ -->
-                    <MudCheckBox T="bool" @bind-Value="_onlyNotInBook" Label="未登録のみ" />
-
-                    <MudSpacer />
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               StartIcon="@Icons.Material.TwoTone.PlaylistAdd"
-                               Disabled="@(_selectedBook is null || _selectedIds.Count == 0)"
-                               OnClick="AddSelectedAsync">
-                        選択を追加
-                    </MudButton>
+                    <MudCheckBox T="bool"
+                                 Value="@_onlyNotInBook"
+                                 ValueChanged="OnOnlyNotInBookChanged"
+                                 Label="未登録のみ"
+                                 Disabled="@(_selectedBook is null)" />
                 </MudStack>
 
-                <!-- 候補テーブル -->
-                <MudTable T="PhraseListItemModel"
-                          Dense="true"
-                          Hover="true"
-                          Items="_viewCandidates">
+                <!-- 候補テーブル（SelectableTable：タイトル未使用） -->
+                <SelectableTable TItem="PhraseListItemModel"
+                                 @ref="_candidatesTable"
+                                 Items="@_viewCandidates"
+                                 IdSelector="@(x => x.Id)"
+                                 Search="true"
+                                 SearchPlaceholder="検索（英語・意味）"
+                                 SearchBy="CandidateSearchBy"
+                                 RowsPerPage="20"
+                                 Height="380px">
+                    <ExtraToolbar Context="ctx">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.TwoTone.PlaylistAdd"
+                                   Disabled="@(_selectedBook is null || ctx.SelectedCountInView == 0)"
+                                   OnClick="@(() => AddSelectedAsync(ctx.GetSelectedIdsInView()))">
+                            選択を追加（@ctx.SelectedCountInView）
+                        </MudButton>
+                    </ExtraToolbar>
+
                     <HeaderContent>
-                        <MudTh style="width:48px;"></MudTh>
                         <MudTh>フレーズ</MudTh>
                         <MudTh>意味</MudTh>
                         <MudTh style="width:56px;"></MudTh>
                     </HeaderContent>
 
                     <RowTemplate Context="p">
-                        <MudTd style="width:48px;">
-                            <!-- Value/ValueChanged を使用（@bind なし） -->
-                            <MudCheckBox T="bool"
-                                         Value="@_selectedIds.Contains(p.Id)"
-                                         ValueChanged="@( v => ToggleSelect(p.Id, v) )" />
-                        </MudTd>
                         <MudTd>@p.Phrase</MudTd>
                         <MudTd>@p.Meaning</MudTd>
                         <MudTd style="text-align:right;">
@@ -144,16 +185,15 @@
                     <NoRecordsContent>
                         <MudText Class="p-4">一致する候補がありません。</MudText>
                     </NoRecordsContent>
-                </MudTable>
+                </SelectableTable>
             </MudCardContent>
         </BaseCard>
 
-        <!-- ブックの中身 -->
-        <BaseCard Class="mt-2">
+        <!-- ブックの中身（アイテムリスト） -->
+        <BaseCard Class="mt-2 book-section-elevated" id="book-section">
             <MudCardHeader>
                 <CardHeaderContent>
-                    <SectionTitle HeadingLevel="3"
-                                  Title="@($"選択中ブック：{_selectedBook?.Name ?? "未選択"}")" />
+                    <SectionTitle HeadingLevel="3" Title="@GetCurrentBookTitle()" />
                 </CardHeaderContent>
             </MudCardHeader>
 
@@ -162,71 +202,157 @@
                 {
                     <MudText Class="p-2">左の一覧からブックを選択してください。</MudText>
                 }
-                else if (_bookItems.Count == 0)
-                {
-                    <MudText Class="p-2">このブックにはまだフレーズがありません。</MudText>
-                }
                 else
                 {
-                    <MudList T="PhraseBookItemModel" Dense="true">
-                        @foreach (var it in _bookItems)
-                        {
-                            <MudListItem T="PhraseBookItemModel" Value="@it">
-                                <MudText Typo="Typo.subtitle2">@it.English</MudText>
-                                <MudText Class="ml-2">@it.Japanese</MudText>
-                            </MudListItem>
-                        }
-                    </MudList>
+                    <SelectableTable TItem="PhraseBookItemModel"
+                                     @ref="_bookTable"
+                                     Items="@_bookItems"
+                                     IdSelector="@(x => x.Id)"
+                                     Search="true"
+                                     SearchPlaceholder="検索（英語・意味）"
+                                     SearchBy="BookSearchBy"
+                                     RowsPerPage="10"
+                                     Height="360px">
+                        <ExtraToolbar Context="ctx">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       StartIcon="@Icons.Material.TwoTone.DeleteForever"
+                                       Disabled="@(ctx.SelectedCountInView == 0)"
+                                       OnClick="@(() => DeleteSelectedItemsAsync(ctx.GetSelectedIdsInView()))">
+                                選択を削除（@ctx.SelectedCountInView）
+                            </MudButton>
+                        </ExtraToolbar>
+
+                        <HeaderContent>
+                            <MudTh>フレーズ</MudTh>
+                            <MudTh>意味</MudTh>
+                            <MudTh style="width:56px;"></MudTh>
+                        </HeaderContent>
+
+                        <RowTemplate Context="it">
+                            <MudTd>@it.English</MudTd>
+                            <MudTd>@it.Japanese</MudTd>
+                            <MudTd style="text-align:right;">
+                                <MudIconButton Icon="@Icons.Material.TwoTone.RemoveCircle"
+                                               Color="Color.Error"
+                                               OnClick="@(() => DeleteSingleItemAsync(it.Id))" />
+                            </MudTd>
+                        </RowTemplate>
+
+                        <NoRecordsContent>
+                            <MudText Class="p-2">このブックにはフレーズがありません。</MudText>
+                        </NoRecordsContent>
+                    </SelectableTable>
                 }
             </MudCardContent>
         </BaseCard>
+
     </MudItem>
 </MudGrid>
 
+<!-- 右下固定：汎用インジケータ（どのページでも使い回し可能） -->
+@if (_selectedBook is not null)
+{
+    <FloatingIndicator Show="true"
+                       Icon="@Icons.Material.TwoTone.MenuBook"
+                       Label="@_selectedBook!.Name"
+                       Count="@CurrentBookCount"
+                       CountMax="99999"
+                       TargetElementId="book-section"
+                       ActionText="表示"
+                       ActionIcon="@Icons.Material.Filled.ArrowDownward" />
+}
+
+<style>
+    /* 既存 */
+    .book-list-trailing {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 8px;
+    }
+
+    .book-section-elevated {
+        box-shadow: 0 0 0 2px rgba(25,118,210,0.08);
+    }
+
+    /* ここから追加：フローティングUIぶんの安全余白 */
+    .fi-safe-area {
+        /* インジケータの高さ + 影 + 下オフセット分を確保 */
+        padding-bottom: 120px;
+    }
+    /* 画面が狭いときは少し余裕を増やす */
+    @@media (max-width: 960px) {
+        .fi-safe-area {
+            padding-bottom: 140px;
+        }
+    }
+    /* iOS セーフエリアがある端末向けに上乗せ（対応ブラウザのみ適用） */
+    @@supports (padding: max(0px)) {
+        .fi-safe-area {
+            padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
+        }
+    }
+</style>
+
 @code {
-    // --- 内部状態 ---
-    private string? _newBookName;
+    // --- 状態 ---
+    private string _newBookName = string.Empty;
 
     private List<PhraseBookListItemModel> _books = new();
     private PhraseBookListItemModel? _selectedBook;
 
-    private List<PhraseListItemModel> _allCandidates = new();   // サービスから取得
-    private List<PhraseListItemModel> _viewCandidates = new();  // フィルタ後表示
-    private HashSet<Guid> _selectedIds = new();
+    private SelectableTable<PhraseListItemModel>? _candidatesTable;
+    private SelectableTable<PhraseBookItemModel>? _bookTable;
 
+    // 候補データ（全件）と表示用（フィルタ後）
+    private List<PhraseListItemModel> _allCandidates = new();
+    private List<PhraseListItemModel> _viewCandidates = new();
+
+    // ブックの中身（全件）
     private List<PhraseBookItemModel> _bookItems = new();
-    private HashSet<Guid> _bookItemIdSet = new();
+    private HashSet<Guid> _bookItemIdSet = new(); // 未登録のみ用
 
-    private string? _search;
     private PeriodFilter _period = PeriodFilter.Last30;
     private bool _onlyNotInBook = true;
 
+    // リネーム用
+    private Guid? _renamingBookId;
+    private string _renameText = string.Empty;
+
     private enum PeriodFilter { Last30, Last90, All }
 
-    // 初期化
+    private int CurrentBookCount
+        => _selectedBook is null ? 0 : (_books.FirstOrDefault(x => x.Id == _selectedBook.Id)?.Count ?? 0);
+
     protected override async Task OnInitializedAsync()
     {
-        // 左ペイン：ブック一覧（BodyOnly）
+        // 左：ブック一覧
         _books = await UiOperationRunner.ReadWithOverlayAsync(
             () => PhraseBookService.GetPhraseBooksAsync(),
             "ブックを読込中…") ?? new();
 
-        // 候補（BodyOnly）
+        // 候補（全件）
         _allCandidates = await UiOperationRunner.ReadWithOverlayAsync(
             () => PhraseService.GetPhraseListAsync(),
             "フレーズ候補を読込中…") ?? new();
 
-        // 先頭を選択
+        // 先頭ブックを選択し中身取得
         if (_books.Count > 0)
         {
             _selectedBook = _books[0];
-            await LoadBookItemsAsync(); // 右下の中身
+            await LoadBookItemsAsync();
         }
 
         ApplyFilters();
     }
 
-    // 左ペイン：作成
+    private string GetCurrentBookTitle()
+        => _selectedBook is null
+           ? "選択中ブックのアイテム一覧：未選択"
+           : $"「{_selectedBook.Name}」のアイテム一覧";
+
+    // ---- 左：ブック作成/削除/選択 ----
     private async Task CreateBookAsync()
     {
         if (string.IsNullOrWhiteSpace(_newBookName)) return;
@@ -234,24 +360,21 @@
         var created = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.CreateAsync(_newBookName),
             "ブックを作成中…");
-
         if (!created.IsSuccess) return;
 
         _newBookName = string.Empty;
 
-        // 再取得（軽いのでオーバーレイ無し）
         _books = await UiOperationRunner.ReadAsync(
             () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
 
-        // 新規を選択
         var newId = created.Data;
         _selectedBook = _books.FirstOrDefault(x => x.Id == newId) ?? _books.FirstOrDefault();
 
-        await LoadBookItemsAsync();
-        ApplyFilters();
+        await RefreshBookAndListAsync();
+        _candidatesTable?.ClearSelection();
+        _bookTable?.ClearSelection();
     }
 
-    // 左ペイン：削除
     private async Task OnDeleteBookAsync(PhraseBookListItemModel b)
     {
         var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm,
@@ -261,7 +384,6 @@
         var result = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.DeleteAsync(b.Id),
             "ブックを削除中…");
-
         if (!result.IsSuccess) return;
 
         _books = await UiOperationRunner.ReadAsync(
@@ -272,6 +394,9 @@
             _selectedBook = _books.FirstOrDefault();
             _bookItems.Clear();
             _bookItemIdSet.Clear();
+            _candidatesTable?.ClearSelection();
+            _bookTable?.ClearSelection();
+
             if (_selectedBook is not null)
                 await LoadBookItemsAsync();
         }
@@ -279,38 +404,41 @@
         ApplyFilters();
     }
 
-    // ブック選択（MudList の SelectedValueChanged から呼ばれる）
     private async Task OnBookSelectedAsync(PhraseBookListItemModel? b)
     {
         _selectedBook = b;
-        _selectedIds.Clear();
+        _candidatesTable?.ClearSelection();
+        _bookTable?.ClearSelection();
+
         await LoadBookItemsAsync();
+        ApplyFilters();
     }
 
-    // 右下：選択中ブックの中身をロード
+    // ---- 右下：ブックの中身 読込 ----
     private async Task LoadBookItemsAsync()
     {
         if (_selectedBook is null) return;
 
-        _bookItems = await UiOperationRunner.ReadAsync(
-            () => PhraseBookService.GetItemsAsync(_selectedBook.Id)) ?? new();
+        var data = await UiOperationRunner.ReadAsync(
+            () => PhraseBookService.GetItemsAsync(_selectedBook.Id));
+        _bookItems = data ?? new();
 
         _bookItemIdSet = _bookItems.Select(x => x.Id).ToHashSet();
-        ApplyFilters();
     }
 
-    // 検索テキストのデバウンス後ハンドラ
-    private void OnSearchDebounced(string? _)
-        => ApplyFilters();
-
-    // 期間変更ハンドラ（MudSelect 用）
-    private void OnPeriodChanged(PeriodFilter value)
+    // ---- フィルタ ----
+    private void OnPeriodChanged(PeriodFilter v)
     {
-        _period = value;
+        _period = v;
         ApplyFilters();
     }
 
-    // 候補：フィルタ適用
+    private void OnOnlyNotInBookChanged(bool v)
+    {
+        _onlyNotInBook = v;
+        ApplyFilters();
+    }
+
     private void ApplyFilters()
     {
         IEnumerable<PhraseListItemModel> q = _allCandidates;
@@ -318,89 +446,169 @@
         // 期間（UTC基準）
         var now = DateTime.UtcNow;
         if (_period == PeriodFilter.Last30)
-            q = q.Where(x => (x.CreatedAt ?? DateTime.MinValue) >= now.AddDays(-30));
+            q = q.Where(x => x.CreatedAt >= now.AddDays(-30));
         else if (_period == PeriodFilter.Last90)
-            q = q.Where(x => (x.CreatedAt ?? DateTime.MinValue) >= now.AddDays(-90));
-
-        // テキスト検索
-        var term = (_search ?? string.Empty).Trim();
-        if (term.Length > 0)
-            q = q.Where(x => (x.Phrase ?? "").Contains(term, StringComparison.OrdinalIgnoreCase)
-                          || (x.Meaning ?? "").Contains(term, StringComparison.OrdinalIgnoreCase));
+            q = q.Where(x => x.CreatedAt >= now.AddDays(-90));
 
         // 未登録のみ
         if (_onlyNotInBook && _bookItemIdSet.Count > 0)
             q = q.Where(x => !_bookItemIdSet.Contains(x.Id));
 
+        // 1000件制限なし
         _viewCandidates = q
-            .OrderByDescending(x => x.CreatedAt ?? DateTime.MinValue)
-            .Take(1000) // 安全のため上限
+            .OrderByDescending(x => x.CreatedAt)
             .ToList();
 
-        // 画面外れた選択を除去
-        var viewSet = _viewCandidates.Select(x => x.Id).ToHashSet();
-        _selectedIds.RemoveWhere(id => !viewSet.Contains(id));
         StateHasChanged();
     }
 
-    private void ToggleSelect(Guid id, bool v)
+    // ---- 追加/削除 操作 ----
+    private async Task AddSelectedAsync(HashSet<Guid> ids)
     {
-        if (v) _selectedIds.Add(id);
-        else _selectedIds.Remove(id);
-    }
-
-    // 候補：選択を追加
-    private async Task AddSelectedAsync()
-    {
-        if (_selectedBook is null || _selectedIds.Count == 0) return;
+        if (_selectedBook is null || ids.Count == 0) return;
 
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.RegisterConfirm,
-            $"選択中の {_selectedIds.Count} 件を「{_selectedBook.Name}」へ追加します。よろしいですか？");
+            $"選択中の {ids.Count} 件を「{_selectedBook.Name}」へ追加します。よろしいですか？");
         if (!ok) return;
 
-        var list = await UiOperationRunner.WriteThenReloadAsync(
-            operation: () => PhraseBookService.CreateAsync(_selectedBook.Id, _selectedIds),
-            reloadData: () => PhraseBookService.GetItemsAsync(_selectedBook.Id),
-            message: "ブックに追加中…");
+        var write = await UiOperationRunner.WriteAsync(
+            () => PhraseBookService.CreateAsync(_selectedBook.Id, ids),
+            "ブックに追加中…");
+        if (!write.IsSuccess) return;
 
-        if (list is null) return;
+        await RefreshBookAndListAsync();
+        _candidatesTable?.ClearSelection();
 
-        _bookItems = list;
-        _bookItemIdSet = _bookItems.Select(x => x.Id).ToHashSet();
-        _selectedIds.Clear();
-
-        // バッジ件数の更新
-        _books = await UiOperationRunner.ReadAsync(
-            () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
-
-        // 同じブックを指し直す（Count 更新）
-        _selectedBook = _books.FirstOrDefault(x => x.Id == _selectedBook.Id) ?? _selectedBook;
-
-        ApplyFilters();
+        Snackbar.Add("ブックに追加しました。", Severity.Success);
+        await Js.ScrollToIdAsync("book-section", true);
     }
 
-    // 候補：1件だけ追加
     private async Task AddSingleAsync(Guid id)
     {
         if (_selectedBook is null) return;
 
-        var list = await UiOperationRunner.WriteThenReloadAsync(
-            operation: () => PhraseBookService.CreateAsync(_selectedBook.Id, new[] { id }),
-            reloadData: () => PhraseBookService.GetItemsAsync(_selectedBook.Id),
-            message: "ブックに追加中…");
+        var write = await UiOperationRunner.WriteAsync(
+            () => PhraseBookService.CreateAsync(_selectedBook.Id, new[] { id }),
+            "ブックに追加中…");
+        if (!write.IsSuccess) return;
 
-        if (list is null) return;
+        await RefreshBookAndListAsync();
 
-        _bookItems = list;
-        _bookItemIdSet = _bookItems.Select(x => x.Id).ToHashSet();
+        Snackbar.Add("1件追加しました。", Severity.Success);
+        await Js.ScrollToIdAsync("book-section", true);
+    }
 
+    private async Task DeleteSelectedItemsAsync(HashSet<Guid> ids)
+    {
+        if (_selectedBook is null || ids.Count == 0) return;
+
+        var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm,
+            $"「{_selectedBook.Name}」から選択中 {ids.Count} 件を削除します。よろしいですか？");
+        if (!ok) return;
+
+        var res = await UiOperationRunner.WriteAsync(
+            () => PhraseBookService.DeleteAsync(_selectedBook.Id, ids),
+            "ブックから削除中…");
+        if (!res.IsSuccess) return;
+
+        await RefreshBookAndListAsync();
+        _bookTable?.ClearSelection();
+
+        Snackbar.Add("削除しました。", Severity.Success);
+    }
+
+    private async Task DeleteSingleItemAsync(Guid id)
+    {
+        if (_selectedBook is null) return;
+
+        var res = await UiOperationRunner.WriteAsync(
+            () => PhraseBookService.DeleteAsync(_selectedBook.Id, new[] { id }),
+            "ブックから削除中…");
+        if (!res.IsSuccess) return;
+
+        await RefreshBookAndListAsync();
+        Snackbar.Add("1件削除しました。", Severity.Success);
+    }
+
+    private async Task RefreshBookAndListAsync()
+    {
         // バッジ件数更新
         _books = await UiOperationRunner.ReadAsync(
             () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
-        _selectedBook = _books.FirstOrDefault(x => x.Id == _selectedBook.Id) ?? _selectedBook;
 
-        _selectedIds.Remove(id);
+        if (_selectedBook is not null)
+            _selectedBook = _books.FirstOrDefault(x => x.Id == _selectedBook!.Id) ?? _selectedBook;
+
+        await LoadBookItemsAsync();
         ApplyFilters();
     }
+
+    // ---- リネーム操作 ----
+    private async Task BeginRename(PhraseBookListItemModel b)
+    {
+        _renamingBookId = b.Id;
+        _renameText = b.Name ?? string.Empty;
+        await Js.FocusByIdAsync($"rename-{b.Id}");
+    }
+
+    private void CancelRename()
+    {
+        _renamingBookId = null;
+        _renameText = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task SaveRenameAsync(PhraseBookListItemModel b)
+    {
+        var newName = (_renameText ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            Snackbar.Add("名称を入力してください。", Severity.Warning);
+            return;
+        }
+        if (newName == (b.Name ?? string.Empty))
+        {
+            // 変更なし → 単に終了
+            CancelRename();
+            return;
+        }
+
+        var res = await UiOperationRunner.WriteAsync(
+            () => PhraseBookService.UpdateAsync(b.Id, newName),
+            "名称を更新中…");
+        if (!res.IsSuccess) return;
+
+        // 一覧を再取得し、選択中ブックが対象なら参照も更新
+        _books = await UiOperationRunner.ReadAsync(
+            () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
+
+        if (_selectedBook?.Id == b.Id)
+            _selectedBook = _books.FirstOrDefault(x => x.Id == b.Id) ?? _selectedBook;
+
+        _renamingBookId = null;
+        _renameText = string.Empty;
+
+        Snackbar.Add("名称を更新しました。", Severity.Success);
+        StateHasChanged();
+    }
+
+    private async Task OnRenameKeyDown(KeyboardEventArgs e, PhraseBookListItemModel b)
+    {
+        if (e.Key == "Enter")
+        {
+            await SaveRenameAsync(b);
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelRename();
+        }
+    }
+
+    // 検索対象（SelectableTable に渡す）
+    private IEnumerable<string> CandidateSearchBy(PhraseListItemModel p)
+        => new[] { p.Phrase ?? "", p.Meaning ?? "" };
+
+    private IEnumerable<string> BookSearchBy(PhraseBookItemModel it)
+        => new[] { it.English ?? "", it.Japanese ?? "" };
 }
