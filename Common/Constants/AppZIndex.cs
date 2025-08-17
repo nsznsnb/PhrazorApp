@@ -10,4 +10,7 @@ public static class AppZIndex
     public const int GlobalOverlay = 1450;   // ★ 全画面（ダイアログより前, Snackbarより後）
     public const int Snackbar = 1500;
     public const int Tooltip = 1600;
+    // ★ 追加：ページ右下などの“浮遊UI”用のレイヤ
+    public const int FloatingUi = Drawer + 30;    
+    public const int ScrollToTop = FloatingUi + 1; 
 }
