@@ -460,11 +460,26 @@ public static class MyModelMapper
   * ※ MudBlazor 8.x ではジェネリック推論が外れやすいため、**`MudSelect<T>` などジェネリックの型引数 `T` を明示**してください。
   * 上記に反する、新しめのマイナー機能をどうしても使う場合は、**その旨を明記**し、**8.0/9.0 相当の代替コード**も併記してください。
 * **スタイル方針**：まず **MudBlazor のコンポーネント／プロパティで表現**してください（それで賄えない箇所のみ、限定的に Class,Style を用いる）。
-* **Blazor のバインディング規約**：
+* **Blazor / MudBlazor 実装規約**
 
-  * `@bind-Value="X"` を使うと **`Value` / `ValueChanged`（+ `ValueExpression`）が自動生成**されます。**`ValueChanged=` を同時に書かない**のが正解です。
-  * 同様に **`Checked` / `SelectedValue` / `Date`** などの `@bind-◯◯` でも **手動の `◯◯Changed` を併記しない**こと。
-  * **変更検知**が必要な場合は、**プロパティの setter に副作用**（例：妥当性チェック）を記述するのが **MudBlazor 8 / .NET 9.0 で最も安定**します。
+  * `@bind-Value="X"` を使うと **`Value` / `ValueChanged`（+ `ValueExpression`）が自動生成**されます。**`ValueChanged=` を同時に書かない**でください。
+    `Checked` / `SelectedValue` / `Date` などの `@bind-◯◯` も同様に **`◯◯Changed` を併記しない**でください。
+  
+  * **基本ルール**
+  
+    * **@bind と \~Changed の併記禁止**（例：`@bind-Value` と `ValueChanged=` を同時指定しない）
+    * **型引数 `T` を明示**（例：`T="Guid"`；8.0 は推論が外れやすい）
+    * **MultiSelection のバインド先は `HashSet<T>`**（`List<T>` は不可）
+    * 副作用は **プロパティ setter** に書く（`@bind` とイベントの二重定義を避ける）
+  
+  * **正しいプロパティ対応（MudBlazor 8.0 準拠）**
+  
+    * **MudSelect（単一）**：`Value` / `ValueChanged` / `@bind-Value`
+    * **MudSelect（複数）**：`SelectedValues : HashSet<T>` / `SelectedValuesChanged` / `@bind-SelectedValues`
+    * **MudList（単一）**：`SelectedValue` / `SelectedValueChanged` / `@bind-SelectedValue`
+    * **MudList（複数）**：`SelectedValues : HashSet<T>` / `SelectedValuesChanged` / `@bind-SelectedValues`
+    * **MudSwitch**：`Value` / `ValueChanged` / `@bind-Checked`
+    * **MudDatePicker**：`Date : DateTime?` / `DateChanged` / `@bind-Date`
 
 * 以降のチャットは、**ソースコードと実装方針が学習済み**である前提とします。
 
