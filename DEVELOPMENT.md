@@ -478,7 +478,8 @@ public static class MyModelMapper
     * **MudSelect（複数）**：`SelectedValues : HashSet<T>` / `SelectedValuesChanged` / `@bind-SelectedValues`
     * **MudList（単一）**：`SelectedValue` / `SelectedValueChanged` / `@bind-SelectedValue`
     * **MudList（複数）**：`SelectedValues : HashSet<T>` / `SelectedValuesChanged` / `@bind-SelectedValues`
-    * **MudSwitch**：`Value` / `ValueChanged` / `@bind-Checked`
+    * **MudSwitch**：`Value` / `ValueChanged` / `@bind-Value`
+    * **MudCheckBox**: `Value` / `ValueChanged` / `@bind-Value`
     * **MudDatePicker**：`Date : DateTime?` / `DateChanged` / `@bind-Date`
 
 * 以降のチャットは、**ソースコードと実装方針が学習済み**である前提とします。
