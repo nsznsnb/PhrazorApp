@@ -357,18 +357,37 @@ var saved = await _uow.ExecuteInTransactionAsync(async repos =>
 });
 ```
 
-## 3-3. DbContext の共通設定
+## 3-3. DbContext の共通設定(ユーザーフィルター（QueryFilter)）
 
-* **ユーザーごとの出し分けが必要なエンティティは、読み込み時に自動で現在のユーザーにフィルタ**されます。
-  そのため、通常は `UserId` 条件を追加しません（管理用途で全件が必要なときのみフィルタを外します）。
-* **`CreatedAt` / `UpdatedAt` は保存時に自動設定**されます。
-  画面やサービスで個別に設定する必要はありません。
+* **アプリ実行時**：`IHttpContextAccessor` の **UserId** を使い、EF の **HasQueryFilter** で自動的にユーザーの行のみを対象にします。
+* **設計時（`dotnet ef` など）**：`HttpContext` が無いため **フィルターは付与されません（=全件）**。
+
+```csharp
+partial void OnModelCreatingPartial(ModelBuilder b)
+{
+    if (string.IsNullOrEmpty(_uid)) return; // 設計時は付与しない
+
+    b.Entity<DPhrase>().HasQueryFilter(e => e.UserId == _uid);
+    b.Entity<MGenre>().HasQueryFilter(e => e.UserId == _uid);
+
+    // 関連は親の UserId で判定
+    b.Entity<DPhraseImage>().HasQueryFilter(e => e.Phrase.UserId == _uid);
+    b.Entity<MPhraseGenre>().HasQueryFilter(e => e.Phrase.UserId == _uid);
+
+    // 共有マスタはフィルターなし
+}
+```
+
+> 管理用途で全件が必要な場合のみ、該当クエリで `IgnoreQueryFilters()` を明示して使ってください（通常は不要）。
+
 
 ## 3-4. Repository とは
 
 * 単一テーブル（Entity）を扱うための小さなユーティリティです。
-  代表メソッド：`Queryable(asNoTracking)`, `AddAsync`, `UpdateAsync`, `DeleteAsync` など。
-  UnitOfWork から複数の Repository を取り出して連携させます。
+  各レポジトリにはBaseRepositoryを継承させてください(BaseRepositoryには作成・更新・削除メソッドが揃っています)。
+* BaseRepositoryの保存系メソッド使用時には**`CreatedAt` / `UpdatedAt` が自動設定**されます。
+  画面やサービスで個別に設定する必要はありません。
+* UnitOfWork から複数の Repository を取り出して連携させます。
 
 ## 3-5. マッピングファイルの書き方（ModelMapper）
 
