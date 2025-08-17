@@ -33,7 +33,7 @@ namespace PhrazorApp.Services
             {
                 var userId = _user.GetUserId();
                 var rate = result.Rate();
-                var grade = await _grade.ResolveByRateAsync(rate);
+                var grade = await _grade.ResolveByRateEnsureAsync(rate);
                 if (grade is null) return ServiceResult.Error<Guid>($"{MSG_PREFIX}：成績が特定できません。");
 
                 var testId = Guid.NewGuid();

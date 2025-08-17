@@ -11,18 +11,18 @@
 @inject JsInteropManager JS
 
 <MudStack Spacing="3" AlignItems="AlignItems.Center">
-
-    <!-- ヘッダ：バッジ + 成績チップ（レスポンシブ配置） -->
+    <!-- ヘッダ -->
+    <!-- ヘッダ：バッジ + 成績チップ -->
     <MudStack Spacing="1" AlignItems="AlignItems.Center">
-        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
-            <img src="/images/laurel.svg" alt="Result" style="width:120px;height:120px;" />
-        </MudHidden>
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <img src="/images/laurel.svg" alt="Result" style="width:96px;height:96px;" />
+            <MudImage Src="@GradeImageSrc" Alt="@($"Result ({GradeSymbol})")" Width="120" Height="120" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudImage Src="@GradeImageSrc" Alt="@($"Result ({GradeSymbol})")" Width="96" Height="96" />
         </MudHidden>
 
         <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large">
-            成績：@(_gradeName ?? LocalGradeSymbol)
+            成績：@GradeSymbol
         </MudChip>
         <MudText Typo="Typo.h5">テスト結果</MudText>
         <MudText Typo="Typo.subtitle1">
@@ -30,8 +30,40 @@
         </MudText>
     </MudStack>
 
-    <!-- 明細 -->
-    <BaseCard>
+
+    <BaseCard Class="pa-4">
+        <!-- ▲ ボタンをテーブルの上に配置 -->
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <!-- Md以上：横並び -->
+            <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" Class="mb-2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
+                    不正解だけ再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
+                    すべて再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
+                    終了
+                </MudButton>
+            </MudStack>
+        </MudHidden>
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <!-- Sm以下：縦積み -->
+            <MudStack Spacing="1" Class="mb-2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
+                    不正解だけ再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
+                    すべて再テスト
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
+                    終了
+                </MudButton>
+            </MudStack>
+        </MudHidden>
+
+        <!-- 明細テーブル -->
         <MudTable Items="TestResult.Items" Dense="true" Hover="true" Bordered="false" Striped="true" Breakpoint="Breakpoint.Md">
             <HeaderContent>
                 <MudTh>結果</MudTh>
@@ -54,36 +86,6 @@
             </RowTemplate>
         </MudTable>
     </BaseCard>
-
-    <!-- ボタン（Sm以下で縦積み） -->
-    <MudStack Row="true" Spacing="2" Class="w-100">
-        <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
-            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
-                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
-                    不正解だけ再テスト
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
-                    すべて再テスト
-                </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
-                    終了
-                </MudButton>
-            </MudStack>
-        </MudHidden>
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudStack Spacing="2" Class="w-100">
-                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
-                    不正解だけ再テスト
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
-                    すべて再テスト
-                </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
-                    終了
-                </MudButton>
-            </MudStack>
-        </MudHidden>
-    </MudStack>
 </MudStack>
 
 @code {
@@ -91,7 +93,6 @@
     private string? _gradeName;
     private int _wrongCount => TestResult.Total - TestResult.Correct;
 
-    // ローカル推定（S/A/B/D）— DBが未解決でも見た目が崩れないように
     private string LocalGradeSymbol
     {
         get
@@ -104,19 +105,28 @@
         }
     }
 
-    // Result.razor の OnAfterRenderAsync 内（_saved ガードのままでOK）
+    // 表示用：DBで確定した記号があればそれを優先、なければローカル推定
+    private string GradeSymbol => (_gradeName ?? LocalGradeSymbol).ToUpperInvariant();
+
+    private string GradeImageSrc => GradeSymbol switch
+    {
+        "S" => "/images/laurel_gold.svg",
+        "A" => "/images/laurel_green.svg",
+        "B" => "/images/laurel_blue.svg",
+        _ => "/images/laurel_gray.svg"   // D ほか未知はグレー
+    };
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _saved) return;
 
-        // ここを UiRunner.WriteAsync に変更（T は Guid）
         var res = await UiRunner.WriteAsync<Guid>(
             () => TestResultService.SaveAsync(TestResult, ReviewSession.Items));
 
         if (res.IsSuccess)
         {
             _saved = true;
-            _gradeName = LocalGradeSymbol; // 表示は即時反映
+            _gradeName = LocalGradeSymbol;
             Snackbar.Add("テスト結果を保存しました。", Severity.Success);
         }
         else
@@ -126,7 +136,6 @@
 
         StateHasChanged();
     }
-
 
     private void RetestWrong()
     {
@@ -141,9 +150,9 @@
         Nav.NavigateTo("/phrases/writing");
     }
 
-    private async Task FinishAsync()
+    private Task FinishAsync()
     {
-        // JS の履歴戻り（fallback: /phrases）
-        await JS.HistoryBackAsync("/phrases");
+        Nav.NavigateTo("/");   // ← Home へ
+        return Task.CompletedTask;
     }
 }

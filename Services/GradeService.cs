@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Common; // ServiceResult / Unit
 using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
@@ -10,84 +11,72 @@ namespace PhrazorApp.Services
     {
         private readonly UnitOfWork _uow;
         private const string MSG_PREFIX = "成績";
-
         public GradeService(UnitOfWork uow) => _uow = uow;
 
-        // 既定の判定ルール（S/A/B/D）
+        // 既定判定ルール（S/A/B/D）
         private static readonly (string Name, int MinPct)[] DefaultRules =
-        {
-            ("S", 90), ("A", 75), ("B", 60), ("D", 0)
-        };
+            { ("S", 90), ("A", 75), ("B", 60), ("D", 0) };
 
-        // 変更：並び順で取得
+        // 並び順で取得
         public Task<ServiceResult<List<GradeModel>>> GetListAsync()
-        {
-            return _uow.ReadAsync(async repos =>
+            => _uow.ReadAsync(async repos =>
             {
-                var list = await repos.Grades.Queryable()
+                var list = await repos.Grades.Queryable(/*asNoTracking=*/true)
                     .OrderBy(x => x.OrderNo).ThenBy(x => x.GradeName)
                     .SelectModel()
                     .ToListAsync();
-
-                return ServiceResult.Success(list, message: "");
+                return ServiceResult.Success(list, "");
             });
-        }
 
         public Task<ServiceResult<GradeModel?>> GetAsync(Guid id)
-        {
-            return _uow.ReadAsync(async repos =>
+            => _uow.ReadAsync(async repos =>
             {
                 var e = await repos.Grades.GetByIdAsync(id);
-                return ServiceResult.Success(e?.ToModel(), message: "");
+                return ServiceResult.Success(e?.ToModel(), "");
             });
-        }
 
-        /// <summary>テーブルが空なら S/A/B/D を作成</summary>
-        public async Task EnsureDefaultsAsync()
+        /// <summary>成績名で取得（見つからなければ null）</summary>
+        public Task<MGrade?> GetByNameAsync(string name)
+            => _uow.ReadAsync(async r =>
+                await r.Grades.Queryable(true).FirstOrDefaultAsync(x => x.GradeName == name));
+
+        /// <summary>正答率→成績名（"S"/"A"/"B"/"D"）</summary>
+        private static string SymbolFromRate(double rate)
         {
-            await _uow.ExecuteInTransactionAsync(async repos =>
-            {
-                var any = await repos.Grades.Queryable().AnyAsync(); // 既存APIのみ
-                if (any) return;
-
-                var now = DateTime.UtcNow;
-                int order = 1;
-                foreach (var (name, _) in DefaultRules)
-                {
-                    var e = new MGrade
-                    {
-                        GradeId = Guid.NewGuid(),
-                        GradeName = name,
-                        OrderNo = order++,
-                        CreatedAt = now,
-                        UpdatedAt = now
-                    };
-                    await repos.Grades.AddAsync(e);
-                }
-            });
-        }
-
-        /// <summary>成績名（"S"/"A"/"B"/"D"）で取得</summary>
-        public async Task<MGrade?> GetByNameAsync(string name)
-        {
-            return await _uow.ReadAsync(async u =>
-            {
-                return await u.Grades.Queryable()
-                    .FirstOrDefaultAsync(x => x.GradeName == name);
-            });
-        }
-
-        /// <summary>正答率から Grade を決定（必要なら既定作成）</summary>
-        public async Task<MGrade?> ResolveByRateAsync(double rate)
-        {
-            await EnsureDefaultsAsync();
-
             var pct = (int)Math.Round(rate * 100.0, MidpointRounding.AwayFromZero);
-            var symbol = DefaultRules.First(x => pct >= x.MinPct).Name;
-            return await GetByNameAsync(symbol);
+            return DefaultRules.First(x => pct >= x.MinPct).Name;
         }
 
-        // 変更：作成時に OrderNo を末尾に付与
+        /// ★ 正答率から必ず成績を返す（未登録なら作成）
+        public async Task<MGrade> ResolveByRateEnsureAsync(double rate)
+        {
+            var symbol = SymbolFromRate(rate);
+
+            // 既存を探す（NoTracking）
+            var found = await _uow.ReadAsync(async r =>
+                await r.Grades.Queryable(true).FirstOrDefaultAsync(x => x.GradeName == symbol));
+            if (found is not null) return found;
+
+            // 無ければ末尾 OrderNo で新規作成
+            var now = DateTime.UtcNow;
+            var max = await _uow.ReadAsync(async r =>
+                await r.Grades.Queryable(true).MaxAsync(x => (int?)x.OrderNo) ?? -1);
+
+            var e = new MGrade
+            {
+                GradeId = Guid.NewGuid(),
+                GradeName = symbol,
+                OrderNo = max + 1,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            await _uow.ExecuteInTransactionAsync(async repos => { await repos.Grades.AddAsync(e); });
+            return e;
+        }
+
+        // --- CRUD（既存のまま。Queryable(true) を使うよう微修正） ---
+
         public async Task<ServiceResult<Unit>> CreateAsync(GradeModel model)
         {
             try
@@ -96,18 +85,17 @@ namespace PhrazorApp.Services
                 {
                     if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
 
-                    var exists = await repos.Grades.Queryable()
+                    var exists = await repos.Grades.Queryable(true)
                         .AnyAsync(x => x.GradeName == model.Name);
                     if (exists) throw new InvalidOperationException("同名の成績が既に存在します。");
 
-                    var max = await repos.Grades.Queryable()
+                    var max = await repos.Grades.Queryable(true)
                         .MaxAsync(x => (int?)x.OrderNo) ?? -1;
 
                     var e = model.ToEntity();
                     e.OrderNo = max + 1; // 末尾
                     await repos.Grades.AddAsync(e);
                 });
-
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
             }
             catch
@@ -125,15 +113,13 @@ namespace PhrazorApp.Services
                     var e = await repos.Grades.GetByIdAsync(model.Id)
                         ?? throw new InvalidOperationException("対象が見つかりません。");
 
-                    var exists = await repos.Grades.Queryable()
+                    var exists = await repos.Grades.Queryable(true)
                         .AnyAsync(x => x.GradeName == model.Name && x.GradeId != model.Id);
                     if (exists) throw new InvalidOperationException("同名の成績が既に存在します。");
 
-                    // OrderNo も ApplyTo で更新される（Model が保持）
-                    model.ApplyTo(e);
+                    model.ApplyTo(e); // OrderNo 含む
                     await repos.Grades.UpdateAsync(e);
                 });
-
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
             }
             catch
@@ -147,7 +133,7 @@ namespace PhrazorApp.Services
             try
             {
                 var hasRef = await _uow.ReadAsync(async r =>
-                    await r.TestResults.Queryable().AnyAsync(x => x.GradeId == id));
+                    await r.TestResults.Queryable(true).AnyAsync(x => x.GradeId == id));
                 if (hasRef)
                     return ServiceResult.None.Warning("この成績はテスト結果で使用されています。削除できません。");
 
@@ -157,7 +143,6 @@ namespace PhrazorApp.Services
                         ?? throw new InvalidOperationException("対象が見つかりません。");
                     await r.Grades.DeleteAsync(e);
                 });
-
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
             }
             catch
@@ -166,7 +151,6 @@ namespace PhrazorApp.Services
             }
         }
 
-        // 追加：並び順の一括保存（0..N-1 に詰め直し）
         public async Task<ServiceResult<Unit>> SaveOrderAsync(IReadOnlyList<GradeModel> models)
         {
             try
@@ -183,12 +167,10 @@ namespace PhrazorApp.Services
 
                     foreach (var e in entities)
                     {
-                        // 現在の表示順をそのまま確定（0..N-1）
                         e.OrderNo = indexMap[e.GradeId];
                         await repos.Grades.UpdateAsync(e);
                     }
                 });
-
                 return ServiceResult.None.Success("並び順を保存しました。");
             }
             catch
