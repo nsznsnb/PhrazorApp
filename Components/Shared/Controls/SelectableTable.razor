@@ -15,7 +15,15 @@
     <ToolbarContent Context="tb">
         @{
             var txt = tb.SearchText ?? string.Empty;
+            var prev = _lastSearchText;       // ★ 直前の検索文字列
             _lastSearchText = txt;
+
+            // ★ 検索文字列が変わったら、検索結果を自動で全選択
+            if (txt != prev)
+            {
+                AutoSelectAllForText(txt);
+            }
+
             var cnt = GetSelectedCountInView(txt);
             var hasRows = HasRows(txt);
         }
@@ -135,6 +143,8 @@
     private HashSet<Guid> _selected = new();
     private bool _selectAll;
     private string _lastSearchText = "";
+    // 追加：現在の Items セットを表す簡易シグネチャ
+    private int _itemsSignature = 0;
 
     [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
 
@@ -150,6 +160,14 @@
     {
         PruneSelectionToExistingItems();
         RecalcSelectAll(_lastSearchText);
+
+        // ★ ここを追加：Items が差し替わったら（＝プレビュー直後など）検索結果を全選択にする
+        var sig = ComputeItemsSignature();
+        if (sig != _itemsSignature)
+        {
+            _itemsSignature = sig;
+            AutoSelectAllForText(_lastSearchText); // 検索語が空なら「全件」を全選択
+        }
     }
 
     // 基本ユーティリティ
@@ -179,6 +197,17 @@
         RecalcSelectAll(_lastSearchText);
     }
 
+    private int ComputeItemsSignature()
+    {
+        unchecked
+        {
+            int hash = 17;
+            foreach (var id in (Items ?? Enumerable.Empty<TItem>()).Select(GetId))
+                hash = hash * 31 + id.GetHashCode();
+            return hash;
+        }
+    }
+
     private void PruneSelectionToExistingItems()
     {
         var ids = (Items ?? Enumerable.Empty<TItem>()).Select(GetId).ToHashSet();
@@ -206,6 +235,23 @@
 
         RecalcSelectAll(text);
         return Task.CompletedTask;
+    }
+
+    // 検索文字列の変更に追随して、検索結果を自動で全選択する
+    private void AutoSelectAllForText(string text)
+    {
+        var idsInView = ItemsView(text).Select(GetId).ToHashSet();
+        if (idsInView.Count == 0)
+        {
+            _selectAll = false; // ヒット無し→全選択状態は解除
+            return;
+        }
+
+        // "検索結果は全選択" を満たすように、結果セットを選択に取り込む（既存選択は保持）
+        foreach (var id in idsInView)
+            _selected.Add(id);
+
+        RecalcSelectAll(text); // _selectAll の見た目も更新
     }
 
     private int GetSelectedCountInView(string text)
