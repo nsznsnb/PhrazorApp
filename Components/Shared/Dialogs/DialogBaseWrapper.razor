@@ -28,8 +28,9 @@
         @if (ShowExecuteButton)
         {
             <MudButton Variant="Variant.Filled"
-                       Color="color"
+                       Color="@color"
                        Size="@AppConstants.SIZE_BUTTON"
+                       Disabled="@DisableExecuteButton"
                        OnClick="@OnExecuteInternal">
                 @ExecuteButtonText
             </MudButton>
@@ -76,6 +77,7 @@
     [Parameter] public string ExecuteButtonText { get; set; } = "OK";
     [Parameter] public string CancelButtonText { get; set; } = "キャンセル";
     [Parameter] public bool ShowExecuteButton { get; set; } = true;
+    [Parameter] public bool DisableExecuteButton { get; set; } = false;
 
     // ★ これだけで制御：true で閉じる / false で閉じない
     [Parameter] public Func<ValueTask<bool>>? OnExecuteAsync { get; set; }

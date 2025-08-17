@@ -15,8 +15,8 @@ namespace PhrazorApp.Components.Shared.Dialogs
         [Parameter] public Func<List<TItem>, Task<ServiceResult<Unit>>>? ProcessAsync { get; set; }
 
         // UIカスタマイズ
-        [Parameter] public string DialogTitle { get; set; } = "CSV読込";
-        [Parameter] public string ExecuteButtonText { get; set; } = "読込";
+        [Parameter] public string DialogTitle { get; set; } = "CSV取込";
+        [Parameter] public string ExecuteButtonText { get; set; } = "取込";
         [Parameter] public string Accept { get; set; } = ".csv";
         [Parameter] public int MaxSizeMB { get; set; } = 10;
 

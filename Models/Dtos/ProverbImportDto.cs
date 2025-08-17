@@ -4,8 +4,8 @@ namespace PhrazorApp.Models.Dtos
 {
     public sealed class ProverbImportDto
     {
-        [Name("ProverbText")] public string Text { get; set; } = string.Empty;
-        [Name("Meaning")] public string? Meaning { get; set; }
-        [Name("Author")] public string? Author { get; set; }
+        [Index(0)] public string Text { get; set; } = string.Empty;
+        [Index(1)] public string Meaning { get; set; } = string.Empty;
+        [Index(2)] public string Author { get; set; } = string.Empty;
     }
 }

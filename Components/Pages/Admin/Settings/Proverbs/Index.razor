@@ -1,16 +1,26 @@
 ﻿@page "/admin/settings/proverbs"
 @attribute [Authorize(Roles = "Admin")]
+
 @inject ProverbService ProverbService
 @inject UiOperationRunner UiRunner
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@inject NavigationManager Nav
+@inject NavigationManager NavigationManager
 
 <MudStack Spacing="2">
     <SectionTitle Title="格言マスタ" />
 
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+        <MudButton Variant="Variant.Outlined"
+                   Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.Add"
+                   OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/proverbs/create"))">
+            新規追加
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
                    StartIcon="@Icons.Material.TwoTone.UploadFile"
                    OnClick="OpenCsvUploadDialog">
             CSV取込
@@ -37,7 +47,9 @@
                 <MudTd>@context.Meaning</MudTd>
                 <MudTd>@context.Author</MudTd>
                 <MudTd Align="Align.Right">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               Size="Size.Small"
                                StartIcon="@Icons.Material.TwoTone.Delete"
                                OnClick="@(() => OnDeleteAsync(context.Id))">
                         削除
@@ -55,23 +67,23 @@
 @code {
     private List<ProverbModel> _items = new();
 
-    protected override async Task OnInitializedAsync()
-        => await ReloadAsync();
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
 
     private async Task ReloadAsync()
     {
         _items = await UiRunner.ReadWithOverlayAsync(
-                     () => ProverbService.GetListAsync(),
-                     "読み込み中…") ?? new();
+                     () => ProverbService.GetListAsync()) ?? new();
     }
+
     private async Task OpenCsvUploadDialog()
     {
-        await DialogService.ShowCsvUploadDialogAsync<CsvUploadDialog<ProverbImportDto>, ProverbImportDto>(
+        // ヘッダありで取り込む（標準）
+        await DialogService.ShowCsvUploadDialogAsync<ProverbImportDto>(
             caller: this,
             onUploadCompleted: _ => ReloadAsync(),
-            processAsync: rows => ProverbService.ImportCsvAsync(rows), // NoContentResult
-            title: "CSV読込（格言）",
-            executeText: "取り込み");
+            schema: CsvSchemas.ProverbImport,
+            processAsync: rows => ProverbService.ImportCsvAsync(rows));
+
     }
 
     private async Task OnDeleteAsync(Guid id)

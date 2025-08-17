@@ -1,99 +1,235 @@
 ﻿@typeparam TItem
+@using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
 @using Blazored.FluentValidation
 @using MudBlazor
 @using PhrazorApp.Utils
+@using PhrazorApp.Common
 @inherits PhrazorApp.Components.Shared.Dialogs.CsvUploadBaseDialog<TItem>
 @inject UiOperationRunner UiOperationRunner
 
 <DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
-                   DialogTitle="@DialogTitle"
-                   ExecuteButtonText="@ExecuteButtonText"
+                   DialogTitle="@DialogTitle"               
+                   ExecuteButtonText="@ExecuteButtonText"   
                    CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                    ContentClass="py-5 my-1"
+                   DisableExecuteButton="@(!_canExecute)"
                    OnExecuteAsync="SubmitAsync">
 
     <EditForm EditContext="_editCtx">
-        <!-- Blazored.FluentValidation を有効化（アセンブリスキャンは不要に） -->
         <FluentValidationValidator DisableAssemblyScanning="true" />
 
-        <MudText Typo="Typo.subtitle1" Class="mb-2">CSVファイルを選択してください</MudText>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.subtitle1">CSVファイルを選択してください</MudText>
 
-        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
-            <MudFileUpload T="IBrowserFile"
-                           @ref="_file"
-                           For="@(() => _model.File)"
-                           @bind-Files="_model.File"
-                           Accept="@Accept"
-                           MaximumFileCount="1"
-                           OnFilesChanged="OnFilesChanged"
-                           SuppressOnChangeWhenInvalid="true"
-                           Class="my-2">
-                <ActivatorContent>
-                    <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
-                               StartIcon="@Icons.Material.TwoTone.AttachFile">
-                        @AppConstants.LABEL_BUTTON_CHOICE_FILE
-                    </MudButton>
-                </ActivatorContent>
-            </MudFileUpload>
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                <MudFileUpload T="IBrowserFile"
+                               @ref="_file"
+                               For="@(() => _model.File)"
+                               @bind-Files="_model.File"
+                               Accept="@Accept"
+                               MaximumFileCount="1"
+                               OnFilesChanged="OnFilesChanged"
+                               SuppressOnChangeWhenInvalid="true"
+                               Class="my-2">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
+                                   StartIcon="@Icons.Material.TwoTone.AttachFile">
+                            @AppConstants.LABEL_BUTTON_CHOICE_FILE
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
 
-            <MudList T="string">
-                <MudListItem>@(_model.File?.Name ?? string.Empty)</MudListItem>
-            </MudList>
+                <MudList T="string">
+                    <MudListItem>@(_model.File?.Name ?? string.Empty)</MudListItem>
+                </MudList>
+            </MudStack>
+
+            @* ガイド（ヘッダ有無で表示切替） *@
+            @if (Schema is not null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    正しいフォーマット：<code>@CsvUtil.BuildHeaderGuide(Schema)</code>
+                </MudText>
+            }
+
+            @* ヘッダエラー（ヘッダありのときのみ） *@
+            @if (Schema?.HasHeaderRecord == true && _headerErrors.Count > 0)
+            {
+                <MudAlert Severity="Severity.Error" Dense>
+                    <MudList T="string" Dense="true">
+                        @foreach (var e in _headerErrors)
+                        {
+                            <MudListItem>@e</MudListItem>
+                        }
+                    </MudList>
+                </MudAlert>
+            }
+
+            @* 行エラー（最大20件表示） *@
+            @if (_rowErrors.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense>
+                    <MudText>行エラー（先頭 @Math.Min(_rowErrors.Count, MaxRowErrorsDisplay) 件）</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var err in _rowErrors.Take(MaxRowErrorsDisplay))
+                        {
+                            <MudListItem>行 @err.RowNumber: @err.Message</MudListItem>
+                        }
+                    </MudList>
+                    @if (_rowErrors.Count > MaxRowErrorsDisplay)
+                    {
+                        <MudText Color="Color.Secondary">他 @(_rowErrors.Count - MaxRowErrorsDisplay) 件</MudText>
+                    }
+                </MudAlert>
+            }
+
+            @* 自動プレビュー（Schemaの列定義に従う） *@
+            @if (_records.Count > 0 && Schema is not null && _headerErrors.Count == 0 && _rowErrors.Count == 0)
+            {
+                <MudText Typo="Typo.subtitle2">プレビュー（先頭 @Math.Min(_records.Count, MaxPreview) 件）</MudText>
+                <MudTable Items="_records.Take(MaxPreview)">
+                    <HeaderContent>
+                        @foreach (var col in _schemaCols)
+                        {
+                            <MudTh>@col.HeaderName</MudTh>
+                        }
+                    </HeaderContent>
+                    <RowTemplate Context="item">
+                        @foreach (var col in _schemaCols)
+                        {
+                            <MudTd DataLabel="@col.HeaderName">@GetCell(item, col.PropertyName)</MudTd>
+                        }
+                    </RowTemplate>
+                </MudTable>
+            }
         </MudStack>
-
     </EditForm>
 </DialogBaseWrapper>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
+    // 外部公開は最小限（Schema は必須）
+    [Parameter, EditorRequired] public CsvSchema Schema { get; set; } = default!;
+
+    // 既存の基底パラメータ（OnUploadCompleted / ProcessAsync / DialogTitle / ExecuteButtonText / Accept / MaxSizeMB）
     private readonly FileModel _model = new();
     private EditContext? _editCtx;
     private MudFileUpload<IBrowserFile> _file = default!;
 
+    // 状態
+    private readonly List<string> _headerErrors = new();
+    private readonly List<(int RowNumber, string Message)> _rowErrors = new();
+    private readonly List<TItem> _records = new();
+    private List<CsvColumnSpec> _schemaCols = new();
+    private readonly Dictionary<string, Func<TItem, object?>> _getters = new();
+
+    // 固定のUIパラメータ（外部公開しない）
+    private const int MaxPreview = 10;
+    private const int MaxRowErrorsDisplay = 20;
+
+    private bool _canExecute => _model.File is not null
+                                && _headerErrors.Count == 0
+                                && _rowErrors.Count == 0
+                                && _records.Count > 0;
+
     protected override void OnInitialized()
     {
-        // EditContext をモデルに紐づけ
         _editCtx = new EditContext(_model);
     }
 
-    private Task OnFilesChanged(InputFileChangeEventArgs _)
+    private Task OnFilesChanged(InputFileChangeEventArgs e)
     {
-        // ファイル選択時に当該フィールドの再検証を明示的にトリガー
         _editCtx?.NotifyFieldChanged(new FieldIdentifier(_model, nameof(FileModel.File)));
+        _ = ParseAndValidateAsync();
         return Task.CompletedTask;
     }
+
+    private async Task ParseAndValidateAsync()
+    {
+        _headerErrors.Clear();
+        _rowErrors.Clear();
+        _records.Clear();
+        _schemaCols.Clear();
+
+        if (_model.File is null || Schema is null)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        using var stream = _model.File.OpenReadStream((MaxSizeMB > 0 ? MaxSizeMB : 10) * 1024 * 1024);
+
+        var (records, rowErrs, headErrs) =
+            await CsvUtil.ReadWithSchemaAndValidateAsync<TItem>(stream, Schema);
+
+        _records.AddRange(records);
+        _rowErrors.AddRange(rowErrs);
+        _headerErrors.AddRange(headErrs);
+
+        // ★ エラーがある間はプレビュー準備もしない
+        if (_headerErrors.Count > 0 || _rowErrors.Count > 0)
+        {
+            StateHasChanged();
+            return;
+        }
+
+        _schemaCols = Schema.Columns.ToList();
+        BuildGettersIfNeeded();
+
+        StateHasChanged();
+    }
+
+    private void BuildGettersIfNeeded()
+    {
+        if (_schemaCols.Count == 0) return;
+
+        var t = typeof(TItem);
+        foreach (var col in _schemaCols)
+        {
+            if (_getters.ContainsKey(col.PropertyName)) continue;
+
+            var pi = t.GetProperty(col.PropertyName);
+            if (pi is null)
+            {
+                _getters[col.PropertyName] = _ => null;
+                continue;
+            }
+
+            // x => (object?) x.Prop
+            var p = System.Linq.Expressions.Expression.Parameter(typeof(TItem), "x");
+            var body = System.Linq.Expressions.Expression.Convert(
+                System.Linq.Expressions.Expression.Property(p, pi), typeof(object));
+            var lambda = System.Linq.Expressions.Expression.Lambda<Func<TItem, object?>>(body, p);
+            _getters[col.PropertyName] = lambda.Compile();
+        }
+    }
+
+    private object? GetCell(TItem item, string propName)
+        => _getters.TryGetValue(propName, out var g) ? g(item) : null;
 
     private async ValueTask<bool> SubmitAsync()
     {
         if (_editCtx is null) return false;
-
-        // Blazored.FluentValidation 経由で FluentValidation を実行
-        if (!_editCtx.Validate())
-            return false;
-
-        // ファイルはバリデータ側で NotNull/サイズ/拡張子 等をチェック済み
+        if (!_editCtx.Validate()) return false;
         if (_model.File is null) return false;
+        if (_headerErrors.Count > 0 || _rowErrors.Count > 0 || _records.Count == 0) return false;
 
         var res = await UiOperationRunner.WriteAsync(async () =>
         {
-            using var stream = _model.File.OpenReadStream((MaxSizeMB > 0 ? MaxSizeMB : 10) * 1024 * 1024);
-
-            var items = await CsvUtil.ReadToListAsync<TItem>(stream);
-
-            // 呼び出し側で DB 反映などを差し込みたい場合
             if (ProcessAsync is not null)
             {
-                var op = await ProcessAsync(items);
-                if (!op.IsSuccess) return op; // 失敗はそのまま返す
+                var op = await ProcessAsync(_records);
+                if (!op.IsSuccess) return op;
             }
 
-            // 呼び出し元へ通知（テーブル再読込など）
-            await RaiseCompletedAsync(items);
-
+            await RaiseCompletedAsync(_records);
             return ServiceResult.None.Success(AppMessages.MSG_I_SUCCESS_CSV_TAKE_IN);
         }, message: AppMessages.MSG_I_PROGRESS_TAKE_IN);
+
+        if (res.IsSuccess)
+            MudDialog?.Close(DialogResult.Ok(true));
 
         return res.IsSuccess;
     }

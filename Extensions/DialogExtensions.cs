@@ -2,6 +2,7 @@
 using MudBlazor;
 using PhrazorApp.Components.Shared.Dialogs;
 using System.Linq.Expressions;
+using static PhrazorApp.Utils.CsvUtil;
 
 public static class DialogServiceExtensions
 {
@@ -115,39 +116,29 @@ public static class DialogServiceExtensions
         // OK → true / Cancel or Close → false
         return !(result?.Canceled ?? true);
     }
-
     /// <summary>
-    /// CSVアップロードダイアログ（糖衣メソッド）
+    /// CSVアップロードダイアログ（必要最小限API）
+    /// - タイトル/ボタン文言は固定（ダイアログ既定値を使用）
+    /// - Schema は必須で明示指定
+    /// - processAsync は任意注入
     /// </summary>
-    /// <summary>
-    /// CSVアップロードダイアログ（ジェネリック）
-    /// 必要なら DB反映などの処理を processAsync で注入できる。
-    /// </summary>
-    public static Task<IDialogReference> ShowCsvUploadDialogAsync<TDialog, TItem>(
+    public static Task<IDialogReference> ShowCsvUploadDialogAsync<TItem>(
         this IDialogService dialogService,
         object caller,
         Func<List<TItem>, Task> onUploadCompleted,
+        CsvSchema schema,
         Func<List<TItem>, Task<ServiceResult<Unit>>>? processAsync = null,
-        string? title = null,
-        string? executeText = null,
-        string? accept = null,
-        int? maxSizeMB = null,
         DialogOptions? options = null)
-        where TDialog : CsvUploadBaseDialog<TItem>, IComponent
     {
-        var values = new List<(Expression<Func<TDialog, object?>>, object?)>();
-        if (processAsync is not null) values.Add((x => x.ProcessAsync, processAsync));
-        if (title is not null) values.Add((x => x.DialogTitle, title));
-        if (executeText is not null) values.Add((x => x.ExecuteButtonText, executeText));
-        if (accept is not null) values.Add((x => x.Accept, accept));
-        if (maxSizeMB.HasValue) values.Add((x => x.MaxSizeMB, maxSizeMB.Value));
+        var parameters = new DialogParameters<CsvUploadDialog<TItem>>
+        {
+            { x => x.Schema, schema }, // ★ 必須
+            { x => x.OnUploadCompleted, EventCallback.Factory.Create(caller, onUploadCompleted) }
+        };
+        if (processAsync is not null)
+            parameters.Add(x => x.ProcessAsync, processAsync);
 
-        return dialogService.ShowWithParamsAndCallbackAsync<TDialog, List<TItem>>(
-            title ?? "CSV読込",
-            caller,
-            values.ToArray(),
-            x => x.OnUploadCompleted,
-            onUploadCompleted,
-            options ?? OptionsSm());
+        // タイトルは固定表示（"CSV取込"）。ボタン文言もダイアログ既定値「取込」を使用。
+        return dialogService.ShowAsync<CsvUploadDialog<TItem>>("CSV取込", parameters, options ?? OptionsSm());
     }
 }
