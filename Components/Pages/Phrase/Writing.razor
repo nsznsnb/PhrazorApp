@@ -23,6 +23,13 @@
             @(_count == 0 ? "（データなし）" : $"{_index + 1} / {_count}")
         </MudText>
 
+        <!-- 正答ダイアログ切替 -->
+        <MudSwitch T="bool"
+                   @bind-Value="_showCorrectBeforeNext"
+                   Color="Color.Primary"
+                   Class="ml-2"
+                   Label="次に進む前に正答を表示" />
+
         <MudSpacer />
 
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
@@ -68,21 +75,22 @@
 
             <!-- 回答（上=入力 / 下=入力補助：どちらも MudTextField） -->
             <MudGrid Justify="Justify.Center">
-                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
-                    <EditForm Model="_form" OnValidSubmit="SubmitAsync">
-                        <MudStack Spacing="1" AlignItems="AlignItems.Stretch">
+                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6" autocomplete="off">
+                    @* Enterで解答するため OnSubmit を使用 *@
+                    <EditForm Model="_form" OnSubmit="SubmitAsync">
+                        <MudStack @key="_index" Spacing="1" AlignItems="AlignItems.Stretch">
 
-                            <!-- 入力欄（等幅） -->
                             <MudTextField T="string"
                                           @bind-Value="Answer"
                                           Variant="Variant.Text"
                                           FullWidth="true"
+                                          AutoFocus="true"
                                           Adornment="Adornment.Start"
                                           AdornmentIcon="@Icons.Material.TwoTone.EditNote"
                                           Immediate="true"
-                                          Class="mono-input" />
+                                          Class="mono-input"
+                                          InputAttributes="_noAutoAttrs" />
 
-                            <!-- 入力補助（等幅・同じTextField・読み取り専用） -->
                             <MudTextField T="string"
                                           Value="@_assistText"
                                           ReadOnly="true"
@@ -90,7 +98,8 @@
                                           FullWidth="true"
                                           Adornment="Adornment.Start"
                                           AdornmentIcon="@Icons.Material.TwoTone.EditNote"
-                                          Class="mono-input assist-input" />
+                                          Class="mono-input assist-input"
+                                          InputAttributes="_noAutoAttrs" />
 
                             <!-- ボタン＆集計（詰めて並べ、必要時のみ折返し） -->
                             <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
@@ -148,7 +157,6 @@
         --mono-line: 1.5rem;
     }
 
-    /* MudTextField 内 input 要素に適用 */
     .mono-input .mud-input-slot input {
         font-family: var(--mono-font-stack) !important;
         font-size: var(--mono-size) !important;
@@ -157,10 +165,9 @@
         font-variant-ligatures: none !important;
     }
 
-    /* 下の補助欄：色を薄く、アイコンは非表示（幅は保持） */
     .assist-input .mud-input-slot input {
         color: rgba(0,0,0,.54);
-        caret-color: transparent; /* キャレットを見せない */
+        caret-color: transparent;
     }
 
     .assist-input .mud-input-adornment-start {
@@ -170,6 +177,20 @@
 
 @code {
     [Parameter, SupplyParameterFromQuery] public string? Return { get; set; }
+
+    // ブラウザの補完/修正/自動大文字化/スペルチェックを無効化
+    private readonly Dictionary<string, object> _noAutoAttrs = new()
+    {
+        ["autocomplete"] = "off",
+        ["autocorrect"] = "off",
+        ["autocapitalize"] = "none",
+        ["spellcheck"] = "false",
+        // 必要に応じて name を固定して誤検出を避ける
+        ["name"] = "phrase-answer"
+    };
+
+    // 設定：正答ダイアログ（次へ進む前に表示）
+    private bool _showCorrectBeforeNext;
 
     // データ
     private List<ReviewSession.Card> _items = new();
@@ -245,7 +266,6 @@
         return list;
     }
 
-    // ヒント：単語を1つ公開 → 入力は触らず → 補助欄のみ更新
     private void GiveHint()
     {
         var remain = RemainingWordIndices();
@@ -260,7 +280,6 @@
         Snackbar.Add("ヒントを表示しました（単語を1つ公開）。", Severity.Info);
     }
 
-    // 入力補助の再構築（公開 or 正しく入力 → 実文字／それ以外 → 中黒）
     private void RebuildAssist()
     {
         var t = _current.Front ?? string.Empty;
@@ -330,6 +349,10 @@
             _answeredCount++;
             _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true));
             Snackbar.Add("正解です！", Severity.Success);
+
+            if (_showCorrectBeforeNext)
+                await ShowCorrectDialogAsync("正解を確認して次へ進みます。");
+
             await NextAsync();
         }
         else
@@ -341,28 +364,21 @@
             }
             else
             {
-                await ProceedWrongAsync(); // 正答表示 → 次へ
+                await ProceedWrongAsync(); // ×として進む
             }
         }
     }
 
-    // 「次へ（×扱い）」：即座に不正解として進む
     private async Task SkipAsWrongAsync() => await ProceedWrongAsync();
 
-    // 不正解の記録 → 正答を表示 → 次へ
     private async Task ProceedWrongAsync()
     {
         _wrongCount++;
         _answeredCount++;
         _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false));
 
-        var html =
-            "<div style='white-space:pre-wrap'>" +
-            System.Net.WebUtility.HtmlEncode(_current.Front) +
-            "</div>" +
-            "<p style='margin-top:12px;color:rgba(0,0,0,.6)'>不正解として記録しました。正答を確認して次へ進みます。</p>";
-
-        await DialogService.ShowMessageBox("正答", (MarkupString)html, yesText: "次へ");
+        if (_showCorrectBeforeNext)
+            await ShowCorrectDialogAsync("不正解として記録しました。正答を確認して次へ進みます。");
 
         await NextAsync();
     }
@@ -373,7 +389,6 @@
         RebuildAssist();
     }
 
-    // 採点用正規化：記号無視・空白圧縮・大小無視
     private static string NormalizeForJudge(string s)
     {
         var onlyLettersSpaces = new string(s.Where(ch => char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch)).ToArray());
@@ -395,28 +410,40 @@
         await Task.CompletedTask;
     }
 
-    // JSなしで戻る
     private async Task CancelAsync()
     {
         var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DeleteConfirm, "テストを中止しますか？");
         if (!ok) return;
 
-        // 明示の戻り先があれば優先
         if (!string.IsNullOrEmpty(Return))
         {
             Navigation.NavigateTo(Return);
             return;
         }
 
-        // 履歴で直前のページへ
         try
         {
             await JS.HistoryBackAsync();
         }
         catch
         {
-            // 念のためのフォールバック
             Navigation.NavigateTo("/phrases");
         }
+    }
+
+    private async Task ShowCorrectDialogAsync(string? note = null)
+    {
+        // 正答（Front）＋ 和訳（Back）を軽く整形して表示
+        var html =
+            "<div style='white-space:pre-wrap;font-weight:600'>" +
+            System.Net.WebUtility.HtmlEncode(_current.Front) +
+            "</div>" +
+            (string.IsNullOrWhiteSpace(_current.Back)
+                ? ""
+                : "<div style='white-space:pre-wrap;color:rgba(0,0,0,.6);margin-top:.5rem'>" +
+                  System.Net.WebUtility.HtmlEncode(_current.Back) + "</div>") +
+            (string.IsNullOrWhiteSpace(note) ? "" : $"<p style='margin-top:12px;color:rgba(0,0,0,.6)'>{System.Net.WebUtility.HtmlEncode(note)}</p>");
+
+        await DialogService.ShowMessageBox("正答", (MarkupString)html, yesText: "次へ");
     }
 }
