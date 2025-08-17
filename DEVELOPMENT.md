@@ -1,3 +1,4 @@
+
 ---
 
 Development.md
@@ -5,6 +6,7 @@ Development.md
 # Development Guide
 
 > このドキュメントは **ChatGPT に実装方針を学習させるためのドキュメント**です。
+> 本ドキュメント自体もChatGPTで作成されています。
 
 ---
 
