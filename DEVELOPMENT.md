@@ -1,4 +1,3 @@
-ありがとうございます。ご要望を反映し、「用語」に **JsInteropManager** の説明を追加、また **`Services/JsInteropManager.cs` → `UI/Interop/JsInteropManager.cs`** へと記載を修正しました。最新版の **Development.md** をそのまま置き換えてください。
 
 ---
 
