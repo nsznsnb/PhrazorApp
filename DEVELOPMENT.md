@@ -1,7 +1,14 @@
+以下、末尾に「細目」を追記した最新版です。
+
+---
+
+Development.md
+
 # Development Guide
 
 > このドキュメントは **ChatGPT に実装方針を学習させるためのドキュメント**です。
 > 本ドキュメント自体もChatGPTで作成されています。
+
 ---
 
 ## 用語（このプロジェクトでの意味）
@@ -299,3 +306,16 @@ public static class MyModelMapper
 
 ---
 
+# 付記
+
+* **Common フォルダの役割**
+  Common フォルダには、アプリ全体で横断的に使用する定義（定数・Enum・設定）を格納します。**既存の定義をなるべく再利用**してください。
+
+* **Common の名前空間規約**
+  Common に作成するすべてのファイルの名前空間は **`PhrazorApp.Common`** とします。`GlobalUsings.cs` に登録済みのため、**各ファイルで個別の `using` を記述する必要はありません**。
+
+* **Extensions の活用**
+  拡張メソッドは **Extensions** フォルダにまとまっています。特に **ダイアログ起動を簡略化する拡張メソッド（例：`DialogServiceExtensions` の各種 `Show*` 系）** を積極的に利用し、ページ側の記述量を削減してください。
+
+* **Components/Shared の共通 UI**
+  **Components/Shared** には共通 UI コンポーネントが配置されています。ページ実装ではこれらを活用し、**個別ページの重複コードを減らす**方針です（例：`SectionTitle`、`ActionCard`、`TableWithToolbar` など）。
