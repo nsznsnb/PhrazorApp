@@ -19,6 +19,7 @@
                        StartIcon="@Icons.Material.TwoTone.Save">
                 @AppConstants.LABEL_BUTTON_REGISTER
             </MudButton>
+
             <MudButton Variant="Variant.Filled"
                        Size="@AppConstants.SIZE_BUTTON"
                        Color="Color.Default"
@@ -28,6 +29,7 @@
             </MudButton>
         </ActionCard>
 
+        <!-- 成績名 入力 -->
         <BaseCard>
             <MudCardHeader>
                 <CardHeaderContent>
@@ -49,43 +51,155 @@
                 </MudGrid>
             </MudCardContent>
         </BaseCard>
+
+        <!-- 並び順 編集テーブル（GenreEditor と同じ操作性：上へ／下へ） -->
+        <BaseCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <SectionTitle HeadingLevel="3" Title="成績の並び順" />
+                </CardHeaderContent>
+            </MudCardHeader>
+
+            <MudCardContent Class="pt-0">
+                <TableWithToolbar TItem="GradeModel"
+                                  Title="並び順"
+                                  Items="@OrderList"
+                                  Height="360px"
+                                  Search="false"
+                                  Pager="TablePagerMode.Off">
+                    <ToolbarContent Context="ctx">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.TwoTone.Save"
+                                   FullWidth="@(!ctx.IsMdUp)"
+                                   OnClick="SaveOrderAsync">
+                            並び順を保存
+                        </MudButton>
+                        <MudText Class="ml-2" Color="Color.Secondary">
+                            ドラッグには対応していません。「上へ／下へ」で調整してください。
+                        </MudText>
+                    </ToolbarContent>
+
+                    <HeaderContent>
+                        <MudTh Style="width:80px">順序</MudTh>
+                        <MudTh>成績名</MudTh>
+                        <MudTh Style="width:240px">操作</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate Context="g">
+                        <MudTd DataLabel="順序">
+                            @(OrderList.IndexOf(g) + 1)
+                        </MudTd>
+                        <MudTd DataLabel="成績名">
+                            <MudText>@g.Name</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="操作">
+                            <MudStack Row Spacing="1">
+                                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
+                                           StartIcon="@Icons.Material.TwoTone.KeyboardArrowUp"
+                                           Disabled="@IsFirst(g)"
+                                           OnClick="@(() => MoveUp(g))">
+                                    上へ
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default"
+                                           StartIcon="@Icons.Material.TwoTone.KeyboardArrowDown"
+                                           Disabled="@IsLast(g)"
+                                           OnClick="@(() => MoveDown(g))">
+                                    下へ
+                                </MudButton>
+                            </MudStack>
+                        </MudTd>
+                    </RowTemplate>
+
+                    <NoRecordsContent>
+                        <MudText Class="p-4">成績がありません。先に「新規追加」で成績を作成してください。</MudText>
+                    </NoRecordsContent>
+                </TableWithToolbar>
+            </MudCardContent>
+        </BaseCard>
     </MudStack>
 </EditForm>
 
 @code {
     [Parameter] public Guid? Id { get; set; }
-    private bool IsEdit => Id.HasValue;
-    private PhrazorApp.Models.GradeModel _model = new();
+
+    private GradeModel _model = new();
     private EditContext? _editCtx;
 
-    protected override async Task OnInitializedAsync()
+    // 並び順用リスト
+    private List<GradeModel> OrderList = new();
+
+    protected override async Task OnParametersSetAsync()
     {
         _editCtx = new EditContext(_model);
 
-        if (IsEdit)
+
+
+        if (Id is Guid id)
         {
-            var loaded = await UiOperationRunner.ReadAsync(
-                () => Service.GetAsync(Id!.Value));
-            _model = loaded ?? new PhrazorApp.Models.GradeModel { Id = Id!.Value };
+            var model = await UiOperationRunner.ReadAsync(() => Service.GetAsync(id));
+            _model = model ?? new GradeModel { Id = id };
         }
         else
         {
-            _model = new PhrazorApp.Models.GradeModel { Id = Guid.NewGuid() };
+            _model = new GradeModel { Id = Guid.NewGuid() };
         }
 
         _editCtx = new EditContext(_model);
+        await ReloadOrderListAsync();
     }
 
-    private Task HandleValidSubmit() => SubmitCoreAsync();
-
-    private async Task SubmitCoreAsync()
+    private async Task ReloadOrderListAsync()
     {
-        var op = await UiOperationRunner.WriteAsync(
-            () => IsEdit ? Service.UpdateAsync(_model)
-                         : Service.CreateAsync(_model),
-            message: AppMessages.MSG_I_PROGRESS_SAVE);
+        var list = await UiOperationRunner.ReadAsync(() => Service.GetListAsync());
+        OrderList = list ?? new();
+        StateHasChanged();
+    }
 
+    private bool IsFirst(GradeModel item)
+        => OrderList.Count > 0 && ReferenceEquals(OrderList.First(), item);
+
+    private bool IsLast(GradeModel item)
+        => OrderList.Count > 0 && ReferenceEquals(OrderList.Last(), item);
+
+    private void MoveUp(GradeModel item)
+    {
+        var i = OrderList.IndexOf(item);
+        if (i <= 0) return;
+        (OrderList[i - 1], OrderList[i]) = (OrderList[i], OrderList[i - 1]);
+        StateHasChanged();
+    }
+
+    private void MoveDown(GradeModel item)
+    {
+        var i = OrderList.IndexOf(item);
+        if (i < 0 || i >= OrderList.Count - 1) return;
+        (OrderList[i + 1], OrderList[i]) = (OrderList[i], OrderList[i + 1]);
+        StateHasChanged();
+    }
+
+    private async Task SaveOrderAsync()
+    {
+        // 表示順の通りに 0..N-1 を設定して保存
+        for (int i = 0; i < OrderList.Count; i++)
+            OrderList[i].OrderNo = i;
+
+        var op = await UiOperationRunner.WriteAsync(
+            () => Service.SaveOrderAsync(OrderList),
+            message: "並び順を更新中..."
+        );
+        if (op.IsSuccess) await ReloadOrderListAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var isNew = !(Id is Guid);
+        var op = await UiOperationRunner.WriteAsync(
+            () => isNew ? Service.CreateAsync(_model) : Service.UpdateAsync(_model),
+            message: AppMessages.MSG_I_PROGRESS_SAVE 
+        );
         if (!op.IsSuccess) return;
+
         NavigationManager.NavigateTo("/admin/settings/grades");
     }
 
@@ -94,7 +208,7 @@
 
     private Task ClearAsync()
     {
-        _model = new PhrazorApp.Models.GradeModel { Id = Guid.NewGuid() };
+        _model = new GradeModel { Id = Guid.NewGuid() };
         _editCtx = new EditContext(_model);
         StateHasChanged();
         return Task.CompletedTask;
