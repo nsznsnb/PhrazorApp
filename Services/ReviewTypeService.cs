@@ -44,7 +44,7 @@ namespace PhrazorApp.Services
 
                     var dup = await repos.ReviewTypes.Queryable(true)
                         .AnyAsync(x => x.ReviewTypeName == model.Name);
-                    if (dup) throw new InvalidOperationException("同名の復習種別が既に存在します。");
+                    if (dup) ServiceResult.None.Warning("同名の復習種別が既に存在します。");
 
                     await repos.ReviewTypes.AddAsync(model.ToEntity());
                 });
