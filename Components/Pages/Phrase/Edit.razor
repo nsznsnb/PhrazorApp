@@ -2,126 +2,213 @@
 @page "/phrases/edit/{Id:guid}"
 @attribute [Authorize]
 
+@using Blazored.FluentValidation
+@using Microsoft.AspNetCore.Components.Forms
+
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject GenreService GenreService
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
+@inject IServiceProvider ServiceProvider
 
 <PageTitle>@(isEdit ? "フレーズ編集" : "フレーズ新規作成")</PageTitle>
 
 <BackLink Href="/phrases" />
 
-<MudForm Model="@model" @ref="@form" ValidationDelay="0">
+<!-- 1-4: EditContext + Blazored.FluentValidation + PageMessageStore -->
+<EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+    <FluentValidationValidator />
+
     <MudStack Spacing="2">
         <SectionTitle Title="@(isEdit ? "フレーズ編集" : "フレーズ新規作成")" />
+
         <ActionCard>
-            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
-            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Default" StartIcon="@Icons.Material.TwoTone.RestartAlt" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
+            <!-- クリックで Validate させたいので Submit に -->
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.TwoTone.Save">
+                @AppConstants.LABEL_BUTTON_REGISTER
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.TwoTone.RestartAlt"
+                       OnClick="ClearAsync">
+                @AppConstants.LABEL_BUTTON_CLEAR
+            </MudButton>
         </ActionCard>
 
         <BaseCard>
             <MudCardContent Class="py-2">
                 <MudGrid Spacing="1">
                     <MudItem xs="12" md="12">
-                        <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" @bind-Value="@model.Phrase" Immediate="true" MaxLength="200"
-                                      Lines="3" HelperText="@(string.Format(AppMessages.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文", "200"))" ShrinkLabel />
+                        <MudTextField T="string"
+                                      Label="フレーズ"
+                                      Variant="Variant.Outlined"
+                                      @bind-Value="model.Phrase"
+                                      For="@(() => model.Phrase)"
+                                      Immediate="true"
+                                      Lines="3"
+                                      MaxLength="200"
+                                      HelperText="@(string.Format(AppMessages.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文", "200"))"
+                                      ShrinkLabel />
                     </MudItem>
+
                     <MudItem xs="12" md="12">
-                        <MudTextField T="string" Label="意味" Variant="Variant.Outlined" @bind-Value="@model.Meaning" Lines="3" Immediate="true" MaxLength="200"
-                                      HelperText="@(string.Format(AppMessages.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文の意味", "200"))" ShrinkLabel />
+                        <MudTextField T="string"
+                                      Label="意味"
+                                      Variant="Variant.Outlined"
+                                      @bind-Value="model.Meaning"
+                                      For="@(() => model.Meaning)"
+                                      Lines="3"
+                                      Immediate="true"
+                                      MaxLength="200"
+                                      HelperText="@(string.Format(AppMessages.MSG_I_HELPER_REQUIRED_LESS_THAN, "英文の意味", "200"))"
+                                      ShrinkLabel />
                     </MudItem>
+
                     <MudItem xs="12" md="4">
-                        <ImageGeneratorContainer Prompt="@model.Phrase" @bind-ImageUrl="@model.ImageUrl" />
+                        <ImageGeneratorContainer Prompt="@model.Phrase"
+                                                 @bind-ImageUrl="@model.ImageUrl" />
                     </MudItem>
+
                     <MudItem xs="12" md="6">
                         <GenreSelectorContainer @ref="_selector"
-                                          @bind-SelectedItems="model.SelectedDropItems"
-                                          MaxSelection="3"
-                                          OnAddGenreClicked="OpenGenreDialog" />
+                                                @bind-SelectedItems="model.SelectedDropItems"
+                                                MaxSelection="3"
+                                                OnAddGenreClicked="OpenGenreDialog" />
                     </MudItem>
+
                     <MudItem xs="12" md="12">
-                        <MudTextField T="string" Label="Note" Variant="Variant.Outlined" @bind-Value="@model.Note" Lines="3"
+                        <MudTextField T="string"
+                                      Label="Note"
+                                      Variant="Variant.Outlined"
+                                      @bind-Value="model.Note"
+                                      For="@(() => model.Note)"
+                                      Lines="3"
+                                      MaxLength="200"
                                       HelperText="@(string.Format(AppMessages.MSG_I_HELPER_ARBITRARY_LESS_THAN, "解説や備考", "200"))"
                                       ShrinkLabel />
                     </MudItem>
+
                     <MudFlexBreak />
                 </MudGrid>
             </MudCardContent>
         </BaseCard>
 
         <ActionCard>
-            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Save" OnClick="SubmitAsync">@AppConstants.LABEL_BUTTON_REGISTER</MudButton>
-            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error" StartIcon="@Icons.Material.TwoTone.Block" OnClick="ClearAsync">@AppConstants.LABEL_BUTTON_CLEAR</MudButton>
-            <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" StartIcon="@Icons.Material.TwoTone.NavigateBefore" OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">@AppConstants.LABEL_BUTTON_RETURN_INDEX</MudButton>
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.TwoTone.Save">
+                @AppConstants.LABEL_BUTTON_REGISTER
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Error"
+                       StartIcon="@Icons.Material.TwoTone.Block"
+                       OnClick="ClearAsync">
+                @AppConstants.LABEL_BUTTON_CLEAR
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       StartIcon="@Icons.Material.TwoTone.NavigateBefore"
+                       OnClick="@(() => NavigationManager.NavigateTo("/phrases"))">
+                @AppConstants.LABEL_BUTTON_RETURN_INDEX
+            </MudButton>
         </ActionCard>
     </MudStack>
-</MudForm>
+</EditForm>
 
 @code {
     [Parameter] public Guid? Id { get; set; }
 
-    private MudForm? form;
     private GenreSelectorContainer? _selector;
     private bool isEdit;
+
+    // 1-4: EditContext をページで保持（バリデーションの核）
     private PhraseEditModel model = new();
+    private EditContext _editCtx = new EditContext(new PhraseEditModel());
 
     protected override async Task OnInitializedAsync()
     {
         isEdit = Id.HasValue;
-        await ClearAsync();
+
+        // ★ await 前に一度 EditContext を持たせておく
+        _editCtx = new EditContext(model);
+
+        // 実データの読込（await でレンダが走っても _editCtx は null にならない）
+        await LoadModelAsync();
+
+        // 読み込み後のモデルで EditContext を差し替え
+        _editCtx = new EditContext(model);
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task LoadModelAsync()
     {
-        if (firstRender)
+        if (isEdit)
         {
-            await Task.Yield(); // 子の @ref 安定を待つ
-            if (_selector is not null)
-                await _selector.ReloadAsync(model.SelectedDropItems);
+            var loaded = await UiOperationRunner.ReadAsync(() => PhraseService.GetPhraseEditAsync(Id!.Value));
+            model = loaded ?? new PhraseEditModel { Id = Id!.Value };
+        }
+        else
+        {
+            model = new PhraseEditModel { Id = Guid.NewGuid() };
         }
     }
 
     private async Task ClearAsync()
     {
-        if (isEdit)
-        {
-            // 編集：サービスから読み込み
-            var loaded = await UiOperationRunner.ReadAsync(
-                () => PhraseService.GetPhraseEditAsync(Id!.Value)
-            );
-            model = loaded ?? new PhraseEditModel { Id = Id!.Value };
-        }
-        else
-        {
-            // 新規：ローカル初期化のみ
-            model = new PhraseEditModel { Id = Guid.NewGuid() };
-        }
-
-        form?.ResetValidation();
+        await LoadModelAsync();
+        // ★ クリア時も再構築
+        _editCtx = new EditContext(model);
+        StateHasChanged();
     }
 
-    private async Task SubmitAsync()
-    {
-        await form!.Validate();
-        if (!form.IsValid) return;
 
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _selector is not null)
+        {
+            await Task.Yield(); // 子の @ref 安定を待つ
+            await _selector.ReloadAsync(model.SelectedDropItems);
+        }
+    }
+
+
+    // 1-4: 成功時＝保存へ
+    private async Task HandleValidSubmit()
+    {
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.InfoConfirm,
-            string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase));
+            string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase)
+        );
         if (!ok) return;
 
         var op = await UiOperationRunner.WriteAsync(
-            () => isEdit
-                ? PhraseService.UpdatePhraseAsync(model)
-                : PhraseService.CreatePhraseAsync(model),
+            () => isEdit ? PhraseService.UpdatePhraseAsync(model)
+                         : PhraseService.CreatePhraseAsync(model),
             message: AppMessages.MSG_I_PROGRESS_SAVE
         );
 
         if (!op.IsSuccess) return;
-
         NavigationManager.NavigateTo("/phrases");
+    }
+
+    // 1-4: 失敗時＝ページレベルエラー発行
+    private void OnInvalidSubmit(EditContext editContext)
+    {
+        editContext.PublishPageLevelErrors(ServiceProvider);
+        Snackbar.Add("入力内容を確認してください。", Severity.Warning);
     }
 
     private async Task OpenGenreDialog()
@@ -134,11 +221,7 @@
         );
 
         var result = await dlg.Result;
-        if (!(result?.Canceled ?? true))
-        {
-            await _selector!.ReloadAsync(model.SelectedDropItems); // 登録直後に再読込
-        }
-
-
+        if (!(result?.Canceled ?? true) && _selector is not null)
+            await _selector.ReloadAsync(model.SelectedDropItems); // 登録直後に再読込
     }
 }

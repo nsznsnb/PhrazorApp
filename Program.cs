@@ -18,6 +18,7 @@ using PhrazorApp.Services;             // ドメインサービス
 using PhrazorApp.UI.Interop;           // JsInteropManager
 using PhrazorApp.UI.Managers;          // LoadingManager, UiOperationRunner
 using PhrazorApp.UI.State;             // ReviewSession, TestResultSession, PageMessageStore
+using PhrazorApp.Validators;
 using Resend;
 
 namespace PhrazorApp;
@@ -167,6 +168,8 @@ public class Program
         builder.Services.AddScoped<IValidator<ProverbModel>, ProverbModelValidator>();
         builder.Services.AddScoped<IValidator<ReviewTypeModel>, ReviewTypeModelValidator>();
         builder.Services.AddScoped<IValidator<EnglishDiaryModel>, EnglishDiaryModelValidator>();
+        builder.Services.AddScoped<IValidator<PhraseEditModel>, PhraseEditModelValidator>();
+
 
 
 

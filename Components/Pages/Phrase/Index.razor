@@ -423,8 +423,8 @@
                     <!-- md以上：アイコンボタン -->
                     <MudHidden Breakpoint="@Breakpoint.SmAndDown">
                         <MudStack Row>
-                            <MudTooltip Text="編集"><MudIconButton Icon="@Icons.Material.TwoTone.Edit" Color="Color.Info" Size="@BtnSize" AriaLabel="編集" OnClick="@(() => GoEdit(x.Id))" /></MudTooltip>
-                            <MudTooltip Text="削除"><MudIconButton Icon="@Icons.Material.TwoTone.Delete" Color="Color.Error" Size="@BtnSize" AriaLabel="削除" OnClick="@(() => OnDeleteButtonClickedAsync(x))" /></MudTooltip>
+                            <MudTooltip Text="編集"><MudIconButton Variant="Variant.Outlined" Icon="@Icons.Material.TwoTone.Edit" Color="Color.Info"  AriaLabel="編集" OnClick="@(() => GoEdit(x.Id))" /></MudTooltip>
+                            <MudTooltip Text="削除"><MudIconButton Variant="Variant.Outlined" Icon="@Icons.Material.TwoTone.Delete" Color="Color.Error"  AriaLabel="削除" OnClick="@(() => OnDeleteButtonClickedAsync(x))" /></MudTooltip>
                         </MudStack>
                     </MudHidden>
 
