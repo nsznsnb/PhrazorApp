@@ -12,6 +12,7 @@
 @inject IServiceProvider ServiceProvider
 @inject OperationLimitService OpLimit
 @inject OperationTypeService OpType
+@inject JsInteropManager JS
 
 <PageTitle>英語日記 添削</PageTitle>
 <BackLink Href="/diary/calendar" Text="カレンダーに戻る" />
@@ -126,6 +127,7 @@
     private DiaryTagSelectorContainer? _tagSelector;
 
     private const string _correctAnchorId = "diary-correct-anchor";
+    private bool _pendingScrollToCorrect;
 
     // タグ選択（DropItemModel）
     private List<DropItemModel> _selectedTagItems = new();
@@ -177,6 +179,15 @@
         await LoadUsageAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingScrollToCorrect)
+        {
+            _pendingScrollToCorrect = false;
+            await JS.ScrollToIdAsync(_correctAnchorId, smooth: true);
+        }
+    }
+
     private async Task LoadUsageAsync()
     {
         // 1) 上限：OperationType マスタ（0以下は無制限）
@@ -216,6 +227,10 @@
             _model = op.Data;
             _jstDateText = ToTokyoDateOnlyText(_model.CreatedAt);
             _editCtx = new EditContext(_model); // 差し替え後に再構築
+
+            // ▼ テーブル描画完了後にスクロールするためフラグを立てて再描画
+            _pendingScrollToCorrect = true;
+            StateHasChanged();
         }
 
         await LoadUsageAsync();
