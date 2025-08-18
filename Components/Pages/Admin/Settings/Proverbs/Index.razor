@@ -10,6 +10,7 @@
 <MudStack Spacing="2">
     <SectionTitle Title="格言マスタ" />
 
+    <!-- 上部アクション -->
     <ActionCard>
         <MudButton Variant="Variant.Outlined"
                    Size="@AppConstants.SIZE_BUTTON"
@@ -28,13 +29,66 @@
     </ActionCard>
 
     <BaseCard>
-        <TableWithToolbar TItem="ProverbModel"
-                          Items="@_items"
-                          Search="true"
-                          SearchBy="@(x => new[] { x.Text ?? string.Empty, x.Meaning ?? string.Empty, x.Author ?? string.Empty })"
-                          Pager="TablePagerMode.Auto"
-                          RowsPerPage="10"
-                          Height="500px">
+        <SelectableTable TItem="ProverbModel"
+                         Items="_items"
+                         IdSelector="@(x => x.Id)"
+                         Title=""
+                         Search="true"
+                         SearchBy="@(x => new[] { x.Text ?? string.Empty, x.Meaning ?? string.Empty, x.Author ?? string.Empty })"
+                         Pager="TablePagerMode.Auto"
+                         RowsPerPage="10"
+                         Height="500px">
+
+            <!-- 追加ツールバー：一括削除 -->
+            <ExtraToolbar Context="tb">
+                @{
+                    var selAll = tb.GetSelectedIdsAll()?.Count ?? 0;
+                    var hasAny = selAll > 0;
+                }
+
+                <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                    <MudBadge Content="@selAll" Max="99999" Overlap Bordered Origin="Origin.TopRight">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   Size="@AppConstants.SIZE_BUTTON"
+                                   StartIcon="@Icons.Material.TwoTone.Delete"
+                                   Disabled="@(selAll == 0)"
+                                   OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                            一括削除
+                        </MudButton>
+                    </MudBadge>
+                    <MudSpacer />
+                </MudHidden>
+
+                <!-- モバイルはメニュー内に集約（右端） -->
+                <MudHidden Breakpoint="@Breakpoint.MdAndUp">
+                    <MudStack Row Spacing="1" AlignItems="@AlignItems.Center" Style="width:100%">
+                        <MudSpacer />
+                        <MudMenu Dense OffsetY>
+                            <ActivatorContent>
+                                <MudBadge Content="@selAll" Max="99999" Overlap Bordered Origin="Origin.TopRight">
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               Size="@AppConstants.SIZE_BUTTON"
+                                               StartIcon="@Icons.Material.TwoTone.MoreHoriz">
+                                        その他
+                                    </MudButton>
+                                </MudBadge>
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem Disabled="@(selAll == 0)"
+                                             OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Delete"
+                                             Color="@(hasAny ? Color.Error : Color.Default)" Class="mr-2" />
+                                    一括削除
+                                </MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+                    </MudStack>
+                </MudHidden>
+            </ExtraToolbar>
+
+            <!-- Header -->
             <HeaderContent>
                 <MudTh>格言</MudTh>
                 <MudTh>意味</MudTh>
@@ -42,25 +96,35 @@
                 <MudTh style="min-width:160px;">操作</MudTh>
             </HeaderContent>
 
-            <RowTemplate>
-                <MudTd>@context.Text</MudTd>
-                <MudTd>@context.Meaning</MudTd>
-                <MudTd>@context.Author</MudTd>
+            <!-- Rows -->
+            <RowTemplate Context="x">
+                <MudTd>@x.Text</MudTd>
+                <MudTd>@x.Meaning</MudTd>
+                <MudTd>@x.Author</MudTd>
                 <MudTd Align="Align.Right">
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Error"
-                               Size="Size.Small"
-                               StartIcon="@Icons.Material.TwoTone.Delete"
-                               OnClick="@(() => OnDeleteAsync(context.Id))">
-                        削除
-                    </MudButton>
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="@AppConstants.SIZE_BUTTON"
+                                   Color="Color.Info"
+                                   StartIcon="@Icons.Material.TwoTone.Edit"
+                                   OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/proverbs/edit/{x.Id}"))">
+                            @AppConstants.LABEL_BUTTON_EDIT
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.TwoTone.Delete"
+                                   OnClick="@(() => OnDeleteAsync(x.Id))">
+                            削除
+                        </MudButton>
+                    </MudStack>
                 </MudTd>
             </RowTemplate>
 
             <NoRecordsContent>
                 <MudText Class="p-4">データがありません。</MudText>
             </NoRecordsContent>
-        </TableWithToolbar>
+        </SelectableTable>
     </BaseCard>
 </MudStack>
 
@@ -71,27 +135,53 @@
 
     private async Task ReloadAsync()
     {
-        _items = await UiRunner.ReadWithOverlayAsync(
-                     () => ProverbService.GetListAsync()) ?? new();
+        _items = await UiRunner.ReadWithOverlayAsync(() => ProverbService.GetListAsync()) ?? new();
     }
 
     private async Task OpenCsvUploadDialog()
     {
-        // ヘッダありで取り込む（標準）
         await DialogService.ShowCsvUploadDialogAsync<ProverbImportDto>(
             caller: this,
             onUploadCompleted: _ => ReloadAsync(),
             schema: CsvSchemas.ProverbImport,
             processAsync: rows => ProverbService.ImportCsvAsync(rows));
-
     }
 
+    // 個別削除
     private async Task OnDeleteAsync(Guid id)
     {
         var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm, "削除します。よろしいですか？");
         if (!ok) return;
 
-        var r = await UiRunner.WriteAsync(() => ProverbService.DeleteAsync(id), "削除中…");
+        var r = await UiRunner.WriteAsync(() => ProverbService.DeleteAsync(id), AppMessages.MSG_I_PROGRESS_DELETE);
         if (r.IsSuccess) await ReloadAsync();
+    }
+
+    // 一括削除（SelectableTable から渡される選択IDを使用）
+    private async Task OnBulkDeleteRequested(HashSet<Guid> ids)
+    {
+        if (ids is null || ids.Count == 0)
+        {
+            Snackbar.Add("削除対象が選択されていません。", Severity.Warning);
+            return;
+        }
+
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DangerConfirm,
+            $"選択中 {ids.Count} 件を削除します。よろしいですか？");
+        if (!ok) return;
+
+        // DeleteProverbsAsync が未実装の場合は、下のフォールバックコメントを参照
+        var list = await UiRunner.WriteThenReloadAsync(
+            operation: () => ProverbService.DeleteProverbsAsync(ids),
+            reloadData: () => ProverbService.GetListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
+        );
+
+        if (list is not null)
+        {
+            _items = list;
+            Snackbar.Add("削除しました。", Severity.Success);
+        }
     }
 }
