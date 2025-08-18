@@ -11,25 +11,20 @@
     <SectionTitle Title="英語日記カレンダー" />
 
     <ActionCard>
-        <MudButton Variant="Variant.Outlined"
-                   Size="@AppConstants.SIZE_BUTTON"
-                   Color="Color.Info"
-                   StartIcon="@Icons.Material.TwoTone.Add"
-                   OnClick="CreateToday">
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.Add" OnClick="CreateToday">
             新規追加
         </MudButton>
     </ActionCard>
 
     <BaseCard>
-        <!-- 月表示のみ -->
         <MudCalendar T="DiaryCalendarItem"
                      Items="_items"
                      View="CalendarView.Month"
-                     ShowWeek="false"
-                     ShowDay="false">
-            <!-- その日に日記がある場合のみ表示。左=編集へ/右=削除 -->
+                     ShowWeek="false" ShowDay="false">
             <CellTemplate Context="item">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="w-100">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1" Class="w-100">
+                    <!-- 編集へ：必ず JST の日付に変換してから遷移 -->
                     <MudChip T="string"
                              Variant="Variant.Outlined"
                              Color="Color.Primary"
@@ -39,9 +34,9 @@
                         @item.Title
                     </MudChip>
 
+                    <!-- 削除：JST 日付で削除する -->
                     <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
                                    Color="Color.Error"
-                                   AriaLabel="Delete diary"
                                    Size="Size.Small"
                                    OnClick="@(() => OnClickDeleteAsync(item))" />
                 </MudStack>
@@ -63,7 +58,6 @@
         StateHasChanged();
     }
 
-    // --- 遷移（JST日付に正規化してからルートへ） ---
     private void GoToDate(DateOnly jstDate)
         => Nav.NavigateTo($"/diary/edit/{jstDate:yyyy-MM-dd}");
 
@@ -73,17 +67,15 @@
         Nav.NavigateTo($"/diary/edit/{todayJst:yyyy-MM-dd}");
     }
 
-    // --- 削除 ---
     private async Task OnClickDeleteAsync(DiaryCalendarItem item)
     {
-        var target = ToTokyoDateOnly(item.Start); // 当日(JST)
+        var target = ToTokyoDateOnly(item.Start);
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.DangerConfirm,
             $"{target:yyyy-MM-dd} の日記を削除します。よろしいですか？"
         );
         if (!ok) return;
 
-        // ★ サービス側：DeleteByDateAsync(DateOnly) がある前提
         var op = await UiOperationRunner.WriteAsync(
             () => DiaryService.DeleteByDateAsync(target),
             message: "削除しています…"
@@ -94,28 +86,23 @@
         await ReloadAsync();
     }
 
-    // --- JST ユーティリティ ---
+    // ---- JST ユーティリティ ----
     private static DateTime ToTokyoNow()
     {
-        var utc = DateTime.UtcNow;
         var tz = GetTokyoTz();
-        return TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
     }
-
     private static DateOnly ToTokyoDateOnly(DateTime dt)
     {
         var tz = GetTokyoTz();
-        DateTime local;
-        if (dt.Kind == DateTimeKind.Utc)
-            local = TimeZoneInfo.ConvertTimeFromUtc(dt, tz);
-        else if (dt.Kind == DateTimeKind.Local)
-            local = TimeZoneInfo.ConvertTime(dt, tz);
-        else // Unspecified は UTC とみなして変換
-            local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(dt, DateTimeKind.Utc), tz);
-
-        return DateOnly.FromDateTime(local);
+        var d = dt.Kind switch
+        {
+            DateTimeKind.Utc => TimeZoneInfo.ConvertTimeFromUtc(dt, tz),
+            DateTimeKind.Local => TimeZoneInfo.ConvertTime(dt, tz),
+            _ => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(dt, DateTimeKind.Utc), tz)
+        };
+        return DateOnly.FromDateTime(d);
     }
-
     private static TimeZoneInfo GetTokyoTz()
     {
         try { return TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time"); }

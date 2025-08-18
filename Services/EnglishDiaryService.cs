@@ -45,19 +45,46 @@ namespace PhrazorApp.Services
             {
                 var uid = _user.GetUserId();
                 var (fromUtc, toUtc) = GetUtcRangeForLocalMonth(month);
+                var tz = GetTokyoTz();
 
+                // 英日記の必要最小限を取得（UTC）
                 var models = await _uow.ReadAsync(async repos =>
-                {
-                    return await repos.EnglishDiaries
+                    await repos.EnglishDiaries
                         .Queryable(true)
                         .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)
-                        .SelectModel()               // ← Mapper: Entity→Model 投影
-                        .ToListAsync();
-                });
+                        .SelectModel()                // Entity -> EnglishDiaryModel（CreatedAt=UTC想定）
+                        .ToListAsync()
+                ) ?? new List<EnglishDiaryModel>();
 
-                var items = models.AsEnumerable()
-                                  .Select(m => m.ToCalendarItem()) // ← CalendarItem 生成はメモリ上で
-                                  .ToList();
+                // UTC -> JST に変換し、JST日の 0:00 (Unspecified) を Start にする
+                // 同一JST日に複数行があっても最新（UpdatedAt/なければCreatedAt）だけに集約
+                var items = models
+                    .Select(m =>
+                    {
+                        var local = TimeZoneInfo.ConvertTimeFromUtc(m.CreatedAt, tz);
+                        var localDate = DateOnly.FromDateTime(local);
+                        var start = new DateTime(localDate.Year, localDate.Month, localDate.Day, 0, 0, 0, DateTimeKind.Unspecified);
+
+                        return new
+                        {
+                            m.Title,
+                            LocalDate = localDate,
+                            Start = start,
+                            SortKey = m.UpdatedAt == default ? m.CreatedAt : m.UpdatedAt
+                        };
+                    })
+                    .GroupBy(x => x.LocalDate) // JST 日単位で1件に
+                    .Select(g =>
+                    {
+                        var latest = g.OrderByDescending(x => x.SortKey).First();
+                        return new DiaryCalendarItem
+                        {
+                            Title = string.IsNullOrWhiteSpace(latest.Title) ? "（無題）" : latest.Title,
+                            Start = latest.Start
+                        };
+                    })
+                    .OrderBy(x => x.Start)
+                    .ToList();
 
                 return ServiceResult.Success(items);
             }
@@ -191,15 +218,16 @@ namespace PhrazorApp.Services
 
         public Task<ServiceResult<Unit>> DeleteByDateAsync(DateOnly localDateJst)
         {
-            var (fromUtc, toUtc) = GetUtcRangeForLocalDate(localDateJst);
             var uid = _user.GetUserId();
+            var (fromUtc, toUtc) = GetUtcRangeForLocalDate(localDateJst);
+
             return _uow.ExecuteInTransactionAsync(async repos =>
             {
-                var row = await repos.EnglishDiaries
-                    .Queryable(false)
-                    .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)
-                    .FirstOrDefaultAsync();
-                if (row is null) return ServiceResult.None.Success(); // 既に無ければOK
+                var row = await repos.EnglishDiaries.Queryable(false)
+                    .FirstOrDefaultAsync(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc);
+
+                if (row is null) return ServiceResult.None.Success();
+
                 await repos.EnglishDiaries.DeleteAsync(row);
                 return ServiceResult.None.Success();
             });
