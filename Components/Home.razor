@@ -3,33 +3,8 @@
 @inject UiOperationRunner UiOperationRunner
 @inject HomeDashboardService DashboardService
 
-<style>
-    /* チャートカード：軸・グラフが潰れないように全面に広げる */
-    .chart-card {
-        height: 300px;
-        display: flex;
-        flex-direction: column;
-    }
-    @@media (min-width: 960px) {
-        .chart-card
 
-    {
-        height: 320px;
-    }
-
-    }
-
-    .chart-fill {
-        flex: 1;
-        min-height: 0;
-    }
-    /* ← これが無いと中身が縮むことがある */
-
-    /* MudChart は凡例のON/OFF APIがないため、必要時だけ最小CSSで隠す */
-    .hide-legend .mud-chart-legend {
-        display: none;
-    }
-</style>
+<PageTitle>Home</PageTitle>
 
 <MudGrid>
 
@@ -147,6 +122,32 @@
     </MudItem>
 
 </MudGrid>
+
+<style>
+    /* チャートカード：軸・グラフが潰れないように全面に広げる */
+    .chart-card {
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @@media (min-width: 960px) {
+        .chart-card {
+            height: 320px;
+        }
+    }
+
+    .chart-fill {
+        flex: 1;
+        min-height: 0;
+    }
+    /* ← これが無いと中身が縮むことがある */
+
+    /* MudChart は凡例のON/OFF APIがないため、必要時だけ最小CSSで隠す */
+    .hide-legend .mud-chart-legend {
+        display: none;
+    }
+</style>
 
 @code {
     private HomeDashboardModel? _vm;

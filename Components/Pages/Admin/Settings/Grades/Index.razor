@@ -6,8 +6,9 @@
 @inject GradeService Service
 @inject UiOperationRunner UiOperationRunner
 
+<PageTitle>成績マスタ一覧</PageTitle>
 <MudStack Spacing="2">
-    <SectionTitle HeadingLevel="2" Title="成績一覧" />
+    <SectionTitle HeadingLevel="2" Title="成績マスタ一覧" />
     <ActionCard>
         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" Disabled="true" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/grades/create"))">新規追加</MudButton>
     </ActionCard>

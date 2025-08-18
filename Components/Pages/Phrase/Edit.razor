@@ -9,6 +9,8 @@
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
 
+<PageTitle>@(isEdit ? "フレーズ編集" : "フレーズ新規作成")</PageTitle>
+
 <BackLink Href="/phrases" />
 
 <MudForm Model="@model" @ref="@form" ValidationDelay="0">

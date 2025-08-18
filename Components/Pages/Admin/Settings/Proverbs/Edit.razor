@@ -8,10 +8,14 @@
 @inject UiOperationRunner UiOperationRunner
 @inject IServiceProvider ServiceProvider
 
+<PageTitle>格言マスタ登録</PageTitle>
+
 <EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
     <FluentValidationValidator />
     <BackLink Href="/admin/settings/proverbs" />
     <MudStack Spacing="2">
+        <SectionTitle Title="@(IsEdit ? "格言マスタ編集" : "格言マスタ新規作成")" />
+
         <ActionCard>
             <MudButton ButtonType="ButtonType.Submit"
                        Variant="Variant.Outlined"
