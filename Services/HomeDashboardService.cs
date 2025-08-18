@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
-using System.Linq;
 
 namespace PhrazorApp.Services
 {
     /// <summary>
     /// ホームダッシュボード集計サービス
-    /// - UoW 経由で必要データを集計
     /// - 「習得フレーズ」は暫定ルール：レビュー総数 >= 5 ＆ 正答率 >= 80%
+    /// - 直近1か月の新規登録は日単位、実データのみ（全ゼロならカードは空状態）
+    /// - 正答率は0%でも系列があれば表示（UI側で制御）
     /// </summary>
     public sealed class HomeDashboardService
     {
@@ -27,10 +27,12 @@ namespace PhrazorApp.Services
             {
                 var userId = _user.GetUserId();
                 var nowDate = (today ?? DateTime.UtcNow).Date;
+                var endExclusive = nowDate.AddDays(1);
 
                 // --- 1) 登録/習得フレーズ数 ---
                 var pQuery = repos.Phrases.Queryable(asNoTracking: true)
-                                      .Where(p => p.UserId == userId);
+                                          .Where(p => p.UserId == userId);
+
                 var registeredCount = await pQuery.CountAsync();
 
                 var reviewAgg = await (
@@ -47,7 +49,7 @@ namespace PhrazorApp.Services
                     .Select(g => new { Total = g.Count(), Correct = g.Count(x => x.IsCorrect) })
                     .Count(x => x.Total >= 5 && (double)x.Correct / x.Total >= 0.8);
 
-                // --- 2) 今日の格言（DayOfYearでローテーション） ---
+                // --- 2) 今日の格言 ---
                 ProverbModel? todayProverb = null;
                 var provCount = await repos.Proverbs.Queryable(asNoTracking: true).CountAsync();
                 if (provCount > 0)
@@ -66,61 +68,55 @@ namespace PhrazorApp.Services
                         .FirstAsync();
                 }
 
-                // --- 3) 学習記録（日次レビュー回数 直近14日・Bar）---
-                var start = nowDate.AddDays(-13);
-                var endExclusive = nowDate.AddDays(1);
-
+                // --- 3) 学習記録（日次レビュー回数 直近14日：連続学習日数に使用） ---
+                var start14 = nowDate.AddDays(-13);
                 var rawDaily = await (
                     from rl in repos.ReviewLogs.Queryable(asNoTracking: true)
                     join p in pQuery on rl.PhraseId equals p.PhraseId
-                    where rl.ReviewDate >= start && rl.ReviewDate < endExclusive
+                    where rl.ReviewDate >= start14 && rl.ReviewDate < endExclusive
                     group rl by rl.ReviewDate.Date into g
                     select new { Day = g.Key, Count = g.Count() }
                 ).ToListAsync();
 
                 var daily = Enumerable.Range(0, 14)
-                    .Select(i => start.AddDays(i))
-                    .Select(d => new ChartPoint(d.ToString("MM/dd"),
+                    .Select(i => start14.AddDays(i))
+                    .Select(d => new ChartPoint(d.ToString("M/d"),
                                rawDaily.FirstOrDefault(x => x.Day == d)?.Count ?? 0))
                     .ToList();
 
-                // --- 4) 直近8週間の新規フレーズ（Bar）---
+                // --- 4) 直近8週間の新規フレーズ（KPI：今週/先週比に利用） ---
+                // DateDiffWeek が環境により解決できないケースがあるため、DateDiffDay / 7 で代替
                 var rawWeekly = await (
                     from p in pQuery
-                    let weeksAgo = EF.Functions.DateDiffWeek(p.CreatedAt, nowDate)
-                    where weeksAgo >= 0 && weeksAgo < 8
-                    group p by weeksAgo into g
+                    let daysAgo = EF.Functions.DateDiffDay(p.CreatedAt, nowDate) // int? が返る
+                    where daysAgo >= 0 && daysAgo < 56       // 8週 * 7日 = 56日分
+                    group p by (daysAgo / 7) into g                       // 0=今週, 1=先週, ...
                     select new { WeeksAgo = g.Key, Count = g.Count() }
                 ).ToListAsync();
 
                 var weeklyList = Enumerable.Range(0, 8)
                     .Select(wa =>
                     {
-                        var label = $"W-{7 - wa}"; // 古い→新しい
                         var c = rawWeekly.FirstOrDefault(x => x.WeeksAgo == wa)?.Count ?? 0;
-                        return new ChartPoint(label, c);
+                        return new ChartPoint($"W-{7 - wa}", c); // 古い→新しいで表示
                     })
                     .ToList();
 
-                // --- 5) レビュー種別内訳（Donut）---
-                var typeCounts = await (
-                    from rl in repos.ReviewLogs.Queryable(asNoTracking: true)
-                    join p in pQuery on rl.PhraseId equals p.PhraseId
-                    group rl by rl.ReviewTypeId into g
-                    select new { ReviewTypeId = g.Key, Count = g.Count() }
-                ).ToListAsync();
-
-                var typeNames = await repos.ReviewTypes.Queryable(asNoTracking: true)
-                    .Select(rt => new { rt.ReviewTypeId, rt.ReviewTypeName })
+                // --- 5) 直近1か月の新規フレーズ（日次／実データのみ） ---
+                var monthStart = nowDate.AddDays(-29); // 今日含む30日間
+                var rawMonth = await pQuery
+                    .Where(p => p.CreatedAt >= monthStart && p.CreatedAt < endExclusive)
+                    .GroupBy(p => p.CreatedAt.Date)
+                    .Select(g => new { Day = g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var donut = (from tc in typeCounts
-                             join tn in typeNames on tc.ReviewTypeId equals tn.ReviewTypeId into j
-                             from tn in j.DefaultIfEmpty()
-                             select new ChartPoint(tn?.ReviewTypeName ?? $"Type {tc.ReviewTypeId}", tc.Count))
-                            .ToList();
+                var lastMonthNew = Enumerable.Range(0, 30)
+                    .Select(i => monthStart.AddDays(i))
+                    .Select(d => new ChartPoint(d.ToString("M/d"),
+                               rawMonth.FirstOrDefault(x => x.Day == d)?.Count ?? 0))
+                    .ToList();
 
-                // --- 6) テスト正答率（Line, 直近10件）---
+                // --- 6) テスト正答率（直近10件、0%でも系列を作る） ---
                 var lastTests = await repos.TestResults.Queryable(asNoTracking: true)
                     .Where(t => t.UserId == userId)
                     .OrderByDescending(t => t.TestDatetime)
@@ -129,6 +125,7 @@ namespace PhrazorApp.Services
                     .ToListAsync();
 
                 var testIds = lastTests.Select(x => x.TestId).ToList();
+
                 var detailAgg = await repos.TestResultDetails.Queryable(asNoTracking: true)
                     .Where(d => testIds.Contains(d.TestId))
                     .GroupBy(d => d.TestId)
@@ -140,8 +137,8 @@ namespace PhrazorApp.Services
                     .Select(t =>
                     {
                         var a = detailAgg.FirstOrDefault(x => x.TestId == t.TestId);
-                        double acc = (a is null || a.Total == 0) ? 0 : (100.0 * a.Correct / a.Total);
-                        return new ChartPoint(t.TestDatetime.ToString("MM/dd HH:mm"), Math.Round(acc, 1));
+                        double acc = (a is null || a.Total == 0) ? 0.0 : (100.0 * a.Correct / a.Total);
+                        return new ChartPoint(t.TestDatetime.ToString("M/d HH:mm"), Math.Round(acc, 1));
                     })
                     .ToList();
 
@@ -150,15 +147,14 @@ namespace PhrazorApp.Services
                     RegisteredPhraseCount = registeredCount,
                     LearnedPhraseCount = learnedCount,
                     TodayProverb = todayProverb,
-                    DailyReviews = daily,
-                    WeeklyNewPhrases = weeklyList,
-                    ReviewTypeBreakdown = donut,
-                    TestAccuracyTimeline = line
+                    DailyReviews = daily,               // 連続学習用
+                    WeeklyNewPhrases = weeklyList,      // KPI用
+                    LastMonthNewPhrases = lastMonthNew, // グラフ用（左下）
+                    TestAccuracyTimeline = line         // グラフ用（右下）★0%可
                 };
             });
 
             return ServiceResult.Success(model);
         }
-
     }
 }

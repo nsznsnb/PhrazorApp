@@ -3,12 +3,11 @@
 @inject UiOperationRunner UiOperationRunner
 @inject HomeDashboardService DashboardService
 
-
 <PageTitle>Home</PageTitle>
 
 <MudGrid>
 
-    <!-- 1行目：必須KPI 3枚 -->
+    <!-- 1行目：KPI 3枚（従来どおり） -->
     <!-- 登録フレーズ数 -->
     <MudItem xs="12" sm="6" md="4" lg="4" xl="4">
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
@@ -17,8 +16,6 @@
                 <MudText Typo="Typo.h3" Style="font-size:clamp(1.75rem,6vw,2.5rem);">
                     @(_vm?.RegisteredPhraseCount ?? 0)
                 </MudText>
-
-                <!-- モチベ指標：今週新規 + 先週比 -->
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top:auto;">
                     <MudIcon Icon="@Icons.Material.TwoTone.TrendingUp" />
                     <MudText Typo="Typo.caption" Color="Color.Info">
@@ -37,8 +34,6 @@
                 <MudText Typo="Typo.h3" Style="font-size:clamp(1.75rem,6vw,2.5rem);">
                     @(_vm?.LearnedPhraseCount ?? 0)
                 </MudText>
-
-                <!-- モチベ指標：連続学習日数 -->
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top:auto;">
                     <MudIcon Icon="@Icons.Material.TwoTone.Bolt" />
                     <MudText Typo="Typo.caption" Color="Color.Success">
@@ -76,29 +71,36 @@
         </MudPaper>
     </MudItem>
 
-    <!-- 2行目：グラフ 2枚（凡例はヘッダ右に表示。下の凡例は隠す） -->
-    <!-- 直近14日 レビュー回数（Bar） -->
+    <!-- 2行目：グラフ 2枚（カードは従来のPaper。チャートは Width/Height 指定で固定） -->
+    <!-- 直近1か月 新規フレーズ登録数（Line／実データのみ） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl chart-card">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-                <MudText Typo="Typo.subtitle1">直近14日 レビュー回数</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Default">@DailyLegendText</MudText>
+                <MudText Typo="Typo.subtitle1">直近1か月 新規フレーズ登録数</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Default">日次/推移</MudText>
             </MudStack>
 
-            <div class="chart-fill">
-                <MudChart ChartType="ChartType.Bar"
-                          Class="hide-legend"
-                          ChartSeries="@DailySeries"
-                          XAxisLabels="@DailyLabels"
+            @if (HasMonthData)
+            {
+                <MudChart ChartType="ChartType.Line"
+                          ChartSeries="@MonthSeries"
+                          XAxisLabels="@MonthLabels"
+                          ChartOptions="@_chartOptions"
                           AxisChartOptions="@_axisChartOptions"
-                          Style="height:100%; width:100%;" />
-            </div>
+                          Width="100%" Height="350px" />
+            }
+            else
+            {
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:350px;">
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">直近1か月の登録データがありません</MudText>
+                </MudStack>
+            }
         </MudPaper>
     </MudItem>
 
     <!-- 直近テスト 正答率（Line） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl chart-card">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
                 <MudText Typo="Typo.subtitle1">直近テスト 正答率</MudText>
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -106,57 +108,35 @@
                     {
                         <MudText Typo="Typo.caption" Color="Color.Info">平均 @AvgAccuracy.Value.ToString("0.#")%</MudText>
                     }
-                    <MudText Typo="Typo.caption" Color="Color.Default">@AccuracyLegendText</MudText>
                 </MudStack>
             </MudStack>
 
-            <div class="chart-fill">
+            @if (HasAccuracyData) @* ★ 0% だけでも表示する *@
+            {
                 <MudChart ChartType="ChartType.Line"
-                          Class="hide-legend"
                           ChartSeries="@AccuracySeries"
                           XAxisLabels="@AccuracyLabels"
+                          ChartOptions="@_chartOptions"
                           AxisChartOptions="@_axisChartOptions"
-                          Style="height:100%; width:100%;" />
-            </div>
+                          Width="100%" Height="350px" />
+            }
+            else
+            {
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:350px;">
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">テスト結果のデータがありません</MudText>
+                </MudStack>
+            }
         </MudPaper>
     </MudItem>
 
 </MudGrid>
 
-<style>
-    /* チャートカード：軸・グラフが潰れないように全面に広げる */
-    .chart-card {
-        height: 300px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    @@media (min-width: 960px) {
-        .chart-card {
-            height: 320px;
-        }
-    }
-
-    .chart-fill {
-        flex: 1;
-        min-height: 0;
-    }
-    /* ← これが無いと中身が縮むことがある */
-
-    /* MudChart は凡例のON/OFF APIがないため、必要時だけ最小CSSで隠す */
-    .hide-legend .mud-chart-legend {
-        display: none;
-    }
-</style>
-
 @code {
     private HomeDashboardModel? _vm;
 
-    // ★ MudBlazor 8.0 の AxisChartOptions（8.1+ APIは使用しない）
-    private AxisChartOptions _axisChartOptions = new AxisChartOptions()
-    {
-        MatchBoundsToSize = true
-    };
+    // MudBlazor 8.0 の API を使用
+    private readonly AxisChartOptions _axisChartOptions = new() { MatchBoundsToSize = true };
+    private readonly ChartOptions _chartOptions = new() { ShowLegend = false };
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,106 +146,58 @@
         ) ?? new HomeDashboardModel();
     }
 
-    // === モチベ系（今週新規/先週比/連続学習） ===
-    private int ThisWeekNewPhrases =>
-        (int)(_vm?.WeeklyNewPhrases?.LastOrDefault()?.Value ?? 0);
+    // === 直近1か月 新規登録（日次） ===
+    private bool HasMonthData => _vm?.LastMonthNewPhrases?.Any(p => p.Value > 0) == true;
 
-    private int PrevWeekNewPhrases =>
-        (int)(_vm?.WeeklyNewPhrases?.SkipLast(1).LastOrDefault()?.Value ?? 0);
-
-    private int WeekDelta => ThisWeekNewPhrases - PrevWeekNewPhrases;
-
-    private int WeekDeltaPercent =>
-        PrevWeekNewPhrases <= 0
-            ? (ThisWeekNewPhrases > 0 ? 100 : 0)
-            : (int)Math.Round((double)WeekDelta / PrevWeekNewPhrases * 100);
-
-    private string WeekDeltaSign => WeekDelta >= 0 ? "+" : "-";
-
-    private int StudyStreakDays => CalcStreak(_vm?.DailyReviews?.Select(x => (double)x.Value) ?? Enumerable.Empty<double>());
-
-    private static int CalcStreak(IEnumerable<double> counts)
-    {
-        var streak = 0;
-        foreach (var c in counts.Reverse())
-        {
-            if (c > 0d) streak++;
-            else break;
-        }
-        return streak;
-    }
-
-    // === データがなくても “本来の姿” が分かるようにプレースホルダを用意 ===
-    private static string[] Placeholder14Labels =>
-        Enumerable.Range(0, 14)
-            .Select(i => DateTime.Today.AddDays(i - 13).ToString("M/d"))
-            .ToArray();
-
-    private static readonly double[] Placeholder14Data =
-        new double[] { 0, 2, 1, 3, 2, 4, 3, 2, 5, 4, 3, 4, 2, 3 };
-
-    private static string[] Placeholder10Labels =>
-        Enumerable.Range(0, 10)
-            .Select(i => DateTime.Today.AddDays(i - 9).ToString("M/d"))
-            .ToArray();
-
-    private static readonly double[] PlaceholderAccData =
-        new double[] { 60, 62, 65, 63, 68, 70, 72, 74, 73, 75 };
-
-    private static bool HasPositive(IEnumerable<double>? seq)
-        => seq != null && seq.Any(v => v > 0);
-
-    // === 直近14日 レビュー（Bar） ===
-    private bool HasDailyData =>
-        HasPositive(_vm?.DailyReviews?.Select(x => (double)x.Value));
-
-    private string[] DailyLabels =>
-        HasDailyData
-            ? _vm!.DailyReviews.Select(x => x.Label).ToArray()
-            : Placeholder14Labels;
-
-    private List<ChartSeries> DailySeries => new()
+    private List<ChartSeries> MonthSeries => new()
     {
         new ChartSeries
         {
-            // 凡例をヘッダ側に出すため、ここは空文字にして下部凡例を抑制
             Name = string.Empty,
-            Data = HasDailyData
-                ? _vm!.DailyReviews.Select(x => (double)x.Value).ToArray()
-                : Placeholder14Data
+            Data = _vm!.LastMonthNewPhrases.Select(p => (double)p.Value).ToArray()
         }
     };
 
-    private string DailyLegendText => HasDailyData ? "レビュー" : "サンプル";
+    // ラベルは詰み防止のため間引き（3日おき）
+    private string[] MonthLabels =>
+        _vm!.LastMonthNewPhrases
+           .Select((p, i) => (i % 3 == 0) ? p.Label : string.Empty)
+           .ToArray();
 
-    // === 正答率（Line） ===
+    // === 正答率 ===
+    // ★修正箇所：0% でもデータ点があれば表示する
     private bool HasAccuracyData =>
-        HasPositive(_vm?.TestAccuracyTimeline?.Select(x => (double)x.Value));
+        _vm?.TestAccuracyTimeline is { Count: > 0 };
 
     private string[] AccuracyLabels =>
-        HasAccuracyData
-            ? _vm!.TestAccuracyTimeline.Select(x => x.Label).ToArray()
-            : Placeholder10Labels;
+        _vm?.TestAccuracyTimeline?.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
 
     private List<ChartSeries> AccuracySeries => new()
     {
         new ChartSeries
         {
-            Name = string.Empty, // 下部凡例を抑制
-            Data = HasAccuracyData
-                ? _vm!.TestAccuracyTimeline.Select(x => (double)x.Value).ToArray()
-                : PlaceholderAccData
+            Name = string.Empty,
+            Data = _vm?.TestAccuracyTimeline?.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>()
         }
     };
 
-    private string AccuracyLegendText => HasAccuracyData ? "正答率(%)" : "サンプル";
-
     private double? AvgAccuracy
-    {
-        get
-        {
-            var vals = _vm?.TestAccuracyTimeline?.Select(x => (double)x.Value).ToArray();
-            return (vals is { Length: > 0 }) ? vals.Average() : null;
-        }
-    }
+        => (_vm?.TestAccuracyTimeline is { Count: > 0 } tl) ? tl.Select(x => (double)x.Value).Average() : null;
+
+    // KPI 用（既存ロジック）
+    private int ThisWeekNewPhrases =>
+        (int)(_vm?.WeeklyNewPhrases?.LastOrDefault()?.Value ?? 0);
+    private int PrevWeekNewPhrases =>
+        (int)(_vm?.WeeklyNewPhrases?.SkipLast(1).LastOrDefault()?.Value ?? 0);
+    private int WeekDelta => ThisWeekNewPhrases - PrevWeekNewPhrases;
+    private int WeekDeltaPercent =>
+        PrevWeekNewPhrases <= 0
+            ? (ThisWeekNewPhrases > 0 ? 100 : 0)
+            : (int)Math.Round((double)WeekDelta / PrevWeekNewPhrases * 100);
+    private string WeekDeltaSign => WeekDelta >= 0 ? "+" : "-";
+
+    // 連続学習日数はサービス側の日別レビュー集計を利用
+    private int StudyStreakDays => CalcStreak(_vm?.DailyReviews?.Select(x => (double)x.Value) ?? Enumerable.Empty<double>());
+    private static int CalcStreak(IEnumerable<double> counts)
+        => counts.Reverse().TakeWhile(c => c > 0d).Count();
 }
