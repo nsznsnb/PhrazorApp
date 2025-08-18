@@ -219,27 +219,6 @@ Edit the text as instructed and return Markdown with the corrected English and a
             }
         }
 
-        // --- 生成テキストの軽い正規化（保険）---
-        private static string SanitizeAiMarkdown(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
-            var s = raw.Replace("\r\n", "\n");
-
-            // 1) 最初の "### " 見出しより前の前置きを除去
-            s = System.Text.RegularExpressions.Regex.Replace(
-                s, @"(?s)^\s*.*?(?=^###\s)", string.Empty,
-                System.Text.RegularExpressions.RegexOptions.Multiline);
-
-            // 2) 英語見出しを日本語見出しに統一
-            s = System.Text.RegularExpressions.Regex.Replace(s, @"^###\s*Correction.*$", "### 添削（Corrected）", System.Text.RegularExpressions.RegexOptions.Multiline);
-            s = System.Text.RegularExpressions.Regex.Replace(s, @"^###\s*Corrected.*$", "### 添削（Corrected）", System.Text.RegularExpressions.RegexOptions.Multiline);
-            s = System.Text.RegularExpressions.Regex.Replace(s, @"^###\s*Explanation.*$", "### 解説（日本語）", System.Text.RegularExpressions.RegexOptions.Multiline);
-
-            // 3) 画像系の行を除去
-            s = System.Text.RegularExpressions.Regex.Replace(s, @"(?mi)^(.*\b(image|illustrate|prompt|screen|laptop|camera)\b.*)\n?", string.Empty);
-
-            return s.Trim();
-        }
 
         public Task<ServiceResult<Unit>> DeleteByDateAsync(DateOnly localDateJst)
         {
