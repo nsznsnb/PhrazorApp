@@ -160,6 +160,15 @@ public class Program
         builder.Services.AddScoped<IValidator<GenreModel>, GenreModelValidator>();
         builder.Services.AddScoped<IValidator<SubGenreModel>, SubGenreModelValidator>();
         builder.Services.AddScoped<IValidator<FileModel>, FileModelValidator>();
+        builder.Services.AddScoped<IValidator<DiaryTagModel>, DiaryTagModelValidator>();
+        builder.Services.AddScoped<IValidator<GradeModel>, GradeModelValidator>();
+        builder.Services.AddScoped<IValidator<OperationTypeModel>, OperationTypeModelValidator>();
+        builder.Services.AddScoped<IValidator<ProverbModel>, ProverbModelValidator>();
+        builder.Services.AddScoped<IValidator<ReviewTypeModel>, ReviewTypeModelValidator>();
+        builder.Services.AddScoped<IValidator<EnglishDiaryModel>, EnglishDiaryModelValidator>();
+
+
+
         ValidationBootstrapper.Configure(); // ƒAƒvƒŠ‹¤’Ê‚Ì FluentValidation İ’è
 
         // „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
