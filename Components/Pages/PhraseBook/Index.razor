@@ -127,6 +127,13 @@
             </MudCardHeader>
 
             <MudCardContent>
+                @if (_initialized && !HasBooks)
+                {
+                    <MudAlert Severity="Severity.Info" Dense Class="mb-2">
+                        まずフレーズ帳を作成してください。作成後、候補からブックへ追加できます。
+                    </MudAlert>
+                }
+
                 <MudStack Row Wrap="Wrap.Wrap" AlignItems="AlignItems.End" Spacing="2" Class="mb-2">
                     <MudSelect T="PeriodFilter"
                                Label="期間"
@@ -147,7 +154,7 @@
                                  Disabled="@(_selectedBook is null)" />
                 </MudStack>
 
-                <!-- 候補テーブル（SelectableTable：タイトル未使用） -->
+                <!-- 候補テーブル -->
                 <SelectableTable TItem="PhraseListItemModel"
                                  @ref="_candidatesTable"
                                  Items="@_viewCandidates"
@@ -191,7 +198,7 @@
             </MudCardContent>
         </BaseCard>
 
-        <!-- ブックの中身（アイテムリスト） -->
+        <!-- ブックの中身 -->
         <BaseCard Class="mt-2 book-section-elevated" id="book-section">
             <MudCardHeader>
                 <CardHeaderContent>
@@ -252,7 +259,6 @@
     </MudItem>
 </MudGrid>
 
-<!-- 右下固定：汎用インジケータ（どのページでも使い回し可能） -->
 @if (_selectedBook is not null)
 {
     <FloatingIndicator Show="true"
@@ -266,7 +272,6 @@
 }
 
 <style>
-    /* 既存 */
     .book-list-trailing {
         display: inline-flex;
         align-items: center;
@@ -278,18 +283,16 @@
         box-shadow: 0 0 0 2px rgba(25,118,210,0.08);
     }
 
-    /* ここから追加：フローティングUIぶんの安全余白 */
     .fi-safe-area {
-        /* インジケータの高さ + 影 + 下オフセット分を確保 */
         padding-bottom: 120px;
     }
-    /* 画面が狭いときは少し余裕を増やす */
+
     @@media (max-width: 960px) {
         .fi-safe-area {
             padding-bottom: 140px;
         }
     }
-    /* iOS セーフエリアがある端末向けに上乗せ（対応ブラウザのみ適用） */
+
     @@supports (padding: max(0px)) {
         .fi-safe-area {
             padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
@@ -298,7 +301,6 @@
 </style>
 
 @code {
-    // --- 状態 ---
     private string _newBookName = string.Empty;
 
     private List<PhraseBookListItemModel> _books = new();
@@ -307,20 +309,20 @@
     private SelectableTable<PhraseListItemModel>? _candidatesTable;
     private SelectableTable<PhraseBookItemModel>? _bookTable;
 
-    // 候補データ（全件）と表示用（フィルタ後）
     private List<PhraseListItemModel> _allCandidates = new();
     private List<PhraseListItemModel> _viewCandidates = new();
 
-    // ブックの中身（全件）
     private List<PhraseBookItemModel> _bookItems = new();
-    private HashSet<Guid> _bookItemIdSet = new(); // 未登録のみ用
+    private HashSet<Guid> _bookItemIdSet = new();
 
     private PeriodFilter _period = PeriodFilter.Last30;
     private bool _onlyNotInBook = true;
 
-    // リネーム用
     private Guid? _renamingBookId;
     private string _renameText = string.Empty;
+
+    private bool _initialized = false;
+    private bool HasBooks => _books is { Count: > 0 };
 
     private enum PeriodFilter { Last30, Last90, All }
 
@@ -329,24 +331,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // 左：ブック一覧
         _books = await UiOperationRunner.ReadWithOverlayAsync(
             () => PhraseBookService.GetPhraseBooksAsync(),
             "ブックを読込中…") ?? new();
 
-        // 候補（全件）
         _allCandidates = await UiOperationRunner.ReadWithOverlayAsync(
             () => PhraseService.GetPhraseListAsync(),
             "フレーズ候補を読込中…") ?? new();
 
-        // 先頭ブックを選択し中身取得
-        if (_books.Count > 0)
+        if (HasBooks)
         {
             _selectedBook = _books[0];
             await LoadBookItemsAsync();
         }
 
         ApplyFilters();
+        _initialized = true;
     }
 
     private string GetCurrentBookTitle()
@@ -354,7 +354,6 @@
            ? "選択中ブックのアイテム一覧：未選択"
            : $"「{_selectedBook.Name}」のアイテム一覧";
 
-    // ---- 左：ブック作成/削除/選択 ----
     private async Task CreateBookAsync()
     {
         if (string.IsNullOrWhiteSpace(_newBookName)) return;
@@ -410,7 +409,6 @@
         ApplyFilters();
     }
 
-    // ---- 右下：ブックの中身 読込 ----
     private async Task LoadBookItemsAsync()
     {
         if (_selectedBook is null) return;
@@ -422,7 +420,6 @@
         _bookItemIdSet = _bookItems.Select(x => x.Id).ToHashSet();
     }
 
-    // ---- フィルタ ----
     private void OnPeriodChanged(PeriodFilter v)
     {
         _period = v;
@@ -439,18 +436,15 @@
     {
         IEnumerable<PhraseListItemModel> q = _allCandidates;
 
-        // 期間（UTC基準）
         var now = DateTime.UtcNow;
         if (_period == PeriodFilter.Last30)
             q = q.Where(x => x.CreatedAt >= now.AddDays(-30));
         else if (_period == PeriodFilter.Last90)
             q = q.Where(x => x.CreatedAt >= now.AddDays(-90));
 
-        // 未登録のみ
         if (_onlyNotInBook && _bookItemIdSet.Count > 0)
             q = q.Where(x => !_bookItemIdSet.Contains(x.Id));
 
-        // 1000件制限なし
         _viewCandidates = q
             .OrderByDescending(x => x.CreatedAt)
             .ToList();
@@ -458,7 +452,6 @@
         StateHasChanged();
     }
 
-    // ---- 追加/削除 操作 ----
     private async Task AddSelectedAsync(HashSet<Guid> ids)
     {
         if (_selectedBook is null || ids.Count == 0) return;
@@ -529,7 +522,6 @@
 
     private async Task RefreshBookAndListAsync()
     {
-        // バッジ件数更新
         _books = await UiOperationRunner.ReadAsync(
             () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
 
@@ -540,7 +532,6 @@
         ApplyFilters();
     }
 
-    // ---- リネーム操作 ----
     private async Task BeginRename(PhraseBookListItemModel b)
     {
         _renamingBookId = b.Id;
@@ -565,7 +556,6 @@
         }
         if (newName == (b.Name ?? string.Empty))
         {
-            // 変更なし → 単に終了
             CancelRename();
             return;
         }
@@ -575,7 +565,6 @@
             "名称を更新中…");
         if (!res.IsSuccess) return;
 
-        // 一覧を再取得し、選択中ブックが対象なら参照も更新
         _books = await UiOperationRunner.ReadAsync(
             () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
 
@@ -592,16 +581,11 @@
     private async Task OnRenameKeyDown(KeyboardEventArgs e, PhraseBookListItemModel b)
     {
         if (e.Key == "Enter")
-        {
             await SaveRenameAsync(b);
-        }
         else if (e.Key == "Escape")
-        {
             CancelRename();
-        }
     }
 
-    // 検索対象（SelectableTable に渡す）
     private IEnumerable<string> CandidateSearchBy(PhraseListItemModel p)
         => new[] { p.Phrase ?? "", p.Meaning ?? "" };
 
