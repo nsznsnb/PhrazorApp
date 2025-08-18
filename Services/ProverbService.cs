@@ -1,4 +1,5 @@
-﻿using PhrazorApp.Data.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Dtos;
@@ -141,6 +142,45 @@ namespace PhrazorApp.Services
                 return ServiceResult.None.Error($"{MSG_PREFIX}の削除に失敗しました。");
             }
         }
+
+        // ProverbService に追記（Unit を返す版：UiRunner.WriteThenReloadAsyncと整合）
+        public async Task<ServiceResult<Unit>> DeleteProverbsAsync(IReadOnlyCollection<Guid> ids)
+        {
+            if (ids is null || ids.Count == 0)
+                return ServiceResult.None.Success("削除対象がありません。");
+
+            try
+            {
+                var deleted = 0;
+
+                await _uow.ExecuteInTransactionAsync(async repos =>
+                {
+                    // BaseRepository.Queryable() を使用して対象を収集
+                    var targets = await repos.Proverbs
+                                             .Queryable() // 追跡あり（削除に適す）
+                                             .Where(p => ids.Contains(p.ProverbId))
+                                             .ToListAsync();
+
+                    if (targets.Count == 0) return;
+
+                    // BaseRepository.DeleteRangeAsync() で一括削除（SaveChanges は UoW 側）
+                    await repos.Proverbs.DeleteRangeAsync(targets);
+                    deleted = targets.Count;
+                });
+
+                var msg = deleted == 0
+                    ? $"{MSG_PREFIX}は削除されませんでした。"
+                    : $"{MSG_PREFIX}を {deleted} 件削除しました。";
+
+                return ServiceResult.None.Success(msg);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Proverb bulk delete error");
+                return ServiceResult.None.Error($"{MSG_PREFIX}の一括削除に失敗しました。");
+            }
+        }
+
 
         /// <summary>CSV 行の Upsert（Text+Author をキー）</summary>
         public async Task<ServiceResult<Unit>> ImportCsvAsync(IEnumerable<ProverbImportDto> rows)
