@@ -1,0 +1,145 @@
+﻿@using Blazored.FluentValidation
+@using FluentValidation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject UiOperationRunner UiOperationRunner
+@inject DiaryTagService DiaryTagService
+@inject IServiceProvider ServiceProvider
+
+<EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+    <FluentValidationValidator />
+    <MudStack Spacing="2">
+        <ActionCard>
+            <!-- Submit で検証を走らせる -->
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.TwoTone.Save">
+                @AppConstants.LABEL_BUTTON_REGISTER
+            </MudButton>
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="@AppConstants.SIZE_BUTTON"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.TwoTone.RestartAlt"
+                       OnClick="ClearAsync">
+                @AppConstants.LABEL_BUTTON_CLEAR
+            </MudButton>
+        </ActionCard>
+
+        <BaseCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <SectionTitle HeadingLevel="3" Title="日記タグ入力" />
+                </CardHeaderContent>
+            </MudCardHeader>
+
+            <MudCardContent Class="pt-0">
+                <MudGrid Spacing="1">
+                    <MudItem xs="12" md="4">
+                        <MudTextField T="string"
+                                      @bind-Value="_model.Name"
+                                      For="() => _model.Name"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Outlined"
+                                      Label="タグ名"
+                                      Immediate
+                                      ShrinkLabel />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </BaseCard>
+    </MudStack>
+</EditForm>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    [Parameter] public bool IsDialog { get; set; } = false;
+    [CascadingParameter] IMudDialogInstance? DialogInstance { get; set; }
+
+    private bool IsEdit => Id.HasValue;
+    private DiaryTagModel _model = new();
+    private EditContext? _editCtx;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 先に空の EditContext を用意（初期レンダ安定化）
+        _editCtx = new EditContext(_model);
+
+        if (IsEdit)
+        {
+            var model = await UiOperationRunner.ReadAsync(() => DiaryTagService.GetAsync(Id!.Value));
+            _model = model ?? new DiaryTagModel { Id = Id!.Value };
+        }
+        else
+        {
+            _model = new DiaryTagModel { Id = Guid.NewGuid() };
+        }
+
+        _editCtx = new EditContext(_model);
+
+    }
+
+    // ダイアログからも使える公開API
+    public async ValueTask<bool> SubmitAsync(bool validate = true)
+    {
+        if (_editCtx is null) return false;
+
+        if (validate && !_editCtx.Validate())
+        {
+            _editCtx.PublishPageLevelErrors(ServiceProvider);
+            return false;
+        }
+
+        await SubmitCoreAsync();
+        return true;
+    }
+
+    private Task HandleValidSubmit() => SubmitCoreAsync();
+
+    private async Task SubmitCoreAsync()
+    {
+        var result = await UiOperationRunner.WriteAsync(
+            () => IsEdit ? DiaryTagService.UpdateAsync(_model)
+                         : DiaryTagService.CreateAsync(_model),
+            message: AppMessages.MSG_I_PROGRESS_SAVE
+        );
+
+        if (!result.IsSuccess) return;
+
+        if (IsDialog && DialogInstance is not null)
+        {
+            DialogInstance.Close(DialogResult.Ok(_model));
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/diary/tags");
+        }
+    }
+
+    private void OnInvalidSubmit(EditContext ctx)
+    {
+        ctx.PublishPageLevelErrors(ServiceProvider);
+    }
+
+    private Task ClearAsync()
+    {
+        _model = new DiaryTagModel { Id = Guid.NewGuid() };
+        _editCtx = new EditContext(_model);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // --- 内部 Validator（AppValidator<T> を使う場合は差し替え可） ---
+    private sealed class DiaryTagValidator : AbstractValidator<DiaryTagModel>
+    {
+        public DiaryTagValidator()
+        {
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("タグ名は必須です。")
+                .MaximumLength(50).WithMessage("タグ名は50文字以内で入力してください。");
+        }
+    }
+}

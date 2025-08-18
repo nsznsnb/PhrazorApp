@@ -1,0 +1,13 @@
+﻿@page "/diary/tags/create"
+@page "/diary/tags/edit/{Id:guid}"
+@attribute [Authorize]
+
+<BackLink Href="/diary/tags" />
+<SectionTitle Title="@(IsEdit ? "日記タグ編集" : "日記タグ新規作成")" />
+
+<DiaryTagEditor Id="Id" IsDialog="false" />
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool IsEdit => Id != null;
+}

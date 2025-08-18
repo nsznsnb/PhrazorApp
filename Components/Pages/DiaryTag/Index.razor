@@ -1,0 +1,98 @@
+﻿@page "/diary/tags"
+@attribute [Authorize]
+
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject UiOperationRunner UiOperationRunner
+@inject DiaryTagService DiaryTagService
+
+<MudStack Spacing="2">
+    <SectionTitle HeadingLevel="2" Title="日記タグ一覧" />
+
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined"
+                   Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.Add"
+                   OnClick="@(() => NavigationManager.NavigateTo("/diary/tags/create"))">
+            新規追加
+        </MudButton>
+    </ActionCard>
+
+    <BaseCard>
+        <TableWithToolbar TItem="DiaryTagModel"
+                          Items="@_items"
+                          Search="true"
+                          SearchBy="@(x => new[] { x.Name ?? string.Empty })"
+                          Pager="TablePagerMode.Auto"
+                          RowsPerPage="10"
+                          Height="500px">
+
+            <HeaderContent>
+                <MudTh>タグ名</MudTh>
+                <MudTh style="min-width:200px;">操作</MudTh>
+            </HeaderContent>
+
+            <RowTemplate Context="tag">
+                <MudTd>
+                    <MudText Typo="Typo.subtitle1">@tag.Name</MudText>
+                </MudTd>
+                <MudTd style="min-width:200px;">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="@AppConstants.SIZE_BUTTON"
+                                   Color="Color.Info"
+                                   StartIcon="@Icons.Material.TwoTone.Edit"
+                                   OnClick="@(() => NavigationManager.NavigateTo($"/diary/tags/edit/{tag.Id}"))">
+                            @AppConstants.LABEL_BUTTON_EDIT
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="@AppConstants.SIZE_BUTTON"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.TwoTone.Delete"
+                                   OnClick="@(() => OnDeleteAsync(tag))">
+                            @AppConstants.LABEL_BUTTON_DELETE
+                        </MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="p-4">データがありません。</MudText>
+            </NoRecordsContent>
+        </TableWithToolbar>
+    </BaseCard>
+</MudStack>
+
+@code {
+    private List<DiaryTagModel> _items = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = await UiOperationRunner.ReadWithOverlayAsync(
+            () => DiaryTagService.GetListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_READ
+        );
+        if (list is not null) _items = list;
+    }
+
+    private async Task OnDeleteAsync(DiaryTagModel item)
+    {
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DangerConfirm,
+            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, item.Name)
+        );
+        if (!ok) return;
+
+        var list = await UiOperationRunner.WriteThenReloadAsync(
+            operation: () => DiaryTagService.DeleteAsync(item.Id),
+            reloadData: () => DiaryTagService.GetListAsync(),
+            message: AppMessages.MSG_I_PROGRESS_DELETE
+        );
+
+        if (list is not null)
+        {
+            _items = list;
+        }
+    }
+}
