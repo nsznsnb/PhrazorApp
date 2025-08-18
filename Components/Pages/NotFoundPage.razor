@@ -1,0 +1,56 @@
+﻿@inject NavigationManager Nav
+@inject JsInteropManager JsInteropManager
+<MudStack Spacing="2">
+    <SectionTitle Title="ページが見つかりません" />
+
+    <BaseCard>
+        <MudCardContent>
+            <MudStack Spacing="2">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.TwoTone.ReportGmailerrorred" Color="Color.Error" />
+                    <MudText Typo="Typo.h6">お探しのページは見つかりませんでした。</MudText>
+                </MudStack>
+
+                <MudText Color="Color.Secondary">
+                    要求URL: @_path
+                </MudText>
+
+                <MudStack Row Spacing="1">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.TwoTone.Home"
+                               OnClick="@(()=> Nav.NavigateTo("/"))">
+                        ホームへ
+                    </MudButton>
+
+                    <!-- ※「前のページへ戻る」は JS 必須。未導入ならホームへフォールバック -->
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               StartIcon="@Icons.Material.TwoTone.ArrowBack"
+                               OnClick="@GoBack">
+                        前のページへ戻る
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudCardContent>
+    </BaseCard>
+</MudStack>
+
+@code {
+    private string _path = "/";
+
+    protected override void OnInitialized()
+        => _path = new Uri(Nav.Uri).PathAndQuery;
+
+    private async Task GoBack()
+    {
+        try
+        {
+            await JsInteropManager.HistoryBackAsync();
+        }
+        catch
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+}
