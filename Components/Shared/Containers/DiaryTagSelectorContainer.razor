@@ -8,7 +8,8 @@
                   MaxSelection="MaxSelection"
                   UnassignedLabel="未選択のタグ"
                   TargetLabel="選択中"
-                  Height="@(Height ?? "180px")">
+                  Height="@(Height ?? "180px")"
+                  OnAddRequested="OnAddTagRequested">
 </DropItemSelector>
 
 @code {
@@ -16,6 +17,9 @@
     [Parameter] public EventCallback<List<DropItemModel>> SelectedItemsChanged { get; set; }
     [Parameter] public int MaxSelection { get; set; } = 5;
     [Parameter] public string? Height { get; set; }
+
+    // 親に「＋新規」イベントを公開
+    [Parameter] public EventCallback OnAddTagRequested { get; set; }
 
     private List<DropItemModel> _items = new();
 
@@ -29,9 +33,10 @@
         var all = await Runner.ReadAsync(() => DiaryTagService.GetDiaryTagDropItemModelListAsync());
         _items = all ?? new();
 
+        // 初期選択の適用（Tag は Key1 で一致判定）
         foreach (var it in _items)
         {
-            var selected = SelectedItems.Any(sel => sel.Key1 == it.Key1); // TagはKey1だけでもOK
+            var selected = SelectedItems.Any(sel => sel.Key1 == it.Key1);
             it.DropTarget = selected ? DropItemType.Target : DropItemType.UnAssigned;
         }
         StateHasChanged();

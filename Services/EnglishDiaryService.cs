@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Mappings;
@@ -112,27 +113,38 @@ namespace PhrazorApp.Services
 
                 var uid = _user.GetUserId();
 
-                // 2) OpenAI 添削（BuildPromptAsync は ServiceResult<string> を返す想定）
-                var prompt =
-                    $"You are an English writing tutor. Correct the following diary to natural English. " +
-                    $"Keep the meaning. Provide short Japanese explanations of major fixes.\n\n" +
-                    $"[Diary]\n{model.Content}\n\n" +
-                    $"[Additional context]\n{(string.IsNullOrWhiteSpace(model.Note) ? "(none)" : model.Note)}\n\n" +
-                    "Output format:\n" +
-                    "### Corrected\n<rewritten diary>\n\n" +
-                    "### Explanation (JA)\n- <point1>\n- <point2>\n";
+                // === 出力仕様: Markdown固定（見出し2つのみ / 段落保持 / 画像指示なし） ===
+                const string FormatGuide = """
+あなたは英語日記の添削アシスタントです。出力は必ず GitHub Flavored Markdown で、次の2見出しのみをこの順に含めてください。画像・HTML・コードブロック・余計な前置き/後書きは出力しないこと。全体の文字数（半角/全角含む）は500文字以内に収めること。日本語の説明は日本人が理解しやすい平易な表現にすること。
 
-                var ai = await _openAi.BuildPromptAsync(prompt);
+### 添削（Corrected）
+- 原文の段落構造を保ち、空行で段落を分ける（1段落にまとめない）。
+- 意図を保ったまま自然で簡潔な英文に整える。過剰に書き換えない。
+
+### 解説（日本語）
+- どこをどう直したかを箇条書き（- で開始）。各項目は1～2行で簡潔に。
+""";
+
+                var prompt = $"""
+【本文】
+{model.Content}
+
+【補足】（任意）
+{model.Note}
+
+上記を添削し、指定した2つの見出しだけで Markdown を出力してください。
+""";
+
+                var full = $"{FormatGuide}\n\n{prompt}";
+                var ai = await _openAi.BuildPromptAsync(full);
                 if (!ai.IsSuccess || string.IsNullOrWhiteSpace(ai.Data))
-                {
                     return ServiceResult.Error<EnglishDiaryModel>(ai.Message ?? "添削に失敗しました。");
-                }
 
-                model.Correction = ai.Data;
+                model.Correction = ai.Data.Trim();
 
-                // 3) Upsert（当日ローカルの CreatedAt 範囲で1件に集約）
-                var todayLocal = ToLocalDate(DateTime.UtcNow); // Asia/Tokyo
-                var (fromUtc, toUtc) = GetUtcRangeForLocalDate(todayLocal);
+                // 3) Upsert（編集中モデルの CreatedAt が属するローカル日で1件に集約）
+                var targetLocal = ToLocalDate(model.CreatedAt); // Asia/Tokyo
+                var (fromUtc, toUtc) = GetUtcRangeForLocalDate(targetLocal);
 
                 var saved = await _uow.ExecuteInTransactionAsync(async repos =>
                 {
@@ -162,9 +174,7 @@ namespace PhrazorApp.Services
                 // 4) 成功時に使用量記録（戻り値なし → ServiceResult.None）
                 var rec = await _limit.RecordAsync(OperationTypeCode.DiaryCorrection, units: 1);
                 if (!rec.IsSuccess)
-                {
                     _log.LogWarning("Operation usage record failed: {Message}", rec.Message);
-                }
 
                 var message = saved.isNew
                     ? string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX)
@@ -178,6 +188,24 @@ namespace PhrazorApp.Services
                 return ServiceResult.Error<EnglishDiaryModel>("添削または登録に失敗しました。");
             }
         }
+
+        public Task<ServiceResult<Unit>> DeleteByDateAsync(DateOnly localDateJst)
+        {
+            var (fromUtc, toUtc) = GetUtcRangeForLocalDate(localDateJst);
+            var uid = _user.GetUserId();
+            return _uow.ExecuteInTransactionAsync(async repos =>
+            {
+                var row = await repos.EnglishDiaries
+                    .Queryable(false)
+                    .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)
+                    .FirstOrDefaultAsync();
+                if (row is null) return ServiceResult.None.Success(); // 既に無ければOK
+                await repos.EnglishDiaries.DeleteAsync(row);
+                return ServiceResult.None.Success();
+            });
+        }
+
+
 
         // ===== 時刻変換ヘルパ（Asia/Tokyo 基準） =====
 

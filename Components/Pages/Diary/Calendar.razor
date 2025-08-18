@@ -5,20 +5,46 @@
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 @inject UiOperationRunner UiOperationRunner
+@inject IDialogService DialogService
 
 <MudStack Spacing="2">
     <SectionTitle Title="英語日記カレンダー" />
 
+    <ActionCard>
+        <MudButton Variant="Variant.Outlined"
+                   Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.Add"
+                   OnClick="CreateToday">
+            新規追加
+        </MudButton>
+    </ActionCard>
+
     <BaseCard>
-        <MudCalendar T="DiaryCalendarItem" Items="_items">
+        <!-- 月表示のみ -->
+        <MudCalendar T="DiaryCalendarItem"
+                     Items="_items"
+                     View="CalendarView.Month"
+                     ShowWeek="false"
+                     ShowDay="false">
+            <!-- その日に日記がある場合のみ表示。左=編集へ/右=削除 -->
             <CellTemplate Context="item">
-                <MudChip T="string" Variant="Variant.Outlined"
-                         Color="Color.Primary"
-                         Size="Size.Small"
-                         Class="w-100 text-start"
-                         OnClick="@(() => GoToDate(DateOnly.FromDateTime(item.Start)))">
-                    @item.Title
-                </MudChip>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="w-100">
+                    <MudChip T="string"
+                             Variant="Variant.Outlined"
+                             Color="Color.Primary"
+                             Size="Size.Small"
+                             Class="flex-grow-1 overflow-hidden text-start"
+                             OnClick="@(() => GoToDate(ToTokyoDateOnly(item.Start)))">
+                        @item.Title
+                    </MudChip>
+
+                    <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
+                                   Color="Color.Error"
+                                   AriaLabel="Delete diary"
+                                   Size="Size.Small"
+                                   OnClick="@(() => OnClickDeleteAsync(item))" />
+                </MudStack>
             </CellTemplate>
         </MudCalendar>
     </BaseCard>
@@ -26,19 +52,73 @@
 
 @code {
     private List<DiaryCalendarItem> _items = new();
-    private DateOnly _month = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly _month = DateOnly.FromDateTime(ToTokyoNow());
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
     {
-        var list = await UiOperationRunner.ReadAsync(
-            () => DiaryService.GetMonthlyItemsAsync(_month)
-        );
-
+        var list = await UiOperationRunner.ReadAsync(() => DiaryService.GetMonthlyItemsAsync(_month));
         _items = list ?? new();
+        StateHasChanged();
     }
 
-    private void GoToDate(DateOnly d)
+    // --- 遷移（JST日付に正規化してからルートへ） ---
+    private void GoToDate(DateOnly jstDate)
+        => Nav.NavigateTo($"/diary/edit/{jstDate:yyyy-MM-dd}");
+
+    private void CreateToday()
     {
-        Nav.NavigateTo($"/diaries/edit/{d:yyyy-MM-dd}");
+        var todayJst = DateOnly.FromDateTime(ToTokyoNow());
+        Nav.NavigateTo($"/diary/edit/{todayJst:yyyy-MM-dd}");
+    }
+
+    // --- 削除 ---
+    private async Task OnClickDeleteAsync(DiaryCalendarItem item)
+    {
+        var target = ToTokyoDateOnly(item.Start); // 当日(JST)
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.DangerConfirm,
+            $"{target:yyyy-MM-dd} の日記を削除します。よろしいですか？"
+        );
+        if (!ok) return;
+
+        // ★ サービス側：DeleteByDateAsync(DateOnly) がある前提
+        var op = await UiOperationRunner.WriteAsync(
+            () => DiaryService.DeleteByDateAsync(target),
+            message: "削除しています…"
+        );
+        if (!op.IsSuccess) return;
+
+        Snackbar.Add("削除しました。", Severity.Success);
+        await ReloadAsync();
+    }
+
+    // --- JST ユーティリティ ---
+    private static DateTime ToTokyoNow()
+    {
+        var utc = DateTime.UtcNow;
+        var tz = GetTokyoTz();
+        return TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+    }
+
+    private static DateOnly ToTokyoDateOnly(DateTime dt)
+    {
+        var tz = GetTokyoTz();
+        DateTime local;
+        if (dt.Kind == DateTimeKind.Utc)
+            local = TimeZoneInfo.ConvertTimeFromUtc(dt, tz);
+        else if (dt.Kind == DateTimeKind.Local)
+            local = TimeZoneInfo.ConvertTime(dt, tz);
+        else // Unspecified は UTC とみなして変換
+            local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(dt, DateTimeKind.Utc), tz);
+
+        return DateOnly.FromDateTime(local);
+    }
+
+    private static TimeZoneInfo GetTokyoTz()
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time"); }
+        catch { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Tokyo"); }
     }
 }

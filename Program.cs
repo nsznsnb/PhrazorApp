@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using MudBlazor;
 using MudBlazor.Services;
 using PhrazorApp;                       // <App/>
 using PhrazorApp.Components;           // App
@@ -178,6 +179,8 @@ public class Program
         builder.Services.Configure<AzureBlobOptions>(cfg.GetSection("AzureBlob"));
         builder.Services.Configure<OpenAiOptions>(cfg.GetSection("OpenAI"));
         builder.Services.Configure<ResendOptions>(cfg.GetSection("Resend"));
+
+        builder.Services.AddMudMarkdownServices();
 
         var app = builder.Build();
 

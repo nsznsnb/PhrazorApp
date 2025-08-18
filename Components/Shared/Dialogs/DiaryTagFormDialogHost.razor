@@ -1,0 +1,17 @@
+﻿<DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
+                   DialogTitle="日記タグ登録"
+                   ExecuteButtonText="@AppConstants.LABEL_BUTTON_REGISTER"
+                   CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
+                   ContentClass="py-5"
+                   OnExecuteAsync="SubmitAsync">
+
+    <DiaryTagEditor @ref="formRef" IsDialog="true" Id="GenreId" />
+</DialogBaseWrapper>
+
+@code {
+    private DiaryTagEditor? formRef;
+    [Parameter] public Guid? GenreId { get; set; }
+
+    private async ValueTask<bool> SubmitAsync()
+        => formRef is not null && await formRef.SubmitAsync();
+}

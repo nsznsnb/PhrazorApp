@@ -1,110 +1,198 @@
-﻿@page "/diary/edit/{date}"
+﻿@page "/diary/edit/{date:datetime}"
 @attribute [Authorize]
+
+@using Blazored.FluentValidation
+@using Microsoft.AspNetCore.Components.Forms
 
 @inject EnglishDiaryService DiaryService
 @inject IDialogService DialogService
 @inject UiOperationRunner UiOperationRunner
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@inject IServiceProvider ServiceProvider
+@inject OperationLimitService OpLimit
+@inject OperationTypeService OpType
 
 <PageTitle>英語日記 添削</PageTitle>
+<BackLink Href="/diary/calendar" Text="カレンダーに戻る" />
 
 <MudStack Spacing="2">
-    <SectionTitle Title="@($"英語日記 添削 ({DateUtil.Format(_model.CreatedAt)})")" />
 
-    <EditForm Model="_model">
-        <MudForm @ref="_form">
+    <!-- 見出しは JST の「日付のみ」 -->
+    <SectionTitle Title="@($"英語日記 添削 ({_jstDateText})")" />
 
+    <!-- 今日の利用状況 -->
+    <MudAlert Severity="Severity.Info" Dense="true" Class="w-100">
+        @if (_limitPerDay is null)
+        {
+            <MudText Typo="Typo.body2">添削の利用状況：無制限</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2">
+                添削の利用状況（本日）：@(_usedToday ?? 0) / @_limitPerDay 回（残り @_remainingToday.GetValueOrDefault() 回）
+            </MudText>
+        }
+    </MudAlert>
+
+    <!-- バリデーション：EditContext + Blazored.FluentValidation -->
+    <EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+        <FluentValidationValidator />
+
+        <BaseCard>
+            <MudCardContent Class="pb-0">
+                <MudTextField T="string"
+                              @bind-Value="_model.Title"
+                              For="@(() => _model.Title)"
+                              Label="タイトル"
+                              Variant="Variant.Outlined"
+                              Immediate="true" />
+            </MudCardContent>
+
+            <MudCardContent>
+                <MudTextField T="string"
+                              @bind-Value="_model.Content"
+                              For="@(() => _model.Content)"
+                              Label="日記"
+                              Lines="8"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              Placeholder="今日の出来事や感想などを英語で書いてください" />
+            </MudCardContent>
+
+            <MudCardContent>
+                <MudTextField T="string"
+                              @bind-Value="_model.Note"
+                              For="@(() => _model.Note)"
+                              Label="添削をより正確にするための補足情報"
+                              Lines="4"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              Placeholder="背景、意図、ニュアンス、固有名詞 など" />
+            </MudCardContent>
+
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle2" Class="mb-1">日記タグ</MudText>
+
+                <!-- DropItemSelector 内蔵の「＋新規」: 親で受けてダイアログ起動 -->
+                <DiaryTagSelectorContainer @ref="_tagSelector"
+                                           @bind-SelectedItems="SelectedTagItems"
+                                           OnAddTagRequested="OnAddTagRequested" />
+            </MudCardContent>
+
+            <MudCardContent>
+                <MudStack Row="true" Spacing="1">
+                    <!-- Submit にして EditContext を Validate -->
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="@(_limitPerDay.HasValue && _remainingToday.GetValueOrDefault() <= 0)">
+                        添削（登録）
+                    </MudButton>
+                </MudStack>
+            </MudCardContent>
+        </BaseCard>
+        @if (!string.IsNullOrWhiteSpace(_model.Correction))
+        {
             <BaseCard>
-                <MudCardContent Class="pb-0">
-                    <MudTextField T="string"
-                                  @bind-Value="_model.Title"
-                                  Label="タイトル"
-                                  Variant="Variant.Outlined"
-                                  Immediate="true" />
-                </MudCardContent>
-
                 <MudCardContent>
-                    <MudTextField T="string"
-                                  @bind-Value="_model.Content"
-                                  Label="日記"
-                                  Lines="8"
-                                  Variant="Variant.Outlined"
-                                  Immediate="true"
-                                  Placeholder="今日の出来事や感想などを英語で書いてください" />
-                </MudCardContent>
-
-                <MudCardContent>
-                    <MudTextField T="string"
-                                  @bind-Value="_model.Note"
-                                  Label="添削をより正確にするための補足情報"
-                                  Lines="4"
-                                  Variant="Variant.Outlined"
-                                  Immediate="true"
-                                  Placeholder="背景、意図、ニュアンス、固有名詞 など" />
-                </MudCardContent>
-
-                <MudCardContent>
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">日記タグ</MudText>
-                    <DiaryTagSelectorContainer @bind-SelectedTagIds="_model.TagIds" />
-                </MudCardContent>
-
-                <MudCardContent>
-                    <MudStack Row="true" Spacing="1">
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   OnClick="OnClickCorrectAsync">
-                            添削（登録）
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Default"
-                                   OnClick="@(() => Nav.NavigateTo("/diaries/calendar"))">
-                            カレンダーへ戻る
-                        </MudButton>
-                    </MudStack>
+                    <MudText Typo="Typo.subtitle1">添削結果</MudText>
+                    <MudPaper Class="pa-3 mt-2" Outlined="true">
+                        <!-- ライブラリに合わせて Value/Text どちらか（多くは Value） -->
+                        <MudMarkdown Value="@_model.Correction" />
+                    </MudPaper>
                 </MudCardContent>
             </BaseCard>
-
-            @if (!string.IsNullOrWhiteSpace(_model.Correction))
-            {
-                <BaseCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.subtitle1">添削結果</MudText>
-                        <MudPaper Class="pa-3 mt-2" Outlined="true">
-                            <MudText Preline="true">@_model.Correction</MudText>
-                        </MudPaper>
-                    </MudCardContent>
-                </BaseCard>
-            }
-        </MudForm>
+        }
     </EditForm>
 </MudStack>
 
 @code {
     [Parameter] public DateTime date { get; set; }
 
-    private MudForm? _form;
+    // モデル
     private EnglishDiaryModel _model = new();
+
+    // 見出し（日付のみ）
+    private string _jstDateText = string.Empty;
+
+    // EditContext（Blazored.FluentValidation が拾う）
+    private EditContext _editCtx = default!;
+
+    // タグセレクタ参照（ダイアログ後の再読込に使う）
+    private DiaryTagSelectorContainer? _tagSelector;
+
+    // タグ選択（DropItemModel）
+    private List<DropItemModel> _selectedTagItems = new();
+    private List<DropItemModel> SelectedTagItems
+    {
+        get => _selectedTagItems;
+        set
+        {
+            _selectedTagItems = value ?? new();
+            _model.TagIds = _selectedTagItems.Select(x => x.Key1).Distinct().ToList();
+        }
+    }
+
+    // 利用上限表示（null は無制限）
+    private int? _limitPerDay;
+    private int? _remainingToday;
+    private int? _usedToday;
 
     protected override async Task OnInitializedAsync()
     {
+        // 先に空の EditContext を用意
+        _editCtx = new EditContext(_model);
+
+        // 対象日データ取得 or 新規
         var target = DateOnly.FromDateTime(date);
-
-        var loaded = await UiOperationRunner.ReadAsync(
-            () => DiaryService.GetByDateAsync(target)
-        );
-
+        var loaded = await UiOperationRunner.ReadAsync(() => DiaryService.GetByDateAsync(target));
         _model = loaded ?? new EnglishDiaryModel
         {
             Id = Guid.NewGuid(),
             Title = string.Empty,
             Content = string.Empty,
-            CreatedAt = DateTime.UtcNow,
+            Note = string.Empty,
+            // Upsert を日単位にするため JST 0:00(UTC換算) を入れる
+            CreatedAt = loaded is null ? ToUtcAtTokyoMidnight(target) : _model.CreatedAt,
             UpdatedAt = DateTime.UtcNow
         };
+
+        // 見出しは JST の「yyyy-MM-dd」
+        _jstDateText = ToTokyoDateOnlyText(_model.CreatedAt);
+
+        // EditContext を“確定モデル”で再構築
+        _editCtx = new EditContext(_model);
+
+        // TagIds → セレクタへ反映
+        _selectedTagItems = (_model.TagIds ?? new())
+            .Select(id => new DropItemModel { Key1 = id, DropTarget = DropItemType.Target })
+            .ToList();
+
+        await LoadUsageAsync();
     }
 
-    private async Task OnClickCorrectAsync()
+    private async Task LoadUsageAsync()
+    {
+        // 1) 上限：OperationType マスタ（0以下は無制限）
+        var types = await UiOperationRunner.ReadAsync(() => OpType.GetListAsync());
+        var diaryOp = types?.FirstOrDefault(x =>
+            string.Equals(x.Code, OperationTypeCode.DiaryCorrection.ToString(), StringComparison.OrdinalIgnoreCase));
+
+        _limitPerDay = (diaryOp?.Limit > 0) ? diaryOp.Limit : (int?)null;
+
+        // 2) 残り：当日分の残回数（確認のみ、消費しない）
+        var chk = await UiOperationRunner.ReadAsync(() => OpLimit.CheckAsync(OperationTypeCode.DiaryCorrection, units: 0));
+        _remainingToday = chk?.RemainingToday;
+
+        // 3) 使用回数：上限・残りが揃えば計算
+        _usedToday = (_limitPerDay is not null && _remainingToday is not null)
+            ? Math.Max(0, _limitPerDay.Value - _remainingToday.Value)
+            : null;
+    }
+
+    // ----- Submit / Validation -----
+    private async Task HandleValidSubmit()
     {
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.InfoConfirm,
@@ -116,11 +204,62 @@
             () => DiaryService.CorrectAndUpsertAsync(_model),
             message: "添削しています…"
         );
-
         if (!op.IsSuccess) return;
 
-        // 成功時：返ってきたモデルでUI反映
         if (op.Data is not null)
+        {
             _model = op.Data;
+            _jstDateText = ToTokyoDateOnlyText(_model.CreatedAt);
+            _editCtx = new EditContext(_model); // 差し替え後に再構築
+        }
+
+        await LoadUsageAsync();
+    }
+
+    private void OnInvalidSubmit(EditContext editContext)
+    {
+        editContext.PublishPageLevelErrors(ServiceProvider);
+        Snackbar.Add("入力内容を確認してください。", MudBlazor.Severity.Warning);
+    }
+
+    // ----- TagSelector からの「＋新規」イベント（ダイアログ利用） -----
+    private async Task OnAddTagRequested()
+    {
+        // DiaryTagFormDialogHost を使って新規作成ダイアログを開く
+        var dlg = await DialogService.ShowWithAsync<DiaryTagFormDialogHost, Guid?>(
+            title: "日記タグ登録",
+            paramSelector: x => x.GenreId,  // ホスト側のパラメータ名に合わせる
+            value: null,
+            options: DialogServiceExtensions.OptionsMd()
+        );
+
+        var result = await dlg.Result;
+        if (!(result?.Canceled ?? true))
+        {
+            // 直後にタグ一覧を再読込（選択は保持）
+            await _tagSelector!.ReloadAsync(keepSelection: SelectedTagItems);
+            Snackbar.Add("タグを更新しました。", MudBlazor.Severity.Success);
+        }
+    }
+
+    // ----- ヘルパ -----
+    private static DateTime ToUtcAtTokyoMidnight(DateOnly localDateJst)
+    {
+        var tz = GetTokyoTz();
+        var localUnspec = new DateTime(localDateJst.Year, localDateJst.Month, localDateJst.Day, 0, 0, 0, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(localUnspec, tz);
+    }
+
+    private static string ToTokyoDateOnlyText(DateTime utc)
+    {
+        var tz = GetTokyoTz();
+        var local = TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+        return DateOnly.FromDateTime(local).ToString("yyyy-MM-dd");
+    }
+
+    private static TimeZoneInfo GetTokyoTz()
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time"); }
+        catch { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Tokyo"); }
     }
 }
