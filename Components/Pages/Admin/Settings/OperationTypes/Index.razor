@@ -9,35 +9,55 @@
 <MudStack Spacing="2">
     <SectionTitle HeadingLevel="2" Title="操作種別一覧" />
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/operation-types/create"))">新規追加</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                   Disabled="true"
+                   StartIcon="@Icons.Material.TwoTone.Add"
+                   OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/operation-types/create"))">
+            新規追加
+        </MudButton>
     </ActionCard>
+
     <BaseCard>
         <TableWithToolbar TItem="OperationTypeModel"
                           Items="@Elements"
                           Search="true"
-                          SearchBy="@(x => new[] { x.Name ?? string.Empty })"
+                          SearchBy="@(x => new[] { x.Code ?? string.Empty, x.Name ?? string.Empty })"
                           Pager="TablePagerMode.Auto"
                           RowsPerPage="10"
                           Height="500px">
 
             <HeaderContent>
+                <MudTh style="min-width:140px;">コード</MudTh>
                 <MudTh>名称</MudTh>
+                <MudTh Align="Align.Right" style="min-width:140px;">操作上限回数</MudTh>
                 <MudTh style="min-width:200px;">操作</MudTh>
             </HeaderContent>
 
             <RowTemplate Context="context">
                 <MudTd>
+                    <MudText Typo="Typo.subtitle2">@context.Code</MudText>
+                </MudTd>
+
+                <MudTd>
                     <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@context.Name</MudText>
                 </MudTd>
+
+                <MudTd Align="Align.Right">
+                    <!-- null は “—” 表示。0 を無制限扱いにしたい場合は分岐を追加してください -->
+                    <MudText>@(context.LimitCount?.ToString() ?? "—")</MudText>
+                </MudTd>
+
                 <MudTd style="min-width:200px;">
                     <MudStack Row="true" Spacing="1">
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
                                    StartIcon="@Icons.Material.TwoTone.Edit"
+                                   Disabled="true"
                                    OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/operation-types/edit/{context.Id}"))">
                             @AppConstants.LABEL_BUTTON_EDIT
                         </MudButton>
                         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"
                                    StartIcon="@Icons.Material.TwoTone.Delete"
+                                   Disabled="true"
                                    OnClick="@(() => OnDeleteButtonClickedAsync(context))">
                             @AppConstants.LABEL_BUTTON_DELETE
                         </MudButton>
@@ -58,11 +78,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var list = await UiOperationRunner.ReadAsync(
-            () => Service.GetListAsync()
-        );
-        if (list is not null)
-            Elements = list;
+        var list = await UiOperationRunner.ReadAsync(() => Service.GetListAsync());
+        if (list is not null) Elements = list;
     }
 
     private async Task OnDeleteButtonClickedAsync(OperationTypeModel item)

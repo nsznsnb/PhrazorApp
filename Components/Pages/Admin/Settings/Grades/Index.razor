@@ -9,7 +9,7 @@
 <MudStack Spacing="2">
     <SectionTitle HeadingLevel="2" Title="成績一覧" />
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/grades/create"))">新規追加</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info" Disabled="true" StartIcon="@Icons.Material.TwoTone.Add" OnClick="@(() => NavigationManager.NavigateTo("/admin/settings/grades/create"))">新規追加</MudButton>
     </ActionCard>
     <BaseCard>
         <TableWithToolbar TItem="GradeModel"
@@ -36,7 +36,7 @@
                                    OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/grades/edit/{context.Id}"))">
                             @AppConstants.LABEL_BUTTON_EDIT
                         </MudButton>
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Error"
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Disabled="true" Color="Color.Error"
                                    StartIcon="@Icons.Material.TwoTone.Delete"
                                    OnClick="@(() => OnDeleteButtonClickedAsync(context))">
                             @AppConstants.LABEL_BUTTON_DELETE
