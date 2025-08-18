@@ -21,7 +21,7 @@
         <TableWithToolbar TItem="OperationTypeModel"
                           Items="@Elements"
                           Search="true"
-                          SearchBy="@(x => new[] { x.Code ?? string.Empty, x.Name ?? string.Empty })"
+                          SearchBy="@(x => new[] { x.Code, x.Name, x.Limit.ToString() })"
                           Pager="TablePagerMode.Auto"
                           RowsPerPage="10"
                           Height="500px">
@@ -43,8 +43,9 @@
                 </MudTd>
 
                 <MudTd Align="Align.Right">
-                    <!-- null は “—” 表示。0 を無制限扱いにしたい場合は分岐を追加してください -->
-                    <MudText>@(context.LimitCount?.ToString() ?? "—")</MudText>
+                    <MudText>@context.Limit</MudText>
+                    @* もし 0 を「無制限」表示にしたい場合は：
+                    <MudText>@(context.Limit == 0 ? "無制限" : context.Limit.ToString())</MudText> *@
                 </MudTd>
 
                 <MudTd style="min-width:200px;">
