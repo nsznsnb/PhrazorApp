@@ -13,20 +13,31 @@
             <MudRadio T="BulkPhrasebookMode" Option="BulkPhrasebookMode.AddToExisting" Color="Color.Primary">
                 既存のフレーズ帳に追加（重複は無視）
             </MudRadio>
-@*             <MudRadio T="BulkPhrasebookMode" Option="BulkPhrasebookMode.CreateNew" Color="Color.Primary">
+            @* 新規作成モードを使う場合はコメント解除 *@
+            @* <MudRadio T="BulkPhrasebookMode" Option="BulkPhrasebookMode.CreateNew" Color="Color.Primary">
                 新規フレーズ帳を作成して追加
             </MudRadio> *@
         </MudRadioGroup>
 
         @if (_mode == BulkPhrasebookMode.AddToExisting)
         {
-            <MudSelect T="Guid" Label="フレーズ帳" Variant="Variant.Outlined" Margin="Margin.Dense"
-                       @bind-Value="_selectedBookId" Clearable="false">
-                @foreach (var b in _books)
-                {
-                    <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>
-                }
-            </MudSelect>
+            if (!_hasBooks)
+            {
+                <!-- 帳がない時は未選択＆案内表示 -->
+                <MudAlert Severity="Severity.Warning" Dense>
+                    フレーズ帳がありません。<MudLink Href="/phrasebooks">フレーズ帳一覧</MudLink>から追加してください。
+                </MudAlert>
+            }
+            else
+            {
+                <MudSelect T="Guid" Label="フレーズ帳" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           @bind-Value="_selectedBookId" Clearable="false">
+                    @foreach (var b in _books)
+                    {
+                        <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            }
         }
         else
         {
@@ -51,25 +62,29 @@
 
     private BulkPhrasebookMode _mode = BulkPhrasebookMode.AddToExisting;
     private List<PhraseBookListItemModel> _books = new();
-    private Guid _selectedBookId = Guid.Empty;
+    private Guid _selectedBookId = Guid.Empty; // ← 未選択で初期化
     private string? _newBookName;
+    private bool _hasBooks => _books?.Count > 0;
 
     protected override async Task OnInitializedAsync()
     {
-        // PhraseBookService の一覧（件数込み）
         var books = await UiOperationRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync());
         _books = books ?? new();
-        _selectedBookId = _books.FirstOrDefault()?.Id ?? Guid.Empty;
+
+        // 帳がある場合だけ初期選択。無い場合は Guid.Empty のまま（未選択）
+        if (_hasBooks)
+            _selectedBookId = _books[0].Id;
     }
 
     private async ValueTask<bool> ApplyAsync()
     {
         if (TargetIds.Count == 0) return false;
 
-        // 既存に追加
         if (_mode == BulkPhrasebookMode.AddToExisting)
         {
-            if (_selectedBookId == Guid.Empty) return false;
+            // 帳が無い or 未選択なら実行させない
+            if (!_hasBooks || _selectedBookId == Guid.Empty)
+                return false;
 
             var ok = await UiOperationRunner.WriteAsync(
                 () => PhraseBookService.CreateAsync(_selectedBookId, TargetIds),
@@ -81,19 +96,15 @@
             return true;
         }
 
-        // 新規作成して追加（Create→Add を 1 回の WriteAsync にまとめる）
+        // 新規作成モード（使う場合）
         var name = (_newBookName ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(name)) return false;
 
         var chained = await UiOperationRunner.WriteAsync(async () =>
         {
-            // 1) フレーズ帳を作成（Id を受け取る）
             var created = await PhraseBookService.CreateAsync(name);
             if (!created.IsSuccess) return ServiceResult.None.Error(created.Message);
-
-            // 2) 作成した帳へ一括追加
-            var added = await PhraseBookService.CreateAsync(created.Data, TargetIds);
-            return added; // ServiceResult<Unit>
+            return await PhraseBookService.CreateAsync(created.Data, TargetIds);
         }, message: AppMessages.MSG_I_PROGRESS_SAVE);
 
         if (!chained.IsSuccess) return false;
