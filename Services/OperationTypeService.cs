@@ -14,13 +14,15 @@ namespace PhrazorApp.Services
 
         public async Task<ServiceResult<List<OperationTypeModel>>> GetListAsync()
         {
-            var list = await _uow.ReadAsync(async repos => await repos.OperationTypes.Queryable()
-            .OrderBy(x => x.OperationTypeId)
-            .SelectModel()
-            .ToListAsync());
+            var list = await _uow.ReadAsync(async repos =>
+                await repos.OperationTypes
+                    .Queryable(asNoTracking: true)
+                    .OrderBy(x => x.OperationTypeCode)          // ★ コード順
+                    .ThenBy(x => x.OperationTypeName)           //   安定ソート（任意）
+                    .SelectModel()
+                    .ToListAsync());
             return ServiceResult.Success(list);
         }
-
 
         public async Task<ServiceResult<OperationTypeModel?>> GetAsync(Guid id)
         {
