@@ -9,8 +9,8 @@ BEGIN TRY
     ------------------------------------------------------------
     MERGE dbo.M_OPERATION_TYPES WITH (HOLDLOCK) AS tgt
     USING (VALUES
-        (N'1', N'OpenAI画像生成', 20),
-        (N'2', N'OpenAI文書添削',  5)
+        (N'01', N'OpenAI画像生成', 20),
+        (N'02', N'OpenAI文書添削',  5)
     ) AS src(operation_type_code, operation_type_name, operation_type_limit)
         ON tgt.operation_type_code = src.operation_type_code
     WHEN MATCHED THEN
