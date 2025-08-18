@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Mappings;
@@ -122,7 +123,9 @@ namespace PhrazorApp.Services
                 return ServiceResult.Error<EnglishDiaryModel?>("日記の取得に失敗しました。");
             }
         }
-
+        /// <summary>
+        /// OpenAIで添削を行い、当日（ローカル：Asia/Tokyo）分をUpsertする。
+        /// </summary>
         /// <summary>
         /// OpenAIで添削を行い、当日（ローカル：Asia/Tokyo）分をUpsertする。
         /// </summary>
@@ -140,30 +143,31 @@ namespace PhrazorApp.Services
 
                 var uid = _user.GetUserId();
 
-                // === 出力仕様: Markdown固定（見出し2つのみ / 段落保持 / 画像指示なし） ===
-                const string FormatGuide = """
-あなたは英語日記の添削アシスタントです。出力は必ず GitHub Flavored Markdown で、次の2見出しのみをこの順に含めてください。画像・HTML・コードブロック・余計な前置き/後書きは出力しないこと。全体の文字数（半角/全角含む）は500文字以内に収めること。日本語の説明は日本人が理解しやすい平易な表現にすること。
-
-### 添削（Corrected）
-- 原文の段落構造を保ち、空行で段落を分ける（1段落にまとめない）。
-- 意図を保ったまま自然で簡潔な英文に整える。過剰に書き換えない。
-
-### 解説（日本語）
-- どこをどう直したかを箇条書き（- で開始）。各項目は1～2行で簡潔に。
+                // === 出力仕様: Markdown固定（見出し2つのみ / 段落保持 / 画像語禁止 / 500字以内） ===
+                // 英語ガイド（短縮可）
+                const string FormatGuideEn = """
+You edit English diary entries. Output MUST be GitHub Flavored Markdown.
+Add no preface/appendix, no code blocks/HTML/images. Keep total length ≤ 500 characters.
+Preserve paragraph breaks; keep the author’s intent. Also add a short explanation in Japanese.
 """;
 
-                var prompt = $"""
-【本文】
+                var userPrompt = $"""
+Text:
 {model.Content}
 
-【補足】（任意）
+Notes (optional):
 {model.Note}
 
-上記を添削し、指定した2つの見出しだけで Markdown を出力してください。
+Edit the text as instructed and return Markdown with the corrected English and a brief Japanese explanation.
 """;
 
-                var full = $"{FormatGuide}\n\n{prompt}";
-                var ai = await _openAi.BuildPromptAsync(full);
+                // ★ ここを BuildPromptAsync ではなく ChatOnceAsync に
+                var ai = await _openAi.ChatOnceAsync(
+                    system: FormatGuideEn,
+                    user: userPrompt,
+                    temperature: 0.4f, topP: 0.9f, frequencyPenalty: 0.2f
+                );
+
                 if (!ai.IsSuccess || string.IsNullOrWhiteSpace(ai.Data))
                     return ServiceResult.Error<EnglishDiaryModel>(ai.Message ?? "添削に失敗しました。");
 
@@ -175,7 +179,6 @@ namespace PhrazorApp.Services
 
                 var saved = await _uow.ExecuteInTransactionAsync(async repos =>
                 {
-                    // 既存取得（タグを更新するので Include）
                     var entity = await repos.EnglishDiaries
                         .Queryable(false)
                         .Include(x => x.DEnglishDiaryTags)
@@ -214,6 +217,28 @@ namespace PhrazorApp.Services
                 _log.LogError(ex, "[{Prefix}] 添削/登録で例外", MSG_PREFIX);
                 return ServiceResult.Error<EnglishDiaryModel>("添削または登録に失敗しました。");
             }
+        }
+
+        // --- 生成テキストの軽い正規化（保険）---
+        private static string SanitizeAiMarkdown(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+            var s = raw.Replace("\r\n", "\n");
+
+            // 1) 最初の "### " 見出しより前の前置きを除去
+            s = System.Text.RegularExpressions.Regex.Replace(
+                s, @"(?s)^\s*.*?(?=^###\s)", string.Empty,
+                System.Text.RegularExpressions.RegexOptions.Multiline);
+
+            // 2) 英語見出しを日本語見出しに統一
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"^###\s*Correction.*$", "### 添削（Corrected）", System.Text.RegularExpressions.RegexOptions.Multiline);
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"^###\s*Corrected.*$", "### 添削（Corrected）", System.Text.RegularExpressions.RegexOptions.Multiline);
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"^###\s*Explanation.*$", "### 解説（日本語）", System.Text.RegularExpressions.RegexOptions.Multiline);
+
+            // 3) 画像系の行を除去
+            s = System.Text.RegularExpressions.Regex.Replace(s, @"(?mi)^(.*\b(image|illustrate|prompt|screen|laptop|camera)\b.*)\n?", string.Empty);
+
+            return s.Trim();
         }
 
         public Task<ServiceResult<Unit>> DeleteByDateAsync(DateOnly localDateJst)

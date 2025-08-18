@@ -12,4 +12,9 @@ public class OpenAiOptions
     /// 画像サイズ
     /// </summary>
     public string ImageSize { get; set; } = "256x256";
+
+    /// <summary>
+    /// チャットモデル
+    /// </summary>
+    public string ChatModel { get; set; } = "gpt-4o-mini";
 }

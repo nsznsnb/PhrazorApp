@@ -29,7 +29,7 @@ namespace PhrazorApp.Infrastructure
                 return ServiceResult.Error<string>("フレーズが空です。");
 
             // まずプロンプトを生成
-            var promptResult = await BuildPromptAsync(phrase, ct);
+            var promptResult = await BuildImagePromptAsync(phrase, ct);
             if (!promptResult.IsSuccess || string.IsNullOrWhiteSpace(promptResult.Data))
                 return ServiceResult.Error<string>(promptResult.Message ?? "画像プロンプトの生成に失敗しました。");
 
@@ -87,7 +87,7 @@ namespace PhrazorApp.Infrastructure
         /// <summary>
         /// フレーズから画像生成向けプロンプトを作成（Chat Completions API）
         /// </summary>
-        public async Task<ServiceResult<string>> BuildPromptAsync(string phrase, CancellationToken ct = default)
+        public async Task<ServiceResult<string>> BuildImagePromptAsync(string phrase, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(phrase))
                 return ServiceResult.Error<string>("フレーズが空です。");
@@ -143,6 +143,65 @@ namespace PhrazorApp.Infrastructure
                 return ServiceResult.Error<string>("プロンプト生成に失敗しました。");
             }
         }
+
+        public async Task<ServiceResult<string>> ChatOnceAsync(
+    string system, string user,
+    float temperature = 0.4f, float topP = 0.9f, float frequencyPenalty = 0.0f,
+    CancellationToken ct = default)
+        {
+            var apiKey = _options.ApiKey;
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return ServiceResult.Error<string>("OpenAI API キーが設定されていません。");
+
+            // モデルは設定から。なければ軽量高性能の既定を使用
+            var model = string.IsNullOrWhiteSpace(_options.ChatModel) ? "gpt-4o-mini" : _options.ChatModel;
+
+            var request = new
+            {
+                model,
+                messages = new[]
+                {
+            new { role = "system", content = system },
+            new { role = "user",   content = user   }
+        },
+                temperature,
+                top_p = topP,
+                frequency_penalty = frequencyPenalty
+            };
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json")
+            };
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            try
+            {
+                using var res = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+                var json = await res.Content.ReadAsStringAsync(ct);
+
+                if (!res.IsSuccessStatusCode)
+                    return ServiceResult.Error<string>($"テキスト生成に失敗しました。（{(int)res.StatusCode}）");
+
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("choices", out var choices) &&
+                    choices.ValueKind == JsonValueKind.Array &&
+                    choices.GetArrayLength() > 0)
+                {
+                    var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+                    if (!string.IsNullOrWhiteSpace(content))
+                        return ServiceResult.Success(content!, "");
+                }
+                return ServiceResult.Error<string>("テキスト生成レスポンスの解析に失敗しました。");
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogErrorWithContext(LogEvents.GetItem, ex, "テキスト生成で例外が発生しました。");
+                return ServiceResult.Error<string>("テキスト生成に失敗しました。");
+            }
+        }
+
     }
 
 }
