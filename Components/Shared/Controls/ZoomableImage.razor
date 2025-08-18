@@ -1,41 +1,150 @@
-﻿<MudStack Spacing="2">
-    @if (ShowControls)
-    {
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-            <MudText Typo="Typo.body2">ズーム</MudText>
-            <MudSlider T="int" Min="@MinZoom" Max="@MaxZoom" Step="5"
-                       @bind-Value="@Zoom"
-                       Class="w-100" />
-            <MudText Typo="Typo.body2">@Zoom %</MudText>
-            <MudButton Variant="Variant.Outlined" Size="Size.Small"
-                       OnClick="() => Zoom = 100">100%</MudButton>
-            <MudButton Variant="Variant.Outlined" Size="Size.Small"
-                       OnClick="() => Zoom = Math.Min(Zoom + 25, MaxZoom)">+</MudButton>
-            <MudButton Variant="Variant.Outlined" Size="Size.Small"
-                       OnClick="() => Zoom = Math.Max(Zoom - 25, MinZoom)">-</MudButton>
-        </MudStack>
-    }
+﻿@* Components/Shared/ZoomableImage.razor *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
 
-    <div class="zoom-wrap" style="height:@Height">
-        <img src="@Src" alt="@Alt"
-             style="width:@($"{Zoom}%");"
-             draggable="false" />
+<div @ref="_container"
+     style="
+        position:relative;width:100%;height:@Height;
+        overflow:hidden;user-select:none;touch-action:none;
+        border:1px solid var(--mud-palette-lines-default,rgba(0,0,0,.12));
+        border-radius:12px;
+        background-image:
+            linear-gradient(to right, rgba(0,0,0,.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,.05) 1px, transparent 1px);
+        background-size:16px 16px;
+        cursor:@(_isPanning ? "grabbing" : "grab")"
+     @onpointerdown="OnPointerDown"
+     @onpointermove="OnPointerMove"
+     @onpointerup="OnPointerUp"
+     @onpointercancel="OnPointerUp"
+     @onpointerleave="OnPointerUp"
+     @ondblclick="OnDoubleClick"
+     @onwheel="OnWheel" @onwheel:preventDefault @onwheel:stopPropagation>
+
+    <!-- 操作オーバーレイ：＋ / － / リセット（ツールチップ付き） -->
+    <div style="position:absolute;top:8px;right:8px;z-index:2;">
+        <MudPaper Elevation="2" Class="px-2 py-1 rounded-2">
+            <div style="display:flex;gap:.25rem;align-items:center;">
+                <MudTooltip Text="拡大" Placement="Placement.Bottom">
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   OnClick="@(() => ZoomByStep(+1))"
+                                   aria-label="拡大" />
+                </MudTooltip>
+
+                <MudTooltip Text="縮小" Placement="Placement.Bottom">
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   OnClick="@(() => ZoomByStep(-1))"
+                                   aria-label="縮小" />
+                </MudTooltip>
+
+                <MudTooltip Text="等倍" Placement="Placement.Bottom">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   OnClick="@Reset"
+                                   aria-label="リセット" />
+                </MudTooltip>
+            </div>
+        </MudPaper>
     </div>
-</MudStack>
+
+    <!-- 現在倍率表示 -->
+    <div style="position:absolute;left:8px;bottom:8px;z-index:2;">
+        <MudPaper Elevation="1" Class="px-2 py-1 rounded-2">
+            <MudText Typo="Typo.caption">@($"{Math.Round(_scale * 100)}%")</MudText>
+        </MudPaper>
+    </div>
+
+    <img @ref="_img"
+         src="@Src"
+         alt="@Alt"
+         draggable="false"
+         style="
+            position:absolute;top:0;left:0;
+            transform:@Transform;
+            transform-origin:0 0;
+            pointer-events:none;
+            max-width:none;
+            outline:1px solid rgba(0,0,0,.25);
+            box-shadow:0 0 0 2px rgba(255,255,255,.9) inset;
+            image-rendering:-webkit-optimize-contrast;" />
+</div>
 
 @code {
-    [Parameter] public string Src { get; set; } = default!;
-    [Parameter] public string Alt { get; set; } = "image";
+    [Parameter] public string Src { get; set; } = string.Empty;
+    [Parameter] public string? Alt { get; set; }
     [Parameter] public string Height { get; set; } = "70vh";
-    [Parameter] public bool ShowControls { get; set; } = true;
-    [Parameter] public int MinZoom { get; set; } = 25;
-    [Parameter] public int MaxZoom { get; set; } = 400;
+    [Parameter] public double MinScale { get; set; } = 0.25;
+    [Parameter] public double MaxScale { get; set; } = 6.0;
+    [Parameter] public double ZoomStep { get; set; } = 0.15;
 
-    private int _zoom = 100;
-    [Parameter]
-    public int Zoom
+    double _scale = 1.0;
+    double _offsetX = 0, _offsetY = 0;
+    bool _isPanning;
+    double _lastClientX, _lastClientY;
+
+    ElementReference _container, _img;
+
+    string Transform =>
+        $"translate({_offsetX.ToString(System.Globalization.CultureInfo.InvariantCulture)}px," +
+        $"{_offsetY.ToString(System.Globalization.CultureInfo.InvariantCulture)}px) " +
+        $"scale({_scale.ToString(System.Globalization.CultureInfo.InvariantCulture)})";
+
+    void OnPointerDown(PointerEventArgs e)
     {
-        get => _zoom;
-        set { _zoom = value; StateHasChanged(); }
+        _isPanning = true;
+        _lastClientX = e.ClientX;
+        _lastClientY = e.ClientY;
+    }
+
+    void OnPointerMove(PointerEventArgs e)
+    {
+        if (!_isPanning) return;
+        var dx = e.ClientX - _lastClientX;
+        var dy = e.ClientY - _lastClientY;
+        _lastClientX = e.ClientX;
+        _lastClientY = e.ClientY;
+        _offsetX += dx;
+        _offsetY += dy;
+        StateHasChanged();
+    }
+
+    void OnPointerUp(PointerEventArgs _) => _isPanning = false;
+
+    void OnDoubleClick(MouseEventArgs _) => Reset();
+
+    void OnWheel(WheelEventArgs e)
+    {
+        var zoomIn = e.DeltaY < 0;
+        ZoomAt((zoomIn ? (1 + ZoomStep) : (1 - ZoomStep)), e.OffsetX, e.OffsetY);
+    }
+
+    void ZoomByStep(int dir)
+    {
+        var factor = dir > 0 ? (1 + ZoomStep) : (1 - ZoomStep);
+        ZoomAt(factor, 0, 0);
+    }
+
+    void ZoomAt(double factor, double anchorX, double anchorY)
+    {
+        var newScale = Math.Clamp(_scale * factor, MinScale, MaxScale);
+        var beforeX = (anchorX - _offsetX) / _scale;
+        var beforeY = (anchorY - _offsetY) / _scale;
+        _scale = newScale;
+        _offsetX = anchorX - beforeX * _scale;
+        _offsetY = anchorY - beforeY * _scale;
+        StateHasChanged();
+    }
+
+    void Reset()
+    {
+        _scale = 1.0;
+        _offsetX = 0;
+        _offsetY = 0;
+        StateHasChanged();
     }
 }
