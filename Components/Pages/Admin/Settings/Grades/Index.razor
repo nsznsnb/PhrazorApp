@@ -31,7 +31,7 @@
                 </MudTd>
                 <MudTd style="min-width:200px;">
                     <MudStack Row="true" Spacing="1">
-                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
+                        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Disabled="true" Color="Color.Info"
                                    StartIcon="@Icons.Material.TwoTone.Edit"
                                    OnClick="@(() => NavigationManager.NavigateTo($"/admin/settings/grades/edit/{context.Id}"))">
                             @AppConstants.LABEL_BUTTON_EDIT
