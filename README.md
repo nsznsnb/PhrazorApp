@@ -14,8 +14,8 @@
   - **Layout/** … MainLayout, NavMenu など
   - **Pages/** … ルーティングされるページ
   - **Shared/** … 再利用コンポーネント
-    - **Controls/** … 見た目中心（Presentational）
-    - **Containers/** … サービスを利用した処理まで担う（Smart/Container）
+    - **Controls/** … 小UI部品(サービスの処理を含まない)
+    - **Containers/** … サービスを利用した処理まで担うUI部品
     - **Dialogs/** … モーダル（*Dialog / *DialogHost）
   - **App.razor / Routes.razor / _Imports.razor** … ルート/ルーティング/共通 using
 
@@ -23,7 +23,7 @@
   - **Managers/** … ローディング表示・UI操作のオーケストレーション
   - **Interop/** … JS 連携（IJSRuntime ラッパー等）
   - **State/** … 画面間で保持する状態（Scoped）
-  - **Themes/** … MudTheme などのテーマ実体
+  - **Themes/** … アプリ全体の色調などの設定
   - **Rendering/** … RenderModes（Server/Wasm/Auto のプリセット）
 
 - **Services/** … 業務サービス（UI 非依存）
@@ -37,14 +37,15 @@
 
 - **Infrastructure/** … 外部 I/O（Blob/Email/OpenAI 等）と Options バインド
 
-- **Extensions/** … 拡張メソッド（ServiceCollection/WebApplication など）
+- **Extensions/** … 拡張メソッド（ダイアログ呼び出しなどの便利メソッド)
 
-- **Common/** … 横断“定義物”（処理なし）
+- **Common/** … アプリ全体で使用する“定義・設定”
   - **Constants/** … 定数
-  - **Enums/** … 列挙
-  - **Options/** … 設定の POCO
+  - **Csv/** … Csv取込時に利用するスキーマ(列のメタ情報)
+  - **Enums/** … 列挙体
+  - **Options/** … appsettings.json読込用クラス類
   - **Results/** … 結果型（ServiceResult など）
-  - **Validation/** … バリデーション定義
+  - **Validation/** … バリデーションのグローバル設定
 
 - **tools/** … 開発用スクリプト（PowerShell 等）  
   ※ JavaScript は **wwwroot/js/** に配置
