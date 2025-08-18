@@ -94,15 +94,18 @@
         </BaseCard>
         @if (!string.IsNullOrWhiteSpace(_model.Correction))
         {
-            <BaseCard>
-                <MudCardContent>
-                    <MudText Typo="Typo.subtitle1">添削結果</MudText>
-                    <MudPaper Class="pa-3 mt-2" Outlined="true">
-                        <!-- ライブラリに合わせて Value/Text どちらか（多くは Value） -->
-                        <MudMarkdown Value="@_model.Correction" />
-                    </MudPaper>
-                </MudCardContent>
-            </BaseCard>
+            <!-- ▼ スクロール先アンカー -->
+            <div id="@_correctAnchorId">
+                <BaseCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.subtitle1">添削結果</MudText>
+                        <MudPaper Class="pa-3 mt-2" Outlined="true">
+                            <!-- ライブラリに合わせて Value/Text どちらか（多くは Value） -->
+                            <MudMarkdown Value="@_model.Correction" />
+                        </MudPaper>
+                    </MudCardContent>
+                </BaseCard>
+            </div>
         }
     </EditForm>
 </MudStack>
@@ -121,6 +124,8 @@
 
     // タグセレクタ参照（ダイアログ後の再読込に使う）
     private DiaryTagSelectorContainer? _tagSelector;
+
+    private const string _correctAnchorId = "diary-correct-anchor";
 
     // タグ選択（DropItemModel）
     private List<DropItemModel> _selectedTagItems = new();

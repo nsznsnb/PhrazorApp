@@ -141,7 +141,7 @@ public enum OperationTypeCode
     /// <summary>
     ///  英語日記の添削（OpenAI）
     /// </summary>
-    DiaryCorrection = 2,   //
+    DiaryCorrection = 2,   
                            
 }
 

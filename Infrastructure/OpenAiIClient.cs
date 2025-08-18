@@ -86,6 +86,7 @@ namespace PhrazorApp.Infrastructure
 
         /// <summary>
         /// フレーズから画像生成向けプロンプトを作成（Chat Completions API）
+        /// gpt-image-1 での画像生成に適した、簡潔で具体的な英語プロンプトを返す。
         /// </summary>
         public async Task<ServiceResult<string>> BuildImagePromptAsync(string phrase, CancellationToken ct = default)
         {
@@ -96,15 +97,34 @@ namespace PhrazorApp.Infrastructure
             if (string.IsNullOrWhiteSpace(apiKey))
                 return ServiceResult.Error<string>("OpenAI API キーが設定されていません。");
 
+            // 画像用のテキスト整形は軽量高品質モデルを既定に（オプションで差し替え可能）
+            var model = string.IsNullOrWhiteSpace(_options.ChatModel)
+                ? "gpt-4o-mini"
+                : _options.ChatModel;
+
+            var system = """
+You create concise, vivid English prompts suitable for image generation with gpt-image-1.
+Write a single sentence without quotes or code blocks. Avoid brand names, copyrighted characters,
+nudity, real-person likeness, or embedded text. Prefer concrete subjects, setting, lighting,
+composition (shot/angle), style (e.g., watercolor, cinematic), and color mood.
+Return ONLY the prompt text.
+""";
+
+            var user = $"Source phrase: {phrase}\nConvert it into a single, concrete image prompt in English.";
+
             var request = new
             {
-                model = "gpt-3.5-turbo",
+                model,
                 messages = new[]
                 {
-                new { role = "system", content = "You convert short English sentences into detailed prompts suitable for generating illustrations using DALL·E" },
-                new { role = "user",   content = $"Convert this sentence into a detailed image prompt: {phrase}" }
-            },
-                temperature = 0.7
+            new { role = "system", content = system },
+            new { role = "user",   content = user }
+        },
+                temperature = 0.6,
+                top_p = 0.9,
+                frequency_penalty = 0.2,
+                // 画像プロンプトは短めが扱いやすい
+                max_tokens = 160
             };
 
             using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
@@ -119,10 +139,7 @@ namespace PhrazorApp.Infrastructure
                 var json = await res.Content.ReadAsStringAsync(ct);
 
                 if (!res.IsSuccessStatusCode)
-                {
-
                     return ServiceResult.Error<string>($"プロンプト生成に失敗しました。（{(int)res.StatusCode}）");
-                }
 
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("choices", out var choices) &&
@@ -131,7 +148,14 @@ namespace PhrazorApp.Infrastructure
                 {
                     var content = choices[0].GetProperty("message").GetProperty("content").GetString();
                     if (!string.IsNullOrWhiteSpace(content))
-                        return ServiceResult.Success(content!, "");
+                    {
+                        // 軽いサニタイズ：改行やバッククォート/引用符を除去し、1行に整える
+                        var promptText = content.Replace("\r\n", " ").Replace("\n", " ").Trim();
+                        promptText = promptText.Trim('`', '"', '“', '”', '「', '」', '『', '』');
+                        while (promptText.Contains("  ")) promptText = promptText.Replace("  ", " ");
+
+                        return ServiceResult.Success(promptText, "画像プロンプトを生成しました。");
+                    }
                 }
 
                 return ServiceResult.Error<string>("プロンプト生成レスポンスの解析に失敗しました。");

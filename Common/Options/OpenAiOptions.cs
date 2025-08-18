@@ -17,4 +17,9 @@ public class OpenAiOptions
     /// チャットモデル
     /// </summary>
     public string ChatModel { get; set; } = "gpt-4o-mini";
+
+    /// <summary>
+    /// 画像生成モデル
+    /// </summary>
+    public string ImageModel { get; set; } = "gpt-image-1";
 }

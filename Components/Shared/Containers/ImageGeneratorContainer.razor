@@ -1,17 +1,35 @@
 ﻿@inject ImageService ImageService
 @inject UiOperationRunner UiOperationRunner
+@inject OperationLimitService OpLimit
+@inject OperationTypeService OpType
+@inject ISnackbar Snackbar
 
 <MudPaper Class="pa-2" Outlined="true" Style="width: 100%; max-width: 286px;">
     <MudStack Spacing="2" AlignItems="AlignItems.Start" Class="pa-1">
+
         <MudButton StartIcon="@Icons.Material.TwoTone.ImageSearch"
                    Variant="Variant.Filled"
                    Color="Color.Secondary"
                    Size="@AppConstants.SIZE_BUTTON"
                    OnClick="Generate"
                    FullWidth
-                   Disabled="_isLoading || string.IsNullOrWhiteSpace(Prompt)">
+                   Disabled="@(_isLoading
+                                                 || string.IsNullOrWhiteSpace(Prompt)
+                                                 || (_limitPerDay.HasValue && _remainingToday.GetValueOrDefault() <= 0))">
             画像生成
         </MudButton>
+
+        <!-- 上限表示（小さめ） -->
+        @if (_limitPerDay is null)
+        {
+            <MudText Typo="Typo.caption" Class="opacity-70">本日の生成上限：無制限</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Class="opacity-70">
+                本日：@(_usedToday ?? 0) / @_limitPerDay 回（残り @_remainingToday.GetValueOrDefault() 回）
+            </MudText>
+        }
 
         @if (_isLoading)
         {
@@ -26,12 +44,22 @@
                       Style="aspect-ratio: 1; object-fit: contain;"
                       Class="rounded-lg" />
         }
+
+        <!-- 注意書き（小さく邪魔にならない位置） -->
+        <MudText Typo="Typo.caption" Class="opacity-60">
+            ※ 開発途中のため、この画像は保存されません。
+        </MudText>
     </MudStack>
 </MudPaper>
 
 @code {
     private bool _isLoading = false;
     private string? _imageUrlInternal;
+
+    // 利用上限（null は無制限）
+    private int? _limitPerDay;
+    private int? _remainingToday;
+    private int? _usedToday;
 
     [Parameter, EditorRequired]
     public string? Prompt { get; set; }
@@ -42,9 +70,31 @@
     [Parameter]
     public EventCallback<string?> ImageUrlChanged { get; set; }
 
+    protected override async Task OnInitializedAsync()
+        => await LoadUsageAsync();
+
     protected override void OnParametersSet()
+        => _imageUrlInternal = ImageUrl;
+
+    private async Task LoadUsageAsync()
     {
-        _imageUrlInternal = ImageUrl;
+        // 1) マスタから上限取得（0 以下は無制限）
+        var types = await UiOperationRunner.ReadAsync(() => OpType.GetListAsync());
+        var op = types?.FirstOrDefault(x =>
+            string.Equals(x.Code, OperationTypeCode.ImageGenaration.ToString(), StringComparison.OrdinalIgnoreCase));
+
+        _limitPerDay = (op?.Limit > 0) ? op.Limit : (int?)null;
+
+        // 2) 本日の残回数（確認のみ・消費しない）
+        var chk = await UiOperationRunner.ReadAsync(() => OpLimit.CheckAsync(OperationTypeCode.ImageGenaration, units: 0));
+        _remainingToday = chk?.RemainingToday;
+
+        // 3) 使用回数（上限と残りが揃ったときだけ算出）
+        _usedToday = (_limitPerDay is not null && _remainingToday is not null)
+            ? Math.Max(0, _limitPerDay.Value - _remainingToday.Value)
+            : null;
+
+        StateHasChanged();
     }
 
     private async Task Generate()
@@ -52,28 +102,37 @@
         if (string.IsNullOrWhiteSpace(Prompt))
             return;
 
-        // 局所UIの無効化用
+        // 実行前チェック（1回分を消費できるか）
+        var gate = await UiOperationRunner.ReadAsync(() => OpLimit.CheckAsync(OperationTypeCode.ImageGenaration, units: 1));
+        if (gate is null || !(gate.Allowed))
+        {
+            var msg = gate?.Message ?? "本日の生成上限に達しています。";
+            Snackbar.Add(msg, Severity.Warning);
+            return;
+        }
+
         _isLoading = true;
         _imageUrlInternal = null;
         StateHasChanged();
 
+        // 画像生成（サービス側は gpt-image-1 を使用する想定）
         var url = await UiOperationRunner.ReadWithOverlayAsync(
-            () => ImageService.GenerateImageAsync(Prompt),   // ★ CTなし版
+            () => ImageService.GenerateImageAsync(Prompt),
             message: "画像生成中..."
         );
+
+        _isLoading = false;
+
         if (!string.IsNullOrWhiteSpace(url))
         {
             _imageUrlInternal = url;
             await ImageUrlChanged.InvokeAsync(_imageUrlInternal);
-        }
-        else
-        {
-            // 失敗時は Service 側のメッセージが Snackbar に出ています
-            // 追加のUI処理が必要ならここで
+
+            // 成功時のみ使用量を記録し、最新残数を再取得
+            await UiOperationRunner.WriteAsync(() => OpLimit.RecordAsync(OperationTypeCode.ImageGenaration, units: 1));
+            await LoadUsageAsync();
         }
 
-
-        _isLoading = false;
         StateHasChanged();
     }
 }
