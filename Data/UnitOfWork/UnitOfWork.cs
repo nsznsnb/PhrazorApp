@@ -25,6 +25,8 @@ namespace PhrazorApp.Data.UnitOfWork
             public DailyUsageRepository DailyUsages { get; }
             public DiaryTagRepository DiaryTags { get; }
             public EnglishDiaryRepository EnglishDiaries { get; }
+
+            public EnglishDiaryTagRepository EnglishDiaryTags { get; }
             public GradeRepository Grades { get; }
             public OperationTypeRepository OperationTypes { get; }
             public ProverbRepository Proverbs { get; }
@@ -45,6 +47,7 @@ namespace PhrazorApp.Data.UnitOfWork
                 DailyUsages = new DailyUsageRepository(ctx);
                 DiaryTags = new DiaryTagRepository(ctx);
                 EnglishDiaries = new EnglishDiaryRepository(ctx);
+                EnglishDiaryTags = new EnglishDiaryTagRepository(ctx);
                 Grades = new GradeRepository(ctx);
                 OperationTypes = new OperationTypeRepository(ctx);
                 Proverbs = new ProverbRepository(ctx);

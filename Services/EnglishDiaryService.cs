@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
 using PhrazorApp.Models;
 using PhrazorApp.Models.Mappings;
@@ -220,22 +221,46 @@ Edit the text as instructed and return Markdown with the corrected English and a
         }
 
 
-        public Task<ServiceResult<Unit>> DeleteByDateAsync(DateOnly localDateJst)
+
+        public async Task<ServiceResult<Unit>> DeleteByDateAsync(DateOnly localDateJst)
         {
             var uid = _user.GetUserId();
             var (fromUtc, toUtc) = GetUtcRangeForLocalDate(localDateJst);
 
-            return _uow.ExecuteInTransactionAsync(async repos =>
+            // ← 戻り値なしTxメソッドなので、結果は外で受ける
+            var result = ServiceResult.None.Success();
+
+            await _uow.ExecuteInTransactionAsync(async repos =>
             {
-                var row = await repos.EnglishDiaries.Queryable(false)
-                    .FirstOrDefaultAsync(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc);
+                // 1) 対象日の主キーだけ取得（匿名型は使わない）
+                Guid? diaryId = await repos.EnglishDiaries.Queryable(false)
+                    .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)
+                    .Select(x => (Guid?)x.DiaryId)
+                    .SingleOrDefaultAsync();
 
-                if (row is null) return ServiceResult.None.Success();
+                if (diaryId is null)
+                {
+                    // 何もしない（result は既に Success）
+                    return;
+                }
 
-                await repos.EnglishDiaries.DeleteAsync(row);
-                return ServiceResult.None.Success();
+                // 2) 子（中間テーブル）を先に削除
+                // リポジトリがある場合: repos.EnglishDiaryTags
+                // ない場合は ↓ の "DbSet アクセス案" を使う
+                await repos.EnglishDiaryTags.Queryable(false)
+                    .Where(t => t.DiaryId == diaryId.Value)
+                    .ExecuteDeleteAsync();
+
+                // 3) 親を削除（キーだけのスタブでOK）
+                await repos.EnglishDiaries.DeleteAsync(new DEnglishDiary
+                {
+                    DiaryId = diaryId.Value
+                });
             });
+
+            return result;
         }
+
 
 
 
