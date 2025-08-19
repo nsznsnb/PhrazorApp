@@ -1,6 +1,9 @@
 ﻿@page "/diary/calendar"
 @attribute [Authorize]
 
+@using Heron.MudCalendar
+@using System.Globalization
+
 @inject EnglishDiaryService DiaryService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -11,20 +14,26 @@
     <SectionTitle Title="英語日記カレンダー" />
 
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON" Color="Color.Info"
-                   StartIcon="@Icons.Material.TwoTone.Add" OnClick="CreateToday">
+        <MudButton Variant="Variant.Outlined"
+                   Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Info"
+                   StartIcon="@Icons.Material.TwoTone.Add"
+                   OnClick="CreateToday">
             新規追加
         </MudButton>
     </ActionCard>
 
     <BaseCard>
+        <!-- 月表示のみ。Culture を ja-JP に固定して月名・曜日を日本語化 -->
         <MudCalendar T="DiaryCalendarItem"
                      Items="_items"
                      View="CalendarView.Month"
-                     ShowWeek="false" ShowDay="false">
+                     ShowWeek="false"
+                     ShowDay="false"
+                     Culture="@_ja">
             <CellTemplate Context="item">
                 <MudStack Row AlignItems="AlignItems.Center" Spacing="1" Class="w-100">
-                    <!-- 編集へ：必ず JST の日付に変換してから遷移 -->
+                    <!-- 編集へ：JST の日付に正規化して遷移 -->
                     <MudChip T="string"
                              Variant="Variant.Outlined"
                              Color="Color.Primary"
@@ -46,6 +55,8 @@
 </MudStack>
 
 @code {
+    private static readonly CultureInfo _ja = CultureInfo.GetCultureInfo("ja-JP");
+
     private List<DiaryCalendarItem> _items = new();
     private DateOnly _month = DateOnly.FromDateTime(ToTokyoNow());
 
@@ -92,6 +103,7 @@
         var tz = GetTokyoTz();
         return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
     }
+
     private static DateOnly ToTokyoDateOnly(DateTime dt)
     {
         var tz = GetTokyoTz();
@@ -103,6 +115,7 @@
         };
         return DateOnly.FromDateTime(d);
     }
+
     private static TimeZoneInfo GetTokyoTz()
     {
         try { return TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time"); }
