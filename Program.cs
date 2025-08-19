@@ -194,17 +194,19 @@ public class Program
         {
             app.UseMigrationsEndPoint();
 
-            // 初期ユーザ作成（開発時のみ）
-            using var scope = app.Services.CreateScope();
-            var services = scope.ServiceProvider;
-            var seedOptions = services.GetRequiredService<IOptions<SeedUserOptions>>().Value;
-            await SeedUserData.InitializeAsync(services, seedOptions);
+
         }
         else
         {
             app.UseExceptionHandler("/Error");
             app.UseHsts(); // 既定 30 日
         }
+
+        // 初期ユーザ作成
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var seedOptions = services.GetRequiredService<IOptions<SeedUserOptions>>().Value;
+        await SeedUserData.InitializeAsync(services, seedOptions);
 
         app.UseHttpsRedirection();
         app.UseAntiforgery();
