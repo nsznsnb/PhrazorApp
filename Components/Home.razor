@@ -135,7 +135,7 @@
     private HomeDashboardModel? _vm;
 
     // MudBlazor 8.0 の API を使用
-    private readonly AxisChartOptions _axisChartOptions = new() { MatchBoundsToSize = true };
+    private readonly AxisChartOptions _axisChartOptions = new() { MatchBoundsToSize = false };
     private readonly ChartOptions _chartOptions = new() { ShowLegend = false };
 
     protected override async Task OnInitializedAsync()
