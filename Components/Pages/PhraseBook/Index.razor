@@ -25,7 +25,10 @@
                                   Placeholder="新しいブック名"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
-                                  MaxLength="60" />
+                                  MaxLength="60"
+                                  Immediate="true"
+                                  Clearable="true"
+                                  OnKeyDown="OnNewBookNameKeyDown" />
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                StartIcon="@Icons.Material.TwoTone.Add"
@@ -56,7 +59,7 @@
 
                                 @if (_renamingBookId == b.Id)
                                 {
-                                    <!-- インライン・リネーム入力 -->
+                                    <!-- インライン・リネーム入力（Enter=保存 / Esc=取消） -->
                                     <MudTextField T="string"
                                                   Id="@($"rename-{b.Id}")"
                                                   Class="mr-2"
@@ -142,9 +145,9 @@
                                Value="@_period"
                                ValueChanged="OnPeriodChanged"
                                Style="width:150px">
-                        <MudSelectItem Value="@PeriodFilter.Last30">直近30日</MudSelectItem>
-                        <MudSelectItem Value="@PeriodFilter.Last90">直近90日</MudSelectItem>
-                        <MudSelectItem Value="@PeriodFilter.All">すべて</MudSelectItem>
+                        <MudSelectItem T="PeriodFilter" Value="@PeriodFilter.Last30">直近30日</MudSelectItem>
+                        <MudSelectItem T="PeriodFilter" Value="@PeriodFilter.Last90">直近90日</MudSelectItem>
+                        <MudSelectItem T="PeriodFilter" Value="@PeriodFilter.All">すべて</MudSelectItem>
                     </MudSelect>
 
                     <MudCheckBox T="bool"
@@ -355,6 +358,17 @@
         => _selectedBook is null
            ? "選択中ブックのアイテム一覧：未選択"
            : $"「{_selectedBook.Name}」のアイテム一覧";
+
+    // --- Enterで新規作成確定 ---
+    private async Task OnNewBookNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            var name = (_newBookName ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(name))
+                await CreateBookAsync();
+        }
+    }
 
     private async Task CreateBookAsync()
     {
@@ -580,6 +594,7 @@
         StateHasChanged();
     }
 
+    // Enter=保存 / Esc=取消（インラインリネーム）
     private async Task OnRenameKeyDown(KeyboardEventArgs e, PhraseBookListItemModel b)
     {
         if (e.Key == "Enter")
