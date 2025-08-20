@@ -100,7 +100,7 @@
                                              SelectedValues="_f.SubGenreIds"
                                              SelectedValuesChanged="@EventCallback.Factory.Create(this, (object? e) => OnSubGenreIdsChanged(ToSet(e)))"
                                              Dense="true"
-                                             CheckBoxColor="Color.Primary">
+                                             CheckBoxColor="Color.Default">
                                         @foreach (var sg in s1)
                                         {
                                             <MudListItem T="Guid" Value="@sg.Id">
