@@ -4,7 +4,7 @@
 
 ## 開発者向けドキュメント
 
-このプロジェクトの実装方針・用語・概念は **[Development Guide](./DEVELOPMENT.md)** にまとめています。
+このプロジェクトの用語・実装方針は **[Development Guide](./DEVELOPMENT.md)** にまとめています。
 
 ## システム構成図
 
