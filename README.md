@@ -5,6 +5,28 @@
 このプロジェクトの実装方針・命名・画面とサービスの役割・バリデーション方針などは  
 **[Development Guide](./DEVELOPMENT.md)** にまとめています。
 
+## システム構成図
+
+```mermaid
+flowchart TB
+  Client["ユーザーのブラウザ（HTTPS）"] --> UI
+
+  subgraph App["Azure Web App / Blazor Server"]
+    UI["UI（MudBlazor）"]
+    SVC["Services"]
+    INF["Infrastructure"]
+    DATA["Repositories"]
+    UI -->|UIOperationRunner| SVC
+    UI -->|UIOperationRunner| INF
+    SVC -->|UnitOfWork| DATA
+  end
+
+  DATA --> SQL["Azure SQL Database"]
+  INF -.予定/未実装.- BLOB["Azure Blob Storage（画像）"]
+  INF --> OPENAI["OpenAI（画像生成／日記添削）"]
+  INF --> RESEND["Resend（メール送信）"]
+```
+
 ## ディレクトリ概要
 
 - **Components/** … Razor コンポーネント
