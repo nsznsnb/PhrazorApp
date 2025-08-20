@@ -39,10 +39,11 @@
                        MultiSelection="true"
                        SelectedValues="_f.PhraseBookIds"
                        SelectedValuesChanged="@EventCallback.Factory.Create(this, (IEnumerable<Guid> ids) => OnPhraseBookIdsChanged(ids))"
+                       ToStringFunc="GetPhraseBookName"
                        Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (var b in _books)
                 {
-                    <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>
+                    <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>  @* Value は Guid のまま *@
                 }
             </MudSelect>
 
@@ -52,7 +53,6 @@
             <MudTextField T="string"
                           @bind-Value="_genreFilter"
                           Variant="Variant.Outlined"
-                          Dense="true"
                           Margin="Margin.Dense"
                           Placeholder="ジャンル・サブジャンル名で絞り込み" />
             <MudPaper Outlined="true" Elevation="0" Square="true"
@@ -407,6 +407,9 @@
     private static bool ContainsCi(string? text, string? term)
         => !string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(term)
            && text.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private string GetPhraseBookName(Guid id)
+    => _books.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
 
     private int GetSelectedCountWithin(GenreModel g)
         => g.SubGenres?.Count(sg => _f.SubGenreIds.Contains(sg.Id)) ?? 0;
