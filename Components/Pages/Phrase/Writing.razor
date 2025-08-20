@@ -63,13 +63,17 @@
                 </MudItem>
             </MudGrid>
 
-            <!-- 出題（No 左上） -->
-            <MudGrid Justify="Justify.Center">
-                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
-                    <MudCard Elevation="10" Class="p-6">
-                        <MudStack Spacing="1">
-                            <MudText Typo="Typo.overline" Align="Align.Left">No. @_indexPlus1</MudText>
-                            <MudText Typo="Typo.h6" Align="Align.Center">@_current.Back</MudText>
+            <!-- 出題（No 左上・本文は中央）。高さ固定 -->
+            <MudGrid Justify="Justify.Center" Class="mb-1">
+                <MudItem Xs="12" Sm="10" Md="8" Lg="7" Xl="6">
+                    <MudCard Elevation="10" Class="p-6 qcard">
+                        <MudStack Spacing="1" Class="q-stack">
+                            <MudText Typo="Typo.subtitle2" Align="Align.Left">No. @_indexPlus1</MudText>
+
+                            <!-- 本文は中央寄せ・余った高さを占有・必要ならスクロール -->
+                            <div class="q-body">
+                                <MudText Typo="Typo.h6" Align="Align.Center">@_current.Back</MudText>
+                            </div>
                         </MudStack>
                     </MudCard>
                 </MudItem>
@@ -77,7 +81,7 @@
 
             <!-- 回答（上=入力 / 下=入力補助：どちらも MudTextField） -->
             <MudGrid Justify="Justify.Center">
-                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6" autocomplete="off">
+                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6" >
                     @* Enterで解答するため OnSubmit を使用 *@
                     <EditForm Model="_form" OnSubmit="SubmitAsync">
                         <MudStack @key="_index" Spacing="1" AlignItems="AlignItems.Stretch">
@@ -91,6 +95,7 @@
                                           AdornmentIcon="@Icons.Material.TwoTone.EditNote"
                                           Immediate="true"
                                           Class="mono-input"
+                                          OnKeyDown="HandleAnswerKeyDown"
                                           InputAttributes="_noAutoAttrs" />
 
                             <MudTextField T="string"
@@ -157,6 +162,32 @@
         --mono-font-stack: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", "Source Code Pro", "Noto Sans Mono", "Liberation Mono", monospace;
         --mono-size: 1rem;
         --mono-line: 1.5rem;
+        --qcard-h: 180px; /* 出題カードの固定高さ。 */
+    }
+
+    /* カード自体の高さを固定 */
+    .qcard {
+        height: var(--qcard-h);
+    }
+
+    /* 中身がカードの高さにフィットするように */
+    .q-stack {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* 本文領域：縦中央・余白を占有・オーバー時のみスクロール */
+    .q-body {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        text-align: center;
+        /* 単語が長いときも折り返す */
+        overflow-wrap: anywhere;
+        word-break: normal;
     }
 
     .mono-input .mud-input-slot input {
@@ -228,6 +259,8 @@
     private string _assistText = string.Empty;
 
     private bool _peek;
+    private bool _submitting;
+
 
     protected override void OnInitialized()
     {
@@ -279,7 +312,6 @@
 
         RebuildAssist();
 
-        Snackbar.Add("ヒントを表示しました（単語を1つ公開）。", Severity.Info);
     }
 
     private void RebuildAssist()
@@ -333,43 +365,62 @@
         _ => ch
     };
 
+    private async Task HandleAnswerKeyDown(KeyboardEventArgs e)
+    {
+        // IME確定後の Enter/NumpadEnter を拾う。修飾キー付きは無視。
+        if ((e.Key == "Enter" || e.Key == "NumpadEnter") && !e.AltKey && !e.CtrlKey && !e.ShiftKey)
+            await SubmitAsync();
+    }
+
+
     private async Task SubmitAsync()
     {
-        var input = _form.Answer;
-        if (string.IsNullOrWhiteSpace(input))
+        if (_submitting) return;
+        _submitting = true;
+        try
         {
-            Snackbar.Add("英作文を入力してください。", Severity.Warning);
-            return;
-        }
-
-        var user = NormalizeForJudge(input);
-        var expected = NormalizeForJudge(_current.Front);
-
-        if (user == expected)
-        {
-            _correctCount++;
-            _answeredCount++;
-            _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true));
-            Snackbar.Add("正解です！", Severity.Success);
-
-            if (_showCorrectBeforeNext)
-                await ShowCorrectDialogAsync("正解を確認して次へ進みます。");
-
-            await NextAsync();
-        }
-        else
-        {
-            _attemptsLeft--;
-            if (_attemptsLeft > 0)
+            // ここから元の SubmitAsync 本体（そのまま流用）
+            var input = _form.Answer;
+            if (string.IsNullOrWhiteSpace(input))
             {
-                Snackbar.Add($"不正解です。もう一度試してください（残り {_attemptsLeft} 回）", Severity.Error);
+                Snackbar.Add("英作文を入力してください。", Severity.Warning);
+                return;
+            }
+
+            var user = NormalizeForJudge(input);
+            var expected = NormalizeForJudge(_current.Front);
+
+            if (user == expected)
+            {
+                _correctCount++;
+                _answeredCount++;
+                _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true));
+                Snackbar.Add("正解です！", Severity.Success);
+
+                if (_showCorrectBeforeNext)
+                    await ShowCorrectDialogAsync("正解を確認して次へ進みます。");
+
+                await NextAsync();
             }
             else
             {
-                await ProceedWrongAsync(); // ×として進む
+                _attemptsLeft--;
+                if (_attemptsLeft > 0)
+                {
+                    Snackbar.Add($"不正解です。もう一度試してください（残り {_attemptsLeft} 回）", Severity.Error);
+                }
+                else
+                {
+                    await ProceedWrongAsync();
+                }
             }
         }
+        finally
+        {
+            _submitting = false;
+        }
     }
+
 
     private async Task SkipAsWrongAsync() => await ProceedWrongAsync();
 
