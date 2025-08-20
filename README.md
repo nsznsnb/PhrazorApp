@@ -49,7 +49,7 @@ flowchart TB
   - **Themes/** … アプリ全体の色調などの設定
   - **Rendering/** … RenderModes（Server/Wasm/Auto のプリセット）
 
-- **Services/** … 業務サービス（UI 非依存）
+- **Services/** … アプリ固有の処理
 
 - **Data/** … データアクセス
   - **ApplicationDbContext.cs** … Identity（Code-first）
@@ -58,7 +58,7 @@ flowchart TB
   - **Repositories/** … リポジトリ
   - **Migrations/** … Identity のマイグレーション
 
-- **Infrastructure/** … 外部 I/O（Blob/Email/OpenAI 等）と Options バインド
+- **Infrastructure/** … 外部 I/O（Blob/Email/OpenAI 等）
 
 - **Extensions/** … 拡張メソッド（ダイアログ呼び出しなどの便利メソッド)
 
