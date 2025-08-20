@@ -1,120 +1,132 @@
 ﻿@typeparam TItem
 @using MudBlazor
 
-<TableWithToolbar TItem="TItem"
-                  Title="@Title"
-                  Items="@Items"
-                  Search="@Search"
-                  SearchBy="@SearchBy"
-                  SearchPlaceholder="@SearchPlaceholder"
-                  Pager="@Pager"
-                  RowsPerPage="@RowsPerPage"
-                  Height="@Height">
+@* ここで初回遅延描画をオプション化 *@
+@if (!DeferFirstRender || _ready)
+{
+    <TableWithToolbar TItem="TItem"
+                      Title="@Title"
+                      Items="@Items"
+                      Search="@Search"
+                      SearchBy="@SearchBy"
+                      SearchPlaceholder="@SearchPlaceholder"
+                      Pager="@Pager"
+                      RowsPerPage="@RowsPerPage"
+                      Height="@Height">
 
-    <!-- Toolbar -->
-    <ToolbarContent Context="tb">
-        @{
-            var txt = tb.SearchText ?? string.Empty;
-            var prev = _lastSearchText;
-            _lastSearchText = txt;
+        <!-- Toolbar -->
+        <ToolbarContent Context="tb">
+            @{
+                var txt = tb.SearchText ?? string.Empty;
+                var prev = _lastSearchText;
+                _lastSearchText = txt;
 
-            // 検索語が変わった → レンダー後に「結果を全選択（置換）」を実行予約
-            if (txt != prev)
-                _pendingAutoSelectText = txt;
+                // 検索語が変わった → レンダー後に「結果を全選択（置換）」を実行予約
+                if (txt != prev)
+                    _pendingAutoSelectText = txt;
 
-            var cnt = GetSelectedCountInView(txt);
-            var hasRows = HasRows(txt);
-        }
-
-        <!-- モバイル：検索結果に対する全選択/解除 -->
-        <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <div style="width:100%">
-                <MudCheckBox T="bool"
-                             Value="@_selectAll"
-                             ValueChanged="@( (bool v) => OnSelectAllChanged(v, txt) )"
-                             Dense="true"
-                             Disabled="@(!hasRows)"
-                             Label="全選択(検索結果)" />
-            </div>
-        </MudHidden>
-
-        <!-- 追加ツールバー（ページから差し込む） -->
-        @if (ExtraToolbar is not null)
-        {
-            var ctx = new SelectableTableToolbarContext(
-            SelectedCountInView: cnt,
-            IsMdUp: tb.IsMdUp,
-            SearchText: txt,
-            GetSelectedIdsInView: () => GetSelectedIdsInView(txt),
-            GetSelectedIdsAll: () => GetSelectedIdsAll()
-            );
-
-            if (tb.IsMdUp)
-            {
-                <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
-                    @ExtraToolbar(ctx)
-                </MudStack>
+                var cnt = GetSelectedCountInView(txt);
+                var hasRows = HasRows(txt);
             }
-            else
-            {
-                <MudStack Spacing="2" AlignItems="AlignItems.Stretch" Style="width:100%">
-                    @ExtraToolbar(ctx)
-                </MudStack>
-            }
-        }
-    </ToolbarContent>
 
-    <!-- Header（左端：選択チェック。デスクトップのみ） -->
-    <HeaderContent>
-        <MudTh style="width:48px;text-align:center;">
-            <MudHidden Breakpoint="Breakpoint.SmAndDown">
-                <MudTooltip Text="@(_selectAll ? "全解除" : "全選択")" Arrow="true" Placement="Placement.Top">
+            <!-- モバイル：検索結果に対する全選択/解除 -->
+            <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                <div style="width:100%">
                     <MudCheckBox T="bool"
                                  Value="@_selectAll"
-                                 ValueChanged="@( (bool v) => OnSelectAllChanged(v, _lastSearchText) )"
-                                 Disabled="@(!HasRows(_lastSearchText))" />
-                </MudTooltip>
+                                 ValueChanged="@( (bool v) => OnSelectAllChanged(v, txt) )"
+                                 Dense="true"
+                                 Disabled="@(!hasRows)"
+                                 Label="全選択(検索結果)" />
+                </div>
             </MudHidden>
-        </MudTh>
-        @HeaderContent
-    </HeaderContent>
 
-    <!-- Rows（左端チェック） -->
-    <RowTemplate Context="row">
-        <!-- モバイル -->
-        <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <MudTd style="width:64px;">
-                <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
-                     @onclick="@(() => ToggleRow(GetId(row), !IsSelected(GetId(row))))"
-                     aria-label="行を選択/解除">
-                    <MudCheckBox @key="MobileKey(row)" T="bool"
-                                 Size="Size.Large"
-                                 Value="@IsSelected(GetId(row))"
-                                 ValueChanged="@( (bool v) => ToggleRow(GetId(row), v) )"
-                                 @onclick:stopPropagation="true" />
-                </div>
-            </MudTd>
-        </MudHidden>
+            <!-- 追加ツールバー（ページから差し込む） -->
+            @if (ExtraToolbar is not null)
+            {
+                var ctx = new SelectableTableToolbarContext(
+                SelectedCountInView: cnt,
+                IsMdUp: tb.IsMdUp,
+                SearchText: txt,
+                GetSelectedIdsInView: () => GetSelectedIdsInView(txt),
+                GetSelectedIdsAll: () => GetSelectedIdsAll()
+                );
 
-        <!-- デスクトップ -->
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudTd style="width:48px;text-align:center; cursor:pointer;"
-                   @onclick="@(() => ToggleRow(GetId(row), !IsSelected(GetId(row))))">
-                <div @onclick:stopPropagation="true" @onmousedown:stopPropagation="true">
-                    <MudCheckBox @key="DesktopKey(row)" T="bool"
-                                 Value="@IsSelected(GetId(row))"
-                                 ValueChanged="@( (bool v) => ToggleRow(GetId(row), v) )" />
-                </div>
-            </MudTd>
-        </MudHidden>
+                if (tb.IsMdUp)
+                {
+                    <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                        @ExtraToolbar(ctx)
+                    </MudStack>
+                }
+                else
+                {
+                    <MudStack Spacing="2" AlignItems="AlignItems.Stretch" Style="width:100%">
+                        @ExtraToolbar(ctx)
+                    </MudStack>
+                }
+            }
+        </ToolbarContent>
 
-        @RowTemplate(row)
-    </RowTemplate>
+        <!-- Header（左端：選択チェック。デスクトップのみ） -->
+        <HeaderContent>
+            <MudTh style="width:48px;text-align:center;">
+                <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                    <MudTooltip Text="@(_selectAll ? "全解除" : "全選択")" Arrow="true" Placement="Placement.Top">
+                        <MudCheckBox T="bool"
+                                     Value="@_selectAll"
+                                     ValueChanged="@( (bool v) => OnSelectAllChanged(v, _lastSearchText) )"
+                                     Disabled="@(!HasRows(_lastSearchText))" />
+                    </MudTooltip>
+                </MudHidden>
+            </MudTh>
+            @HeaderContent
+        </HeaderContent>
 
-    <NoRecordsContent>
-        @NoRecordsContent
-    </NoRecordsContent>
-</TableWithToolbar>
+        <!-- Rows（左端チェック） -->
+        <RowTemplate Context="row">
+            <!-- モバイル -->
+            <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                <MudTd style="width:64px;">
+                    <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
+                         @onclick="@(() => ToggleRow(GetId(row), !IsSelected(GetId(row))))"
+                         aria-label="行を選択/解除">
+                        <MudCheckBox @key="MobileKey(row)" T="bool"
+                                     Size="Size.Large"
+                                     Value="@IsSelected(GetId(row))"
+                                     ValueChanged="@( (bool v) => ToggleRow(GetId(row), v) )"
+                                     @onclick:stopPropagation="true" />
+                    </div>
+                </MudTd>
+            </MudHidden>
+
+            <!-- デスクトップ -->
+            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                <MudTd style="width:48px;text-align:center; cursor:pointer;"
+                       @onclick="@(() => ToggleRow(GetId(row), !IsSelected(GetId(row))))">
+                    <div @onclick:stopPropagation="true" @onmousedown:stopPropagation="true">
+                        <MudCheckBox @key="DesktopKey(row)" T="bool"
+                                     Value="@IsSelected(GetId(row))"
+                                     ValueChanged="@( (bool v) => ToggleRow(GetId(row), v) )" />
+                    </div>
+                </MudTd>
+            </MudHidden>
+
+            @RowTemplate(row)
+        </RowTemplate>
+
+        <NoRecordsContent>
+            @NoRecordsContent
+        </NoRecordsContent>
+    </TableWithToolbar>
+}
+else
+{
+    <!-- 初回描画時はプレースホルダだけ（接続安定後に一覧を描画） -->
+    <MudPaper Elevation="0" Class="pa-4"
+              Style="@($"height:{Height ?? "500px"};display:flex;align-items:center;justify-content:center;")">
+        <MudText Color="Color.Secondary">読み込み中...</MudText>
+    </MudPaper>
+}
 
 @code {
     // -------- 公開パラメータ（必要最小限） --------
@@ -138,10 +150,15 @@
     // 外部ツールバー差し込み
     [Parameter] public RenderFragment<SelectableTableToolbarContext>? ExtraToolbar { get; set; }
 
+    // ★ 追加：初回描画を遅延させるスイッチ（独自JSなし）
+    [Parameter] public bool DeferFirstRender { get; set; } = false;
+
     // -------- 内部状態 --------
     private HashSet<Guid> _selected = new();
     private bool _selectAll;
     private string _lastSearchText = "";
+
+    private bool _ready; // DeferFirstRender 用
 
     // レンダー後に実行する“自動全選択（置換）”の予約
     private string? _pendingAutoSelectText;
@@ -171,21 +188,27 @@
             _pendingAutoSelectText = _lastSearchText;   // 描画後に「結果を全選択（置換）」を実行
         }
 
-        // --- 既存の“内容”変化検知（同じ参照で中身だけ変わるケースの保険） ---
+        // --- “内容”変化検知（同じ参照で中身だけ変わるケースの保険） ---
         var sig = ComputeItemsSignature();
         if (sig != _itemsSignature)
         {
             _itemsSignature = sig;
-            _pendingAutoSelectText = _lastSearchText;   // 同じく全選択を予約
+            _pendingAutoSelectText = _lastSearchText;
         }
 
-        // 生存確認・全選択フラグ再計算（既存の処理のまま）
+        // 生存確認・全選択フラグ再計算
         PruneSelectionToExistingItems();
         RecalcSelectAll(_lastSearchText);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender && DeferFirstRender)
+        {
+            _ready = true;         // 2回目のレンダリングで本体描画
+            StateHasChanged();
+        }
+
         // 予約があれば、描画完了後にまとめて反映（置換）
         if (_pendingAutoSelectText is not null)
         {
@@ -248,7 +271,7 @@
     {
         var all = ItemsView(text).Select(GetId).ToList();
         _selectAll = all.Count > 0 && all.All(_selected.Contains);
-        // ここでは StateHasChanged は呼ばない（呼び出し側で必要時に再描画）
+        // ここでは StateHasChanged は呼ばない
     }
 
     private Task OnSelectAllChanged(bool v, string text)

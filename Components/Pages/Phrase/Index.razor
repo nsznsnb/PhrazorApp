@@ -226,7 +226,7 @@
 
         <MudDivider />
 
-        <!-- 一覧本体 -->
+        <!-- 一覧本体：SelectableTable 側で初回遅延描画を実施 -->
         <SelectableTable TItem="PhraseListItemModel"
                          @ref="_table"
                          Items="_filtered"
@@ -235,7 +235,8 @@
                          Search="false"
                          Pager="TablePagerMode.Auto"
                          RowsPerPage="@_rowsPerPage"
-                         Height="500px">
+                         Height="500px"
+                         DeferFirstRender="true">
 
             <!-- ツールバー（ページ側で差し込み） -->
             <ExtraToolbar Context="tb">
@@ -540,13 +541,13 @@
             );
         }
 
-// フレーズ帳（OR マッチ）
-if (_qPhraseBooks.Any())
-{
-    q = q.Where(x => x.PhraseBookNames != null
-                     && x.PhraseBookNames.Any(n => !string.IsNullOrWhiteSpace(n)
-                                                   && _qPhraseBooks.Contains(n)));
-}
+        // フレーズ帳（OR マッチ）
+        if (_qPhraseBooks.Any())
+        {
+            q = q.Where(x => x.PhraseBookNames != null
+                             && x.PhraseBookNames.Any(n => !string.IsNullOrWhiteSpace(n)
+                                                           && _qPhraseBooks.Contains(n)));
+        }
 
         // ★ 復習回数：範囲正規化（min > max の場合は入れ替え）
         int? min = _qReviewMin, max = _qReviewMax;
@@ -593,15 +594,15 @@ if (_qPhraseBooks.Any())
     }
 
     private void RebuildPhraseBookOptions()
-{
-    _phraseBookOptions = Elements
-        .Where(e => e.PhraseBookNames is not null)
-        .SelectMany(e => e.PhraseBookNames!)
-        .Where(n => !string.IsNullOrWhiteSpace(n))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .OrderBy(n => n)
-        .ToList();
-}
+    {
+        _phraseBookOptions = Elements
+            .Where(e => e.PhraseBookNames is not null)
+            .SelectMany(e => e.PhraseBookNames!)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n)
+            .ToList();
+    }
 
     // --- Toolbar actions ---
     private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
@@ -736,38 +737,37 @@ if (_qPhraseBooks.Any())
         );
     }
 
-private async Task OpenBulkPhrasebookDialog(HashSet<Guid> ids)
-{
-    if (ids.Count == 0)
+    private async Task OpenBulkPhrasebookDialog(HashSet<Guid> ids)
     {
-        Snackbar.Add("対象が選択されていません。", Severity.Warning);
-        return;
-    }
-
-    await DialogService.ShowWithParamsAndCallbackAsync<BulkAddToPhrasebookDialog, bool>(
-        title: "フレーズ帳に追加",
-        caller: this,
-        values: new (Expression<Func<BulkAddToPhrasebookDialog, object?>>, object?)[] {
-            (x => x.TargetIds, ids)
-        },
-        callbackSelector: x => x.OnApplied,
-        handler: async _ =>
+        if (ids.Count == 0)
         {
-            var list = await UiOperationRunner.ReadAsync(() => PhraseService.GetPhraseListAsync());
-            if (list is not null)
-            {
-                Elements = list;
-                RebuildCategoryOptions();
-                RebuildPhraseBookOptions(); 
-                _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
-                ApplyFilter();
-            }
-            Snackbar.Add("フレーズ帳へ追加しました。", Severity.Success);
-        },
-        options: DialogServiceExtensions.OptionsSm()
-    );
-}
+            Snackbar.Add("対象が選択されていません。", Severity.Warning);
+            return;
+        }
 
+        await DialogService.ShowWithParamsAndCallbackAsync<BulkAddToPhrasebookDialog, bool>(
+            title: "フレーズ帳に追加",
+            caller: this,
+            values: new (Expression<Func<BulkAddToPhrasebookDialog, object?>>, object?)[] {
+                (x => x.TargetIds, ids)
+            },
+            callbackSelector: x => x.OnApplied,
+            handler: async _ =>
+            {
+                var list = await UiOperationRunner.ReadAsync(() => PhraseService.GetPhraseListAsync());
+                if (list is not null)
+                {
+                    Elements = list;
+                    RebuildCategoryOptions();
+                    RebuildPhraseBookOptions(); 
+                    _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+                    ApplyFilter();
+                }
+                Snackbar.Add("フレーズ帳へ追加しました。", Severity.Success);
+            },
+            options: DialogServiceExtensions.OptionsSm()
+        );
+    }
 
     // 個別削除
     private async Task OnDeleteButtonClickedAsync(PhraseListItemModel item)
