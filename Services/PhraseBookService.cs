@@ -123,7 +123,7 @@ namespace PhrazorApp.Services
                         await repos.PhraseBookItems.AddRangeAsync(toAdd);
                 });
 
-                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success("フレーズ帳にフレーズを追加しました。");
             }
             catch (Exception ex)
             {
@@ -182,7 +182,7 @@ namespace PhrazorApp.Services
                     await repos.PhraseBooks.DeleteAsync(book);
                 });
 
-                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "フレーズ帳からフレーズ"));
             }
             catch (Exception ex)
             {
@@ -212,7 +212,7 @@ namespace PhrazorApp.Services
                     await repos.PhraseBookItems.DeleteRangeAsync(targets);
                 });
 
-                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "フレーズ"));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, "フレーズ帳からフレーズ"));
             }
             catch (Exception ex)
             {

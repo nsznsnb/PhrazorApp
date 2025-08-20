@@ -485,7 +485,6 @@
         await RefreshBookAndListAsync();
         _candidatesTable?.ClearSelection();
 
-        Snackbar.Add("ブックに追加しました。", Severity.Success);
         await Js.ScrollToIdAsync("book-section", true);
     }
 
@@ -500,7 +499,6 @@
 
         await RefreshBookAndListAsync();
 
-        Snackbar.Add("1件追加しました。", Severity.Success);
         await Js.ScrollToIdAsync("book-section", true);
     }
 
@@ -520,7 +518,6 @@
         await RefreshBookAndListAsync();
         _bookTable?.ClearSelection();
 
-        Snackbar.Add("削除しました。", Severity.Success);
     }
 
     private async Task DeleteSingleItemAsync(Guid id)
@@ -533,7 +530,6 @@
         if (!res.IsSuccess) return;
 
         await RefreshBookAndListAsync();
-        Snackbar.Add("1件削除しました。", Severity.Success);
     }
 
     private async Task RefreshBookAndListAsync()
@@ -590,7 +586,6 @@
         _renamingBookId = null;
         _renameText = string.Empty;
 
-        Snackbar.Add("名称を更新しました。", Severity.Success);
         StateHasChanged();
     }
 
