@@ -24,11 +24,10 @@
     <!-- 操作オーバーレイ：＋ / － / リセット（ツールチップ付き） -->
     <div style="position:absolute;top:8px;right:8px;z-index:2;">
         <MudPaper Elevation="2" Class="px-2 py-1 rounded-2">
-            <div style="display:flex;gap:.25rem;align-items:center;">
+            <MudButtonGroup Color="Color.Default" Variant="Variant.Outlined">
                 <MudTooltip Text="拡大" Placement="Placement.Bottom">
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Color="Color.Default"
-                                   Size="Size.Small"
                                    OnClick="@(() => ZoomByStep(+1))"
                                    aria-label="拡大" />
                 </MudTooltip>
@@ -36,7 +35,6 @@
                 <MudTooltip Text="縮小" Placement="Placement.Bottom">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Color="Color.Default"
-                                   Size="Size.Small"
                                    OnClick="@(() => ZoomByStep(-1))"
                                    aria-label="縮小" />
                 </MudTooltip>
@@ -44,11 +42,10 @@
                 <MudTooltip Text="等倍" Placement="Placement.Bottom">
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                    Color="Color.Default"
-                                   Size="Size.Small"
                                    OnClick="@Reset"
                                    aria-label="リセット" />
                 </MudTooltip>
-            </div>
+            </MudButtonGroup>
         </MudPaper>
     </div>
 
