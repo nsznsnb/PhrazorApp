@@ -49,13 +49,13 @@ flowchart TB
   - **Themes/** … アプリ全体の色調などの設定
   - **Rendering/** … RenderModes（Server/Wasm/Auto のプリセット）
 
-- **Services/** … アプリ固有の処理
+- **Services/** … アプリ固有の処理(サービス)
 
-- **Data/** … データアクセス
-  - **ApplicationDbContext.cs** … Identity（Code-first）
-  - **EngDbContext.cs** … 業務（DB-first, Scaffold 生成物を使用）
-  - **Entities/** … Scaffold 生成物
-  - **Repositories/** … リポジトリ
+- **Data/** … データベースアクセス
+  - **ApplicationDbContext.cs** … ASP.NET Identity (Code-first)
+  - **EngDbContext.cs** … EFCore（DB-first）
+  - **Entities/** … テーブルを表現するクラス群(エンティティ)
+  - **Repositories/** … テーブル操作を担う(レポジトリ)
   - **Migrations/** … Identity のマイグレーション
 
 - **Infrastructure/** … 外部 I/O（Blob/Email/OpenAI 等）
