@@ -71,10 +71,11 @@
         </MudPaper>
     </MudItem>
 
-    <!-- 2行目：グラフ 2枚（カードは従来のPaper。チャートは Width/Height 指定で固定） -->
+    <!-- 2行目：グラフ 2枚（高さを揃える） -->
     <!-- 直近1か月 新規フレーズ登録数（Line／実データのみ） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
+        <!-- ▼ 左のカード：基準高さ -->
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:420px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
                 <MudText Typo="Typo.subtitle1">直近1か月 新規フレーズ登録数</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Default">日次/推移</MudText>
@@ -98,32 +99,43 @@
         </MudPaper>
     </MudItem>
 
-    <!-- 直近テスト 正答率（Line） -->
+    <!-- 成績構成比（Donut） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl">
+        <!-- ▼ 右のカードも同じ高さ -->
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:420px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-                <MudText Typo="Typo.subtitle1">直近テスト 正答率</MudText>
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                    @if (AvgAccuracy.HasValue)
-                    {
-                        <MudText Typo="Typo.caption" Color="Color.Info">平均 @AvgAccuracy.Value.ToString("0.#")%</MudText>
-                    }
-                </MudStack>
+                <MudText Typo="Typo.subtitle1">成績の割合（全テスト）</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    総テスト数 @TotalTests
+                </MudText>
             </MudStack>
 
-            @if (HasAccuracyData) @* ★ 0% だけでも表示する *@
+            @if (HasGradeData)
             {
-                <MudChart ChartType="ChartType.Line"
-                          ChartSeries="@AccuracySeries"
-                          XAxisLabels="@AccuracyLabels"
-                          ChartOptions="@_chartOptions"
-                          AxisChartOptions="@_axisChartOptions"
-                          Width="100%" Height="350px" />
+                <!-- ▼ チップ分の高さを確保するため Donut は少し低め -->
+                <MudChart ChartType="ChartType.Donut"
+                          InputData="@DonutData"
+                          InputLabels="@DonutLabels"
+                          ChartOptions="@_donutOptions"
+                          Width="100%" Height="300px" />
+
+                <!-- ▼ チップの色も画像に合わせる（S=Gold, A=Green, B=Blue, D=Gray） -->
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
+                          Class="mt-2" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
+                             Style="background:#FFC107;color:#000;">S @SCount（@SPct）</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
+                             Style="background:#2E7D32;color:#fff;">A @ACount（@APct）</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
+                             Style="background:#1565C0;color:#fff;">B @BCount（@BPct）</MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
+                             Style="background:#757575;color:#fff;">D @DCount（@DPct）</MudChip>
+                </MudStack>
             }
             else
             {
                 <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:350px;">
-                    <MudText Typo="Typo.body2" Style="opacity:.7;">テスト結果のデータがありません</MudText>
+                    <MudText Typo="Typo.body2" Style="opacity:.7;">テストデータがありません</MudText>
                 </MudStack>
             }
         </MudPaper>
@@ -134,9 +146,25 @@
 @code {
     private HomeDashboardModel? _vm;
 
-    // MudBlazor 8.0 の API を使用
+    // MudBlazor 8.0 の API
     private readonly AxisChartOptions _axisChartOptions = new() { MatchBoundsToSize = false };
     private readonly ChartOptions _chartOptions = new() { ShowLegend = false };
+
+    // ドーナツ用パレット（SVGに合わせて単色化：Gold / Green / Blue / Gray）
+    private static readonly string[] _donutPalette = new[]
+    {
+        "#FFC107", // S: gold（SVGの #FFE082～#FFC107～#C9A227 より中間色）
+        "#2E7D32", // A: green（SVGの #A5D6A7～#2E7D32）
+        "#1565C0", // B: blue  （SVGの #90CAF9～#1565C0）
+        "#757575", // D: gray  （SVGの #BDBDBD～#757575）
+    };
+
+
+    private readonly ChartOptions _donutOptions = new()
+    {
+        ShowLegend = true,
+        ChartPalette = _donutPalette
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,31 +186,34 @@
         }
     };
 
-    // ラベルは詰み防止のため間引き（3日おき）
     private string[] MonthLabels =>
         _vm!.LastMonthNewPhrases
            .Select((p, i) => (i % 3 == 0) ? p.Label : string.Empty)
            .ToArray();
 
-    // === 正答率 ===
-    // ★修正箇所：0% でもデータ点があれば表示する
-    private bool HasAccuracyData =>
-        _vm?.TestAccuracyTimeline is { Count: > 0 };
+    // === 成績の割合（Donut） ===
+    private bool HasGradeData => (_vm?.GradeDistribution?.Sum(x => x.Value) ?? 0) > 0;
 
-    private string[] AccuracyLabels =>
-        _vm?.TestAccuracyTimeline?.Select(x => x.Label).ToArray() ?? Array.Empty<string>();
+    private double[] DonutData =>
+        _vm?.GradeDistribution?.Select(x => x.Value).ToArray() ?? Array.Empty<double>();
 
-    private List<ChartSeries> AccuracySeries => new()
-    {
-        new ChartSeries
-        {
-            Name = string.Empty,
-            Data = _vm?.TestAccuracyTimeline?.Select(x => (double)x.Value).ToArray() ?? Array.Empty<double>()
-        }
-    };
+    private string[] DonutLabels =>
+        _vm?.GradeDistribution?.Select(x => x.Label).ToArray()
+        ?? new[] { "S", "A", "B", "D" };
 
-    private double? AvgAccuracy
-        => (_vm?.TestAccuracyTimeline is { Count: > 0 } tl) ? tl.Select(x => (double)x.Value).Average() : null;
+    private int TotalTests => (int)(_vm?.GradeDistribution?.Sum(x => x.Value) ?? 0);
+
+    private int SCount => (int)(_vm?.GradeDistribution?.FirstOrDefault(x => x.Label == "S")?.Value ?? 0);
+    private int ACount => (int)(_vm?.GradeDistribution?.FirstOrDefault(x => x.Label == "A")?.Value ?? 0);
+    private int BCount => (int)(_vm?.GradeDistribution?.FirstOrDefault(x => x.Label == "B")?.Value ?? 0);
+    private int DCount => (int)(_vm?.GradeDistribution?.FirstOrDefault(x => x.Label == "D")?.Value ?? 0);
+
+    private string SPct => FormatPct(SCount);
+    private string APct => FormatPct(ACount);
+    private string BPct => FormatPct(BCount);
+    private string DPct => FormatPct(DCount);
+    private string FormatPct(int count)
+        => TotalTests <= 0 ? "0%" : $"{(count * 100.0 / TotalTests):0.#}%";
 
     // KPI 用（既存ロジック）
     private int ThisWeekNewPhrases =>

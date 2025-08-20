@@ -9,10 +9,9 @@ public sealed class HomeDashboardModel
 
     public List<ChartPoint> DailyReviews { get; set; } = new();          // KPI用
     public List<ChartPoint> WeeklyNewPhrases { get; set; } = new();      // KPI用
-    public List<ChartPoint> LastMonthNewPhrases { get; set; } = new();   // ★新規
-    public List<ChartPoint> TestAccuracyTimeline { get; set; } = new();
+    public List<ChartPoint> LastMonthNewPhrases { get; set; } = new();   // 左下
+    public List<ChartPoint> GradeDistribution { get; set; } = new();     // 右下（Donut）★新設
 }
-
 public sealed class ChartPoint
 {
     public ChartPoint(string label, double value) { Label = label; Value = value; }

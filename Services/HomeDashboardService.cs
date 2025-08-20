@@ -8,7 +8,7 @@ namespace PhrazorApp.Services
     /// ホームダッシュボード集計サービス
     /// - 「習得フレーズ」は暫定ルール：レビュー総数 >= 5 ＆ 正答率 >= 80%
     /// - 直近1か月の新規登録は日単位、実データのみ（全ゼロならカードは空状態）
-    /// - 正答率は0%でも系列があれば表示（UI側で制御）
+    /// - 成績構成比（S/A/B/D）は全テスト累計の割合
     /// </summary>
     public sealed class HomeDashboardService
     {
@@ -85,12 +85,11 @@ namespace PhrazorApp.Services
                     .ToList();
 
                 // --- 4) 直近8週間の新規フレーズ（KPI：今週/先週比に利用） ---
-                // DateDiffWeek が環境により解決できないケースがあるため、DateDiffDay / 7 で代替
                 var rawWeekly = await (
                     from p in pQuery
                     let daysAgo = EF.Functions.DateDiffDay(p.CreatedAt, nowDate) // int? が返る
-                    where daysAgo >= 0 && daysAgo < 56       // 8週 * 7日 = 56日分
-                    group p by (daysAgo / 7) into g                       // 0=今週, 1=先週, ...
+                    where daysAgo >= 0 && daysAgo < 56
+                    group p by (daysAgo / 7) into g                      // 0=今週, 1=先週, ...
                     select new { WeeksAgo = g.Key, Count = g.Count() }
                 ).ToListAsync();
 
@@ -116,30 +115,19 @@ namespace PhrazorApp.Services
                                rawMonth.FirstOrDefault(x => x.Day == d)?.Count ?? 0))
                     .ToList();
 
-                // --- 6) テスト正答率（直近10件、0%でも系列を作る） ---
-                var lastTests = await repos.TestResults.Queryable(asNoTracking: true)
-                    .Where(t => t.UserId == userId)
-                    .OrderByDescending(t => t.TestDatetime)
-                    .Take(10)
-                    .Select(t => new { t.TestId, t.TestDatetime })
-                    .ToListAsync();
+                // --- 6) 成績構成比（S/A/B/D の件数） ---
+                var gradeCounts = await (
+                    from t in repos.TestResults.Queryable(asNoTracking: true)
+                    join g in repos.Grades.Queryable(asNoTracking: true) on t.GradeId equals g.GradeId
+                    where t.UserId == userId
+                    group g by g.GradeName into gg
+                    select new { Grade = gg.Key, Count = gg.Count() }
+                ).ToListAsync();
 
-                var testIds = lastTests.Select(x => x.TestId).ToList();
-
-                var detailAgg = await repos.TestResultDetails.Queryable(asNoTracking: true)
-                    .Where(d => testIds.Contains(d.TestId))
-                    .GroupBy(d => d.TestId)
-                    .Select(g => new { TestId = g.Key, Total = g.Count(), Correct = g.Count(x => x.IsCorrect) })
-                    .ToListAsync();
-
-                var line = lastTests
-                    .OrderBy(x => x.TestDatetime) // 古い→新しい
-                    .Select(t =>
-                    {
-                        var a = detailAgg.FirstOrDefault(x => x.TestId == t.TestId);
-                        double acc = (a is null || a.Total == 0) ? 0.0 : (100.0 * a.Correct / a.Total);
-                        return new ChartPoint(t.TestDatetime.ToString("M/d HH:mm"), Math.Round(acc, 1));
-                    })
+                // 並び順を固定（S→A→B→D）。存在しない成績は 0 件にする
+                string[] order = new[] { "S", "A", "B", "D" };
+                var gradeDistribution = order
+                    .Select(sym => new ChartPoint(sym, gradeCounts.FirstOrDefault(x => x.Grade == sym)?.Count ?? 0))
                     .ToList();
 
                 return new HomeDashboardModel
@@ -149,8 +137,8 @@ namespace PhrazorApp.Services
                     TodayProverb = todayProverb,
                     DailyReviews = daily,               // 連続学習用
                     WeeklyNewPhrases = weeklyList,      // KPI用
-                    LastMonthNewPhrases = lastMonthNew, // グラフ用（左下）
-                    TestAccuracyTimeline = line         // グラフ用（右下）★0%可
+                    LastMonthNewPhrases = lastMonthNew, // 左下
+                    GradeDistribution = gradeDistribution // 右下（Donut）
                 };
             });
 
