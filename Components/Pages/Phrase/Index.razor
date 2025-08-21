@@ -261,7 +261,7 @@
                                StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                Disabled="@(selAll == 0)"
                                OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                        選択して復習
+                        フレーズ復習
                     </MudButton>
 
                     <MudButton Variant="Variant.Outlined"
@@ -334,14 +334,14 @@
                                              OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.PlayArrow"
                                              Color="@(hasAnyAll ? Color.Primary : Color.Default)" Class="mr-2" />
-                                    選択して復習
+                                    フレーズ復習
                                 </MudMenuItem>
 
                                 <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Label"
                                              Color="@(hasAnyAll ? Color.Info : Color.Default)" Class="mr-2" />
-                                    ジャンルー一括設定
+                                    ジャンル一括設定
                                 </MudMenuItem>
 
                                 <MudMenuItem Disabled="@(selAll == 0)"

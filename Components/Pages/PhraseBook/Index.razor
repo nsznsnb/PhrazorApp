@@ -55,7 +55,13 @@
                         @foreach (var b in _books)
                         {
                             <MudListItem T="PhraseBookListItemModel" Value="@b">
-                                <MudIcon Icon="@Icons.Material.TwoTone.MenuBook" Class="mr-2" />
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.MenuBook" Class="mr-2" />
+                                    <!-- 件数 -->
+                                    <MudText>
+                                        @(b.Count.ToString() + "件")
+                                    </MudText>
+                                </MudStack>
 
                                 @if (_renamingBookId == b.Id)
                                 {
@@ -84,30 +90,33 @@
                                     @if (_renamingBookId == b.Id)
                                     {
                                         <!-- 保存／キャンセル -->
-                                        <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                                       Color="Color.Primary"
-                                                       Disabled="@string.IsNullOrWhiteSpace((_renameText ?? string.Empty).Trim())"
-                                                       OnClick="@(() => SaveRenameAsync(b))" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                                       Color="Color.Default"
-                                                       OnClick="@CancelRename" />
+                                        <MudTooltip Text="確定">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                           Color="Color.Primary"
+                                                           Disabled="@string.IsNullOrWhiteSpace((_renameText ?? string.Empty).Trim())"
+                                                           OnClick="@(() => SaveRenameAsync(b))" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="キャンセル">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                           Color="Color.Default"
+                                                           OnClick="@CancelRename" />
+                                        </MudTooltip>
                                     }
                                     else
                                     {
                                         <!-- 編集（リネーム開始） -->
-                                        <MudIconButton Icon="@Icons.Material.TwoTone.Edit"
-                                                       Color="Color.Default"
-                                                       OnClick="@(() => BeginRename(b))" />
-
-                                        <!-- 件数 -->
-                                        <MudChip Color="Color.Primary" Variant="Variant.Filled" Label="true">
-                                            @((b.Count > 99999) ? "99999+" : b.Count.ToString())
-                                        </MudChip>
+                                        <MudTooltip Text="フレーズ名変更">
+                                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit"
+                                                           Color="Color.Default"
+                                                           OnClick="@(() => BeginRename(b))" />
+                                        </MudTooltip>
 
                                         <!-- 削除 -->
-                                        <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
-                                                       Color="Color.Error"
-                                                       OnClick="@(() => OnDeleteBookAsync(b))" />
+                                        <MudTooltip Text="フレーズ帳削除">
+                                            <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
+                                                           Color="Color.Error"
+                                                           OnClick="@(() => OnDeleteBookAsync(b))" />
+                                        </MudTooltip>
                                     }
                                 </MudStack>
                             </MudListItem>
@@ -173,7 +182,7 @@
                                    StartIcon="@Icons.Material.TwoTone.PlaylistAdd"
                                    Disabled="@(_selectedBook is null || ctx.SelectedCountInView == 0)"
                                    OnClick="@(() => AddSelectedAsync(ctx.GetSelectedIdsInView()))">
-                            選択を追加（@ctx.SelectedCountInView）
+                            フレーズ帳に追加（@ctx.SelectedCountInView）
                         </MudButton>
                     </ExtraToolbar>
 
@@ -187,10 +196,12 @@
                         <MudTd>@p.Phrase</MudTd>
                         <MudTd>@p.Meaning</MudTd>
                         <MudTd style="text-align:right;">
-                            <MudIconButton Icon="@Icons.Material.TwoTone.AddCircle"
-                                           Color="Color.Primary"
-                                           Disabled="@(_selectedBook is null)"
-                                           OnClick="@(() => AddSingleAsync(p.Id))" />
+                            <MudTooltip Text="フレーズ帳に追加">
+                                <MudIconButton Icon="@Icons.Material.TwoTone.AddCircle"
+                                               Color="Color.Primary"
+                                               Disabled="@(_selectedBook is null)"
+                                               OnClick="@(() => AddSingleAsync(p.Id))" />
+                            </MudTooltip>
                         </MudTd>
                     </RowTemplate>
 
@@ -231,7 +242,7 @@
                                        StartIcon="@Icons.Material.TwoTone.DeleteForever"
                                        Disabled="@(ctx.SelectedCountInView == 0)"
                                        OnClick="@(() => DeleteSelectedItemsAsync(ctx.GetSelectedIdsInView()))">
-                                選択を削除（@ctx.SelectedCountInView）
+                                フレーズ帳から削除（@ctx.SelectedCountInView）
                             </MudButton>
                         </ExtraToolbar>
 
@@ -245,9 +256,11 @@
                             <MudTd>@it.English</MudTd>
                             <MudTd>@it.Japanese</MudTd>
                             <MudTd style="text-align:right;">
-                                <MudIconButton Icon="@Icons.Material.TwoTone.RemoveCircle"
-                                               Color="Color.Error"
-                                               OnClick="@(() => DeleteSingleItemAsync(it.Id))" />
+                                <MudTooltip Text="フレーズ帳から削除">
+                                    <MudIconButton Icon="@Icons.Material.TwoTone.RemoveCircle"
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => DeleteSingleItemAsync(it.Id))" />
+                                </MudTooltip>
                             </MudTd>
                         </RowTemplate>
 
@@ -267,8 +280,6 @@
     <FloatingIndicator Show="true"
                        Icon="@Icons.Material.TwoTone.MenuBook"
                        Label="@_selectedBook!.Name"
-                       Count="@CurrentBookCount"
-                       CountMax="99999"
                        TargetElementId="book-section"
                        ActionText="表示"
                        ActionIcon="@Icons.Material.Filled.ArrowDownward" />
@@ -354,8 +365,8 @@
 
     private string GetCurrentBookTitle()
         => _selectedBook is null
-           ? "選択中ブックのアイテム一覧：未選択"
-           : $"「{_selectedBook.Name}」のアイテム一覧";
+           ? "選択中ブックのフレーズ一覧：未選択"
+           : $"「{_selectedBook.Name}」のフレーズ一覧";
 
     // --- Enterで新規作成確定 ---
     private async Task OnNewBookNameKeyDown(KeyboardEventArgs e)
