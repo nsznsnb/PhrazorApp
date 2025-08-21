@@ -24,4 +24,11 @@
     <PackageReference Include="Resend" Version="0.1.4" />
   </ItemGroup>
 
+	<ItemGroup>
+		<Content Include="Downloads\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
+
 </Project>

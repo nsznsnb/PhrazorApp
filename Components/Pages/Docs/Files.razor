@@ -1,0 +1,83 @@
+﻿@page "/docs/files"
+@attribute [Authorize]
+
+@inject FileDownloadService FileDownloadService
+@inject UiOperationRunner UiOperationRunner
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<PageTitle>ファイルダウンロード</PageTitle>
+
+<MudStack Spacing="2">
+    <SectionTitle Title="ファイルダウンロード" />
+
+    <BaseCard>
+        <MudCardContent>
+            <MudText Typo="Typo.body2">
+                <MudIcon Icon="@Icons.Material.TwoTone.Info" Class="mr-1" />
+                開発資料とテスト用CSVファイルを配信しています。
+            </MudText>
+        </MudCardContent>
+
+        <MudCardContent>
+            <MudTable T="DownloadFileItem" Items="_files" Hover="true" Dense="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>ファイル名</MudTh>
+                    <MudTh style="width: 140px;">サイズ</MudTh>
+                    <MudTh style="width: 180px;">最終更新</MudTh>
+                    <MudTh style="width: 220px;"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="ファイル名">
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.TwoTone.InsertDriveFile" />
+                            <MudText>@context.FileName</MudText>
+                        </MudStack>
+                    </MudTd>
+                    <MudTd DataLabel="サイズ">@FormatSize(context.Length)</MudTd>
+                    <MudTd DataLabel="最終更新">@context.LastModified.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+                    <MudTd>
+                        <MudStack Row="true" Spacing="1">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.TwoTone.Download"
+                                       OnClick="@(() => Download(context))">
+                                ダウンロード
+                            </MudButton>
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText Typo="Typo.body2">ファイルがありません。</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </BaseCard>
+</MudStack>
+
+@code {
+    private List<DownloadFileItem> _files = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = await UiOperationRunner.ReadAsync(() => FileDownloadService.GetListAsync());
+        _files = list ?? new();
+    }
+
+    private void Download(DownloadFileItem item)
+    {
+        // /files/{*path}?download=1 に遷移して attachment ダウンロード
+        Nav.NavigateTo(item.DownloadUrl, forceLoad: true);
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        double kb = bytes / 1024d;
+        if (kb < 1024) return $"{kb:0.#} KB";
+        double mb = kb / 1024d;
+        if (mb < 1024) return $"{mb:0.#} MB";
+        double gb = mb / 1024d;
+        return $"{gb:0.#} GB";
+    }
+}

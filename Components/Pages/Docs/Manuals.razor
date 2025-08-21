@@ -7,19 +7,27 @@
     <SectionTitle Title="操作マニュアル" />
 
     <ActionCard>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+        <!-- PDFを添付ダウンロード -->
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
                    StartIcon="@Icons.Material.TwoTone.Download"
-                   Href="@PdfPath" Target="_blank">
+                   Href="@PdfDownloadUrl">
             PDF をダウンロード
         </MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+
+        <!-- DOCXを添付ダウンロード（ブラウザ内プレビュー不可のため常に download） -->
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
                    StartIcon="@Icons.Material.TwoTone.Description"
-                   Href="@DocxPath" Target="_blank" Download>
+                   Href="@DocxDownloadUrl">
             Word (DOCX) をダウンロード
         </MudButton>
-        <MudButton Variant="Variant.Outlined" Color="Color.Info"
+
+        <!-- PDFを新規タブで inline 表示 -->
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Info"
                    StartIcon="@Icons.Material.TwoTone.OpenInNew"
-                   Href="@PdfPath" Target="_blank">
+                   Href="@PdfViewUrl" Target="_blank">
             新しいタブで開く
         </MudButton>
     </ActionCard>
@@ -29,7 +37,8 @@
             <MudText Typo="Typo.subtitle1">PDFプレビュー</MudText>
         </MudCardContent>
         <MudCardContent Class="p-0">
-            <PdfPreview Src="@PdfPath" Height="78vh" />
+            <!-- /files は既定 inline。PdfPreview は src にそのまま指定 -->
+            <PdfPreview Src="@PdfViewUrl" Height="78vh" />
         </MudCardContent>
     </MudCard>
 
@@ -39,7 +48,9 @@
 </MudStack>
 
 @code {
-    // wwwroot 配下。先頭の "/" は web ルートを指します
-    private const string PdfPath = "/docs/manuals/Phrazor_Manual.pdf";
-    private const string DocxPath = "/docs/manuals/Phrazor_Manual.docx";
+    // /Endpoints/FileEndpoints.cs に統合済みの /files を利用（Downloads/docs/... に実体を配置）
+    private const string BasePath = "/files/manuals/Phrazor_Manual";
+    private const string PdfViewUrl = $"{BasePath}.pdf";             // inline 表示
+    private const string PdfDownloadUrl = $"{BasePath}.pdf?download=1"; // 添付ダウンロード
+    private const string DocxDownloadUrl = $"{BasePath}.docx?download=1"; // 添付ダウンロード
 }

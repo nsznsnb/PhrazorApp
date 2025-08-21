@@ -11,6 +11,7 @@ using PhrazorApp.Components;           // App
 using PhrazorApp.Components.Account;   // Identity ヘルパ
 using PhrazorApp.Data;                 // ApplicationDbContext（Identity 用）
 using PhrazorApp.Data.UnitOfWork;      // UnitOfWork
+using PhrazorApp.Endpoints;
 using PhrazorApp.Infrastructure;       // BlobStorageClient, Options
 using PhrazorApp.Models;               // ApplicationUser, DTO
 using PhrazorApp.Models.Validators;    // FluentValidation バリデータ
@@ -154,6 +155,8 @@ public class Program
         builder.Services.AddScoped<ReviewTypeService>();
         builder.Services.AddScoped<DiaryTagService>();
         builder.Services.AddScoped<EnglishDiaryService>();
+        builder.Services.AddScoped<FileDownloadService>();
+
 
 
         // ─────────────────────────────────────────
@@ -217,6 +220,7 @@ public class Program
 
         // Identity の /Account エンドポイント
         app.MapAdditionalIdentityEndpoints();
+        app.MapFileEndpoints();
 
         app.Run();
     }

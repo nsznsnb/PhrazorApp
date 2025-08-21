@@ -7,14 +7,17 @@
     <SectionTitle Title="開発資料（ER 図 / a5er）" />
 
     <ActionCard>
+        <!-- PNG は inline 表示を新規タブで -->
         <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                    StartIcon="@Icons.Material.TwoTone.Image"
-                   Href="@PngPath" Target="_blank">
+                   Href="@PngViewUrl" Target="_blank">
             ER 図（PNG）を開く
         </MudButton>
+
+        <!-- .a5er は添付ダウンロード -->
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
                    StartIcon="@Icons.Material.TwoTone.Download"
-                   Href="@A5erPath" Target="_blank" Download>
+                   Href="@A5erDownloadUrl">
             ER 図（.a5er）をダウンロード
         </MudButton>
     </ActionCard>
@@ -24,13 +27,15 @@
             <MudText Typo="Typo.subtitle1">ER 図プレビュー（拡大・スクロール可）</MudText>
         </MudCardContent>
         <MudCardContent>
-            <ZoomableImage Src="@PngPath" Alt="Phrazor ER Diagram" Height="100vh" />
+            <!-- /files は既定で inline 応答。ZoomableImage の Src に指定 -->
+            <ZoomableImage Src="@PngViewUrl" Alt="Phrazor ER Diagram" Height="100vh" />
         </MudCardContent>
     </MudCard>
-
 </MudStack>
 
 @code {
-    private const string PngPath = "/docs/er/Phrazor_ER.png";
-    private const string A5erPath = "/docs/er/Phrazor_ER.a5er";
+    // Downloads/docs/er/ に実体を配置し、/Endpoints/FileEndpoints.cs の /files を使用
+    private const string BasePath = "/files/er/Phrazor_ER";
+    private const string PngViewUrl = $"{BasePath}.png";            // inline 表示
+    private const string A5erDownloadUrl = $"{BasePath}.a5er?download=1"; // 添付ダウンロード
 }

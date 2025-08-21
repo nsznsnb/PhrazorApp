@@ -1,0 +1,763 @@
+﻿# A5:ER FORMAT:16
+# A5:ER ENCODING:UTF8
+# A5:ER Mk-1 Copyright © 2007 m.matsubara
+# A5:SQL Mk-2 Version 2.17.2 Copyright © 1997 - 2022 m.matsubara
+#  https://a5m2.mmatsubara.com
+
+[Manager]
+ProjectName=英作文練習
+Author=Nishizono Shinobu
+MaxEntityRowShow=1000
+ReadOnlyRecommend=0
+Page=Main
+PageInfo="Main",2,"A3Landscape",$FFFFFF
+LogicalView=1
+DecodeDomain=0
+ViewModePageIndividually=1
+ViewMode=2
+ViewFormat=0
+UseNondependenceDashLine=0
+FontName=Tahoma
+FontSize=6
+PaperSize=A4Landscape
+HeaderLeft=
+HeaderCenter=
+HeaderRight=
+FooterLeft=
+FooterCenter=
+FooterRight=
+ShowPageoutRelation=1
+RDBMSType=4
+RDBMSTypeName=Microsoft SQL Server 2008
+CreatePkIndex=1
+CreateFk=1
+FkOnDeleteOption=on delete no action
+FKParentIndex=1
+DefaultPkName=%0:s_PKC
+DefaultPkIndexName=%0:s_PKI
+DefaultIndexName=%0:s_IX%1:d
+DefaultFkName=%0:s_FK%1:d
+SqlSeparator=0
+UpperCaseKeyword=0
+ShowTag=1
+ShowCommonAttributes=0
+BugFixEntityWidth=1
+
+[Entity]
+PName=D_PHRASES
+LName=ユーザーフレーズ
+Comment=
+TableOption=
+Page=MAIN
+Left=500
+Top=500
+Field="フレーズID","phrase_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="フレーズ","phrase","VARCHAR(200)","NOT NULL",,"","",$FFFFFFFF,""
+Field="意味","meaning","NVARCHAR(200)",,,"","",$FFFFFFFF,""
+Field="備考","note","NVARCHAR(200)",,,"","",$FFFFFFFF,""
+Field="ユーザーID","user_id","NVARCHAR(450)","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,user_id 
+Index==0,user_id ,created_at desc
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816070110
+Position="MAIN",500,500,195,231
+ZOrder=1
+
+[Entity]
+PName=M_GENRES
+LName=ジャンルマスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=1250
+Top=50
+Field="ジャンルID","genre_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="ジャンル名","genre_name","NVARCHAR(30)","NOT NULL",,"","",$FFFFFFFF,""
+Field="ユーザーId","user_id","nvARCHAR(450)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,user_id ,genre_name 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065750
+Position="MAIN",1250,50,152,152
+ZOrder=2
+
+[Entity]
+PName=M_SUB_GENRES
+LName=サブジャンルマスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=900
+Top=200
+Field="ジャンルID","genre_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="サブジャンルID","sub_genre_id","UNIQUEIDENTIFIER","NOT NULL",1,"","",$FFFFFFFF,""
+Field="サブジャンル名","sub_genre_name","NVARCHAR(30)","NOT NULL",,"","",$FFFFFFFF,""
+Field="ソート順","order_no","INT","NOT NULL",,"","",$FFFFFFFF,""
+Field="デフォルトフラグ","is_default","BIT","NOT NULL",,"0","",$FFFFFFFF,""
+Field="ユーザーId","user_id","NVARCHAR(450)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,user_id,genre_id,sub_genre_name
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065807
+Position="MAIN",900,200,178,220
+ZOrder=3
+
+[Relation]
+Entity1=M_GENRES
+Entity2=M_SUB_GENRES
+RelationType1=2
+RelationType2=3
+Fields1=genre_id
+Fields2=genre_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,737,4966,4586,R,R,""
+Dependence=1
+Caption=
+PName=
+ModifiedDateTime=20250702035646
+LineMode=0
+Bar1=74
+Bar2=497
+Bar3=459
+TermPos1=R
+TermPos2=R
+ZOrder=4
+
+[Entity]
+PName=M_PHRASE_GENRES
+LName=フレーズジャンル
+Comment=
+TableOption=
+Page=MAIN
+Left=850
+Top=700
+Field="フレーズID","phrase_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="サブジャンルID","sub_genre_id","UNIQUEIDENTIFIER","NOT NULL",1,"","",$FFFFFFFF,""
+Field="ジャンルID","genre_id","UNIQUEIDENTIFIER","NOT NULL",2,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,phrase_id 
+Index==0,genre_id ,sub_genre_id
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065815
+Position="MAIN",850,700,212,157
+ZOrder=5
+
+[Entity]
+PName=D_TEST_RESULTS
+LName=テスト結果
+Comment=
+TableOption=
+Page=MAIN
+Left=1450
+Top=800
+Field="テスト結果ID","test_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="テスト日時","test_datetime","DATETIME","NOT NULL",,"","",$FFFFFFFF,""
+Field="成績ID","grade_id","UNIQUEIDENTIFIER","NOT NULL",,"","",$FFFFFFFF,""
+Field="完了フラグ","complete_flg","BIT","NOT NULL",,"","",$FFFFFFFF,""
+Field="ユーザーID","user_id","NVARCHAR(450)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,user_id ,test_datetime 
+Index==0,grade_id 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065913
+Position="MAIN",1450,800,231,205
+ZOrder=8
+
+[Entity]
+PName=D_TEST_RESULT_DETAILS
+LName=テスト結果明細
+Comment=
+TableOption=
+Page=MAIN
+Left=1050
+Top=1150
+Field="テスト結果ID","test_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="テスト結果明細連番","test_result_detail_no","INT","NOT NULL",1,"","",$FFFFFFFF,""
+Field="フレーズID","phrase_id","UNIQUEIDENTIFIER","NOT NULL",,"","",$FFFFFFFF,""
+Field="正解フラグ","is_correct","BIT","NOT NULL",,"0","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,phrase_id 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065846
+Position="MAIN",1050,1150,265,220
+ZOrder=9
+
+[Relation]
+Entity1=D_TEST_RESULTS
+Entity2=D_TEST_RESULT_DETAILS
+RelationType1=2
+RelationType2=4
+Fields1=test_id
+Fields2=test_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,5997,5954,3939,R,R,""
+Dependence=1
+Caption=
+PName=
+ModifiedDateTime=20250221000609
+LineMode=0
+Bar1=600
+Bar2=595
+Bar3=394
+TermPos1=R
+TermPos2=R
+ZOrder=10
+
+[Entity]
+PName=D_PHRASE_IMAGES
+LName=フレーズ画像
+Comment=
+TableOption=
+Page=MAIN
+Left=100
+Top=50
+Field="フレーズ画像ID","phrase_image_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="URL","url","NVARCHAR(500)","NOT NULL",,"","",$FFFFFFFF,""
+Field="アップロード日時","upload_at","DATETIME",,,"","",$FFFFFFFF,""
+Field="フレーズID","phrase_id","UNIQUEIDENTIFIER","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==2,phrase_id
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065608
+Position="MAIN",100,50,224,195
+ZOrder=12
+
+[Entity]
+PName=M_GRADES
+LName=成績マスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=1350
+Top=500
+Field="成績ID","grade_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="成績名","grade_name","NVARCHAR(20)","NOT NULL",,"","",$FFFFFFFF,""
+Field="ソート順","order_no","INT","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==2,grade_name
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065920
+Position="MAIN",1350,500,157,144
+ZOrder=14
+
+[Relation]
+Entity1=M_GRADES
+Entity2=D_TEST_RESULTS
+RelationType1=1
+RelationType2=3
+Fields1=grade_id
+Fields2=grade_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,3040,6960,2412,R,R,""
+Dependence=0
+Caption=
+PName=
+LineMode=0
+Bar1=304
+Bar2=696
+Bar3=241
+TermPos1=R
+TermPos2=R
+ZOrder=15
+
+[Entity]
+PName=D_REVIEW_LOGS
+LName=復習履歴
+Comment=
+TableOption=
+Page=MAIN
+Left=50
+Top=1200
+Field="復習履歴ID","review_id ","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="フレーズID","phrase_id","UNIQUEIDENTIFIER","NOT NULL",,"","",$FFFFFFFF,""
+Field="復習日","review_date","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="復習種別ID","review_type_id","UNIQUEIDENTIFIER","NOT NULL",,"","",$FFFFFFFF,""
+Field="テスト結果ID","test_id","UNIQUEIDENTIFIER","NOT NULL",,"","",$FFFFFFFF,""
+Field="テスト結果明細連番","test_result_detail_no","INT","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,phrase_id ,review_date 
+Index==0,test_id ,test_result_detail_no 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065720
+Position="MAIN",50,1200,309,243
+ZOrder=16
+
+[Entity]
+PName=M_REVIEW_TYPES
+LName=復習種別マスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=150
+Top=800
+Field="復習種別ID","review_type_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="復習種別名","review_type_name","NVARCHAR(20)","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==2,review_type_name 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065645
+Position="MAIN",150,800,174,131
+ZOrder=19
+
+[Relation]
+Entity1=M_REVIEW_TYPES
+Entity2=D_REVIEW_LOGS
+RelationType1=1
+RelationType2=3
+Fields1=review_type_id
+Fields2=review_type_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,3376,5520,4037,R,R,""
+Dependence=0
+Caption=
+PName=
+LineMode=0
+Bar1=338
+Bar2=552
+Bar3=404
+TermPos1=R
+TermPos2=R
+ZOrder=20
+
+[Relation]
+Entity1=D_TEST_RESULT_DETAILS
+Entity2=D_REVIEW_LOGS
+RelationType1=1
+RelationType2=3
+Fields1=test_id,test_result_detail_no
+Fields2=test_id,test_result_detail_no
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,6344,5886,6114,R,R,""
+Dependence=0
+Caption=
+PName=
+LineMode=0
+Bar1=634
+Bar2=589
+Bar3=611
+TermPos1=R
+TermPos2=R
+ZOrder=22
+
+[Relation]
+Entity1=M_SUB_GENRES
+Entity2=M_PHRASE_GENRES
+RelationType1=2
+RelationType2=3
+Fields1=genre_id,sub_genre_id
+Fields2=genre_id,sub_genre_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,2236,7708,2433,R,R,""
+Dependence=1
+Caption=
+PName=
+LineMode=0
+Bar1=224
+Bar2=771
+Bar3=243
+TermPos1=R
+TermPos2=R
+ZOrder=27
+
+[Relation]
+Entity1=D_PHRASES
+Entity2=M_PHRASE_GENRES
+RelationType1=2
+RelationType2=3
+Fields1=phrase_id
+Fields2=phrase_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,2687,7313,2328,R,R,""
+Dependence=1
+Caption=
+PName=
+LineMode=0
+Bar1=269
+Bar2=731
+Bar3=233
+TermPos1=R
+TermPos2=R
+ZOrder=28
+
+[Relation]
+Entity1=D_PHRASES
+Entity2=D_REVIEW_LOGS
+RelationType1=2
+RelationType2=3
+Fields1=phrase_id
+Fields2=phrase_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,3477,6523,2328,R,R,""
+Dependence=0
+Caption=
+PName=
+LineMode=0
+Bar1=348
+Bar2=652
+Bar3=233
+TermPos1=R
+TermPos2=R
+ZOrder=29
+
+[Relation]
+Entity1=D_PHRASES
+Entity2=D_PHRASE_IMAGES
+RelationType1=2
+RelationType2=1
+Fields1=phrase_id
+Fields2=phrase_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,521,5025,5269,R,R,""
+Dependence=0
+Caption=
+PName=
+ModifiedDateTime=20250727091036
+LineMode=0
+Bar1=52
+Bar2=502
+Bar3=527
+TermPos1=R
+TermPos2=R
+ZOrder=30
+
+[Relation]
+Entity1=D_PHRASES
+Entity2=D_TEST_RESULT_DETAILS
+RelationType1=2
+RelationType2=3
+Fields1=phrase_id
+Fields2=phrase_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,8117,8235,2328,R,R,""
+Dependence=0
+Caption=
+PName=
+LineMode=0
+Bar1=812
+Bar2=824
+Bar3=233
+TermPos1=R
+TermPos2=R
+ZOrder=31
+
+[Entity]
+PName=D_ENGLISH_DIARYS
+LName=英語日記
+Comment=
+TableOption=
+Page=MAIN
+Left=1900
+Top=100
+Field="英語日記ID","diary_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="タイトル","title","NVARCHAR(100)","NOT NULL",,"","",$FFFFFFFF,""
+Field="内容","content","NVARCHAR(1000)","NOT NULL",,"","",$FFFFFFFF,""
+Field="補足","note","NVARCHAR(1000)",,,"","",$FFFFFFFF,""
+Field="添削結果","correction","NVARCHAR(1000)",,,"","",$FFFFFFFF,""
+Field="解説","explanation","NVARCHAR(1000)",,,"","",$FFFFFFFF,""
+Field="ユーザーId","user_id","NVARCHAR(450)","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,user_id ,created_at 
+Index==0,user_id ,title 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065956
+Position="MAIN",1900,100,207,275
+ZOrder=32
+
+[Entity]
+PName=M_DIARY_TAGS
+LName=日記タグ
+Comment=
+TableOption=
+Page=MAIN
+Left=2550
+Top=200
+Field="日記タグID","tag_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="タグ名","tag_name","NVARCHAR(50)",,,"","",$FFFFFFFF,""
+Field="ユーザーID","user_id","NVARCHAR(450)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==1,user_id ,tag_name 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065948
+Position="MAIN",2550,200,148,148
+ZOrder=33
+
+[Entity]
+PName=D_ENGLISH_DIARY_TAGS
+LName=英語日記タグ
+Comment=
+TableOption=
+Page=MAIN
+Left=2200
+Top=600
+Field="英語日記ID","diary_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="日記タグID","diary_tag_id","UNIQUEIDENTIFIER","NOT NULL",1,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,diary_id 
+Index==0,diary_tag_id 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816070004
+Position="MAIN",2200,600,250,119
+ZOrder=36
+
+[Relation]
+Entity1=D_ENGLISH_DIARYS
+Entity2=D_ENGLISH_DIARY_TAGS
+RelationType1=2
+RelationType2=3
+Fields1=diary_id
+Fields2=diary_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,1823,8177,1138,R,R,""
+Dependence=1
+Caption=
+PName=
+LineMode=0
+Bar1=182
+Bar2=818
+Bar3=114
+TermPos1=R
+TermPos2=R
+ZOrder=37
+
+[Relation]
+Entity1=M_DIARY_TAGS
+Entity2=D_ENGLISH_DIARY_TAGS
+RelationType1=2
+RelationType2=3
+Fields1=tag_id
+Fields2=diary_tag_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,5720,4280,6456,R,R,""
+Dependence=1
+Caption=
+PName=
+LineMode=0
+Bar1=572
+Bar2=428
+Bar3=646
+TermPos1=R
+TermPos2=R
+ZOrder=38
+
+[Entity]
+PName=M_PROVERBS
+LName=格言マスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=1950
+Top=850
+Field="格言ID","proverb_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="格言","proverb_text","NVARCHAR(200)","NOT NULL",,"","",$FFFFFFFF,""
+Field="意味","meaning","NVARCHAR(200)",,,"","",$FFFFFFFF,""
+Field="著者","author","NVARCHAR(100)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816070058
+Position="MAIN",1950,850,146,167
+ZOrder=44
+
+[Entity]
+PName=D_DAILY_USAGE
+LName=操作履歴
+Comment=
+TableOption=
+Page=MAIN
+Left=1950
+Top=1150
+Field="ユーザーID","user_id","NVARCHAR(450)","NOT NULL",0,"","",$FFFFFFFF,""
+Field="操作日","operation_date","DATE","NOT NULL",1,"","",$FFFFFFFF,""
+Field="操作種別ID","operation_type_id","UNIQUEIDENTIFIER","NOT NULL",2,"","",$FFFFFFFF,""
+Field="操作回数","operation_count","INT","NOT NULL",,"0","",$FFFFFFFF,""
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816070042
+Position="MAIN",1950,1150,203,131
+ZOrder=45
+
+[Entity]
+PName=M_OPERATION_TYPES
+LName=操作種別マスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=2250
+Top=1150
+Field="操作種別ID","operation_type_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="操作種別コード","operation_type_code","NVARCHAR(50)","NOT NULL",,"","",$FFFFFFFF,""
+Field="操作種別名","operation_type_name","NVARCHAR(20)","NOT NULL",,"","",$FFFFFFFF,""
+Field="操作回数上限","operation_type_limit","INT","NOT NULL",,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==2,operation_type_name
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816070015
+Position="MAIN",2250,1150,168,186
+ZOrder=46
+
+[Relation]
+Entity1=M_OPERATION_TYPES
+Entity2=D_DAILY_USAGE
+RelationType1=2
+RelationType2=3
+Fields1=operation_type_id
+Fields2=operation_type_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,4350,5650,4217,R,R,""
+Dependence=1
+Caption=
+PName=
+LineMode=0
+Bar1=435
+Bar2=565
+Bar3=422
+TermPos1=R
+TermPos2=R
+ZOrder=47
+
+[Entity]
+PName=M_PHRASE_BOOKS
+LName=フレーズ帳マスタ
+Comment=
+TableOption=
+Page=MAIN
+Left=1050
+Top=1550
+Field="フレーズ帳Id","phrase_book_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="フレーズ帳名","phrase_book_name","NVARCHAR(50)","NOT NULL",,"","",$FFFFFFFF,""
+Field="説明","description","NVARCHAR(100)",,,"","",$FFFFFFFF,""
+Field="ユーザーId","user_id","NVARCHAR(450)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==1,user_id ,phrase_book_name 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065838
+Position="MAIN",1050,1550,214,190
+ZOrder=48
+
+[Entity]
+PName=M_PHRASE_BOOK_ITEMS
+LName=フレーズ帳アイテム
+Comment=
+TableOption=
+Page=MAIN
+Left=550
+Top=1450
+Field="フレーズ帳Id","phrase_book_id","UNIQUEIDENTIFIER","NOT NULL",0,"","",$FFFFFFFF,""
+Field="フレーズId","phrase_id","UNIQUEIDENTIFIER","NOT NULL",1,"","",$FFFFFFFF,""
+Field="ソート順","order_no","INT",,,"","",$FFFFFFFF,""
+Field="メモ","note","NVARCHAR(100)",,,"","",$FFFFFFFF,""
+Field="作成日時","created_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Field="更新日時","updated_at","DATETIME","NOT NULL",,"GETDATE()","",$FFFFFFFF,""
+Index==0,phrase_book_id ,order_no 
+EffectMode=None
+Color=$000000
+BkColor=$FFFFFF
+ModifiedDateTime=20250816065829
+Position="MAIN",550,1450,199,161
+ZOrder=49
+
+[Relation]
+Entity1=D_PHRASES
+Entity2=M_PHRASE_BOOK_ITEMS
+RelationType1=2
+RelationType2=3
+Fields1=phrase_id
+Fields2=phrase_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,1598,8402,1470,R,R,""
+Dependence=1
+Caption=
+PName=
+ModifiedDateTime=20250812060106
+LineMode=0
+Bar1=160
+Bar2=840
+Bar3=147
+TermPos1=R
+TermPos2=R
+ZOrder=50
+
+[Relation]
+Entity1=M_PHRASE_BOOKS
+Entity2=M_PHRASE_BOOK_ITEMS
+RelationType1=2
+RelationType2=3
+Fields1=phrase_book_id
+Fields2=phrase_book_id
+Cardinarity1=
+Cardinarity2=
+Position="MAIN",0,5477,4523,6066,R,R,""
+Dependence=1
+Caption=
+PName=
+ModifiedDateTime=20250812060134
+LineMode=0
+Bar1=548
+Bar2=452
+Bar3=607
+TermPos1=R
+TermPos2=R
+ZOrder=51
