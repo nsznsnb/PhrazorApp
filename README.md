@@ -10,23 +10,31 @@
 
 ```mermaid
 flowchart TB
-  Client["ユーザーのブラウザ（HTTPS）"] --> UI
 
-  subgraph App["Azure Web App / Blazor Server"]
-    UI["UI（MudBlazor）"]
-    SVC["Services"]
-    INF["Infrastructure"]
-    DATA["Repositories"]
-    UI -->|UIOperationRunner| SVC
-    UI -->|UIOperationRunner| INF
-    SVC -->|UnitOfWork| DATA
-    SVC --> INF
+  Client["ユーザーのブラウザ（HTTPS）"]
+
+  subgraph Azure["Azure App Service"]
+    direction TB
+
+    subgraph Blazor["Blazor Server"]
+      direction TB
+     UI["UI（MudBlazor）"]
+     SVC["Services"]
+     INF["Infrastructure"]
+     DATA["Repositories"]
+     UI -->|UIOperationRunner| SVC
+     SVC -->|UnitOfWork| DATA
+     SVC --> INF
+    end
   end
+
+  Client --> UI
 
   DATA --> SQL["Azure SQL Database"]
   INF -.予定/未実装.- BLOB["Azure Blob Storage（画像）"]
   INF --> OPENAI["OpenAI（画像生成／日記添削）"]
   INF --> RESEND["Resend（メール送信）"]
+
 ```
 
 ## ディレクトリ概要
