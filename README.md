@@ -58,6 +58,10 @@ flowchart TB
   - **Repositories/** … テーブル操作を担う(レポジトリ)
   - **Migrations/** … Identity のマイグレーション
 
+- **Downloads/** … 外部配信するファイル群
+
+- **Endpoints/** … Minimal API 群（認可付きファイル配信用API 等)
+
 - **Infrastructure/** … 外部 I/O（Blob/Email/OpenAI 等）
 
 - **Extensions/** … 拡張メソッド（ダイアログ呼び出しなどの便利メソッド)
