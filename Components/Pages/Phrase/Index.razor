@@ -226,7 +226,6 @@
 
         <MudDivider />
 
-        <!-- 一覧本体：SelectableTable 側で初回遅延描画を実施 -->
         <SelectableTable TItem="PhraseListItemModel"
                          @ref="_table"
                          Items="_filtered"
@@ -235,8 +234,7 @@
                          Search="false"
                          Pager="TablePagerMode.Auto"
                          RowsPerPage="@_rowsPerPage"
-                         Height="500px"
-                         DeferFirstRender="true">
+                         Height="500px">
 
             <!-- ツールバー（ページ側で差し込み） -->
             <ExtraToolbar Context="tb">
