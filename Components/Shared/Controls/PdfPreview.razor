@@ -1,14 +1,20 @@
-﻿<div class="pdf-preview">
-    <object data="@Src" type="application/pdf"
-            style="width:100%; height:@Height" aria-label="PDF preview">
-        <div class="p-2">
-            <MudText Typo="Typo.body1">PDF プレビューに対応していません。</MudText>
-            <MudLink Href="@Src" Target="_blank">PDFを開く / ダウンロード</MudLink>
-        </div>
-    </object>
+﻿@using MudBlazor
+
+<div class="pdf-preview">
+    <iframe src="@Src"
+            title="PDF preview"
+            style="width:100%; height:@Height; border:0;"></iframe>
 </div>
 
+<MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+    モバイルでスクロールできない場合は
+    <MudLink Href="@Src" Target="_blank">新しいタブで開く</MudLink>
+    または <MudLink Href="@DownloadUrl">ダウンロード</MudLink> をご利用ください。
+</MudAlert>
+
 @code {
-    [Parameter] public string Src { get; set; } = default!;
+    [Parameter] public string Src { get; set; } = default!; // 例: /files/manuals/Phrazor_Manual.pdf
     [Parameter] public string Height { get; set; } = "70vh";
+
+    private string DownloadUrl => Src.Contains("?") ? $"{Src}&download=1" : $"{Src}?download=1";
 }
