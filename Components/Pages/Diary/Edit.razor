@@ -37,7 +37,8 @@
     </MudAlert>
 
     <!-- バリデーション：EditContext + Blazored.FluentValidation -->
-    <EditForm EditContext="_editCtx" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="OnInvalidSubmit">
+    <!-- 送信ハンドラは使わず、各ボタンから _editCtx.Validate() を呼んで分岐 -->
+    <EditForm EditContext="_editCtx">
         <FluentValidationValidator />
 
         <BaseCard>
@@ -83,25 +84,30 @@
 
             <MudCardContent>
                 <MudStack Row="true" Spacing="1">
-                    <!-- Submit にして EditContext を Validate -->
-                    <MudButton ButtonType="ButtonType.Submit"
-                               Variant="Variant.Filled"
+                    <!-- 添削して保存：上限到達時は無効 -->
+                    <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               Disabled="@(_limitPerDay.HasValue && _remainingToday.GetValueOrDefault() <= 0)">
-                        添削（登録）
+                               Disabled="@(_limitPerDay.HasValue && _remainingToday.GetValueOrDefault() <= 0)"
+                               OnClick="CorrectAndSaveAsync">
+                        添削して保存
+                    </MudButton>
+                    <!-- 保存のみ（添削なし） -->
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               OnClick="SaveOnlyAsync">
+                        保存（添削なし）
                     </MudButton>
                 </MudStack>
             </MudCardContent>
         </BaseCard>
+
         @if (!string.IsNullOrWhiteSpace(_model.Correction))
         {
-            <!-- ▼ スクロール先アンカー -->
             <div id="@_correctAnchorId">
                 <BaseCard>
                     <MudCardContent>
                         <MudText Typo="Typo.subtitle1">添削結果</MudText>
                         <MudPaper Class="pa-3 mt-2" Outlined="true">
-                            <!-- ライブラリに合わせて Value/Text どちらか（多くは Value） -->
                             <MudMarkdown Value="@_model.Correction" />
                         </MudPaper>
                     </MudCardContent>
@@ -160,7 +166,6 @@
             Title = string.Empty,
             Content = string.Empty,
             Note = string.Empty,
-            // Upsert を日単位にするため JST 0:00(UTC換算) を入れる
             CreatedAt = loaded is null ? ToUtcAtTokyoMidnight(target) : _model.CreatedAt,
             UpdatedAt = DateTime.UtcNow
         };
@@ -190,26 +195,63 @@
 
     private async Task LoadUsageAsync()
     {
-        // 1) 上限：OperationType マスタ（0以下は無制限）
         var types = await UiOperationRunner.ReadAsync(() => OpType.GetListAsync());
         var diaryOp = types?.FirstOrDefault(x =>
             string.Equals(x.Code, OperationTypeCode.DiaryCorrection.ToString(), StringComparison.OrdinalIgnoreCase));
 
         _limitPerDay = (diaryOp?.Limit > 0) ? diaryOp.Limit : (int?)null;
 
-        // 2) 残り：当日分の残回数（確認のみ、消費しない）
         var chk = await UiOperationRunner.ReadAsync(() => OpLimit.CheckAsync(OperationTypeCode.DiaryCorrection, units: 0));
         _remainingToday = chk?.RemainingToday;
 
-        // 3) 使用回数：上限・残りが揃えば計算
         _usedToday = (_limitPerDay is not null && _remainingToday is not null)
             ? Math.Max(0, _limitPerDay.Value - _remainingToday.Value)
             : null;
     }
 
-    // ----- Submit / Validation -----
-    private async Task HandleValidSubmit()
+    // ===== ボタンハンドラ =====
+
+    private async Task SaveOnlyAsync()
     {
+        if (!_editCtx.Validate())
+        {
+            OnInvalidSubmit(_editCtx);
+            return;
+        }
+
+        var ok = await DialogService.ShowConfirmAsync(
+            DialogConfirmType.InfoConfirm,
+            "添削なしで日記を保存します。よろしいですか"
+        );
+        if (!ok) return;
+
+        var res = await UiOperationRunner.WriteAsync(
+            () => DiaryService.UpsertAsync(_model),
+            message: "保存しています…"
+        );
+        if (!res.IsSuccess) return;
+
+        if (res.Data is not null)
+        {
+            _model = res.Data;
+            _jstDateText = ToTokyoDateOnlyText(_model.CreatedAt);
+            _editCtx = new EditContext(_model);
+            StateHasChanged();
+        }
+
+        // 保存だけなので利用回数は変化しないが、別画面で更新された場合に備えて再読込
+        await LoadUsageAsync();
+
+    }
+
+    private async Task CorrectAndSaveAsync()
+    {
+        if (!_editCtx.Validate())
+        {
+            OnInvalidSubmit(_editCtx);
+            return;
+        }
+
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.InfoConfirm,
             "添削と同時に作成した日記が登録されます。よろしいですか"
@@ -226,10 +268,8 @@
         {
             _model = op.Data;
             _jstDateText = ToTokyoDateOnlyText(_model.CreatedAt);
-            _editCtx = new EditContext(_model); // 差し替え後に再構築
-
-            // ▼ テーブル描画完了後にスクロールするためフラグを立てて再描画
-            _pendingScrollToCorrect = true;
+            _editCtx = new EditContext(_model);
+            _pendingScrollToCorrect = true; // 添削結果へスクロール
             StateHasChanged();
         }
 
@@ -245,10 +285,9 @@
     // ----- TagSelector からの「＋新規」イベント（ダイアログ利用） -----
     private async Task OnAddTagRequested()
     {
-        // DiaryTagFormDialogHost を使って新規作成ダイアログを開く
         var dlg = await DialogService.ShowWithAsync<DiaryTagFormDialogHost, Guid?>(
             title: "日記タグ登録",
-            paramSelector: x => x.GenreId,  // ホスト側のパラメータ名に合わせる
+            paramSelector: x => x.GenreId,
             value: null,
             options: DialogServiceExtensions.OptionsMd()
         );
@@ -256,9 +295,7 @@
         var result = await dlg.Result;
         if (!(result?.Canceled ?? true))
         {
-            // 直後にタグ一覧を再読込（選択は保持）
             await _tagSelector!.ReloadAsync(keepSelection: SelectedTagItems);
-            Snackbar.Add("タグを更新しました。", MudBlazor.Severity.Success);
         }
     }
 
