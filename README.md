@@ -20,6 +20,7 @@ flowchart TB
     UI -->|UIOperationRunner| SVC
     UI -->|UIOperationRunner| INF
     SVC -->|UnitOfWork| DATA
+    SVC --> INF
   end
 
   DATA --> SQL["Azure SQL Database"]
