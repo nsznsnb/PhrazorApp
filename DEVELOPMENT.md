@@ -95,43 +95,33 @@ export function scrollToId(id, smooth = true) {
 ```csharp
 // /UI/Interop/JsInteropManager.cs
 using Microsoft.JSInterop;
-using Microsoft.Extensions.Logging;
 
 namespace PhrazorApp.UI.Interop;
 
 public sealed class JsInteropManager
 {
     private readonly IJSRuntime _js;
-    private readonly ILogger<JsInteropManager> _logger;
-    private IJSObjectReference? _module;
+    private Task<IJSObjectReference>? _moduleTask;
 
-    public JsInteropManager(IJSRuntime js, ILogger<JsInteropManager> logger)
-    {
-        _js = js;
-        _logger = logger;
-    }
+    public JsInteropManager(IJSRuntime js) => _js = js;
 
-    private async ValueTask<IJSObjectReference> GetModuleAsync(CancellationToken ct = default)
-    {
-        _module ??= await _js.InvokeAsync<IJSObjectReference>("import", ct, "/js/site.js");
-        return _module;
-    }
+    // ★ 必要時にだけ site.js を import（並行呼び出しでも1回だけ）
+    private Task<IJSObjectReference> EnsureModuleAsync(CancellationToken ct = default)
+        => _moduleTask ??= _js.InvokeAsync<IJSObjectReference>("import", ct, "./js/site.js").AsTask();
 
-    /// <summary>ID 指定でスムーズスクロール（Home遷移しない）</summary>
-    public async ValueTask ScrollToIdAsync(string targetElementId, bool smooth = true, CancellationToken ct = default)
+    // ▼ 以下、すべてのメソッドはこのパターンで記述する
+    // var mod = await EnsureModuleAsync(ct); 
+    // await mod.InvokeVoidAsync("関数名", ct, args...);
+
+    /// ID指定でスムーズスクロール（例）
+    public async ValueTask ScrollToIdAsync(string id, bool smooth = true, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(targetElementId)) return;
-        try
-        {
-            var mod = await GetModuleAsync(ct);
-            await mod.InvokeVoidAsync("scrollToId", ct, targetElementId, smooth);
-        }
-        catch (JSException ex)
-        {
-            _logger.LogWarning(ex, "JS scrollToId 失敗: {Id}", targetElementId);
-        }
+        if (string.IsNullOrWhiteSpace(id)) return;
+        var mod = await EnsureModuleAsync(ct);
+        await mod.InvokeVoidAsync("scrollToId", ct, id, smooth);
     }
 }
+
 ```
 
 **(3) ページ／コンポーネントでの利用**

@@ -21,6 +21,10 @@ public sealed class JsInteropManager : IAsyncDisposable
     private Task<IJSObjectReference> EnsureModuleAsync(CancellationToken ct = default)
         => _moduleTask ??= _js.InvokeAsync<IJSObjectReference>("import", ct, "./js/site.js").AsTask();
 
+    // ▼ 以下、すべてのメソッドはこのパターンで記述する
+    // var mod = await EnsureModuleAsync(ct); 
+    // await mod.InvokeVoidAsync("関数名", ct, args...);
+
     /// <summary>明示的に先読みしたい場合に呼ぶだけのヘルパ</summary>
     public async ValueTask EnsureLoadedAsync(CancellationToken ct = default)
         => await EnsureModuleAsync(ct);
