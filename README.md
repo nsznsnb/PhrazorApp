@@ -31,9 +31,10 @@ flowchart TB
   Client --> UI
 
   DATA --> SQL["Azure SQL Database"]
-  INF -.予定/未実装.- BLOB["Azure Blob Storage（画像）"]
-  INF --> OPENAI["OpenAI（画像生成／日記添削）"]
   INF --> RESEND["Resend（メール送信）"]
+  INF --> OPENAI["OpenAI（画像生成／日記添削）"]
+  INF -.予定/未実装.- BLOB["Azure Blob Storage（画像）"]
+
 
 ```
 
