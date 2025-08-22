@@ -83,15 +83,8 @@
             <!-- 詳細条件＋検索/クリア（md↑は左:ボタン群/右:件数。sm↓はFullWidth） -->
             <MudHidden Breakpoint="@Breakpoint.SmAndDown">
                 <MudStack Row Spacing="1" AlignItems="@AlignItems.Center" Class="mt-1 mb-1">
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Default"
-                               Size="@BtnSize"
-                               StartIcon="@(_showAdvanced ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
-                               OnClick="@ToggleAdvanced">
-                        詳細条件
-                    </MudButton>
-
-                    <MudButton Variant="Variant.Outlined"
+                    
+                    <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.Search"
@@ -106,6 +99,14 @@
                                OnClick="@ClearFilter">
                         クリア
                     </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="@BtnSize"
+                               StartIcon="@(_showAdvanced ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                               OnClick="@ToggleAdvanced">
+                        詳細条件
+                    </MudButton>
+
 
                     <MudSpacer />
 
@@ -115,16 +116,7 @@
 
             <MudHidden Breakpoint="@Breakpoint.MdAndUp">
                 <MudStack Spacing="1" AlignItems="@AlignItems.Stretch" Class="mt-1 mb-1">
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Default"
-                               Size="@BtnSize"
-                               StartIcon="@(_showAdvanced ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
-                               FullWidth="true"
-                               OnClick="@ToggleAdvanced">
-                        詳細条件
-                    </MudButton>
-
-                    <MudButton Variant="Variant.Outlined"
+                    <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.Search"
@@ -141,6 +133,16 @@
                                OnClick="@ClearFilter">
                         クリア
                     </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="@BtnSize"
+                               StartIcon="@(_showAdvanced ? Icons.Material.Outlined.ExpandLess : Icons.Material.Outlined.ExpandMore)"
+                               FullWidth="true"
+                               OnClick="@ToggleAdvanced">
+                        詳細条件
+                    </MudButton>
+
+
 
                     <MudText Color="Color.Default">表示件数: @_filtered.Count</MudText>
                 </MudStack>
