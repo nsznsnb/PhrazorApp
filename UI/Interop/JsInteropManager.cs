@@ -7,7 +7,9 @@ public sealed class JsInteropManager : IAsyncDisposable
 {
     private readonly IJSRuntime _js;
     private readonly ILogger<JsInteropManager> _logger;
-    private IJSObjectReference? _module;
+
+    // ESM の遅延ロード用（並行呼び出しでも一度だけ import）
+    private Task<IJSObjectReference>? _moduleTask;
 
     public JsInteropManager(IJSRuntime js, ILogger<JsInteropManager> logger)
     {
@@ -15,13 +17,13 @@ public sealed class JsInteropManager : IAsyncDisposable
         _logger = logger;
     }
 
-    // site.js を ES Module として読み込み
-    private async ValueTask<IJSObjectReference> GetModuleAsync(CancellationToken ct = default)
-    {
-        if (_module is null)
-            _module = await _js.InvokeAsync<IJSObjectReference>("import", ct, "./js/site.js");
-        return _module;
-    }
+    /// <summary>site.js（ESM）を必要時に import して返す</summary>
+    private Task<IJSObjectReference> EnsureModuleAsync(CancellationToken ct = default)
+        => _moduleTask ??= _js.InvokeAsync<IJSObjectReference>("import", ct, "./js/site.js").AsTask();
+
+    /// <summary>明示的に先読みしたい場合に呼ぶだけのヘルパ</summary>
+    public async ValueTask EnsureLoadedAsync(CancellationToken ct = default)
+        => await EnsureModuleAsync(ct);
 
     /// <summary>Enter で指定 ID へフォーカス移動</summary>
     public async ValueTask HandleKeyDownToFocusAsync(KeyboardEventArgs e, string targetElementId, CancellationToken ct = default)
@@ -36,7 +38,7 @@ public sealed class JsInteropManager : IAsyncDisposable
         if (string.IsNullOrWhiteSpace(targetElementId)) return;
         try
         {
-            var mod = await GetModuleAsync(ct);
+            var mod = await EnsureModuleAsync(ct);
             await mod.InvokeVoidAsync("focusElementById", ct, targetElementId);
         }
         catch (JSException ex)
@@ -51,7 +53,7 @@ public sealed class JsInteropManager : IAsyncDisposable
         if (string.IsNullOrWhiteSpace(targetElementId)) return;
         try
         {
-            var mod = await GetModuleAsync(ct);
+            var mod = await EnsureModuleAsync(ct);
             await mod.InvokeVoidAsync("scrollToId", ct, targetElementId, smooth);
         }
         catch (JSException ex)
@@ -64,7 +66,7 @@ public sealed class JsInteropManager : IAsyncDisposable
     {
         try
         {
-            var mod = await GetModuleAsync(ct);
+            var mod = await EnsureModuleAsync(ct);
             await mod.InvokeVoidAsync("historyBack", ct, fallbackUrl);
         }
         catch (JSException ex)
@@ -73,11 +75,52 @@ public sealed class JsInteropManager : IAsyncDisposable
         }
     }
 
+    /// <summary>要素の可視状態を監視（IntersectionObserver）。戻り値は監視ID。</summary>
+    public async ValueTask<string?> ObserveElementVisibilityAsync(
+        string elementId,
+        DotNetObjectReference<object> dotNetRef,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(elementId)) return null;
+        try
+        {
+            var mod = await EnsureModuleAsync(ct);
+            return await mod.InvokeAsync<string?>("observeElementVisibility", ct, elementId, dotNetRef);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS observeElementVisibility 失敗: {Id}", elementId);
+            return null;
+        }
+    }
+
+    public async ValueTask UnobserveElementVisibilityAsync(string id, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return;
+        try
+        {
+            var mod = await EnsureModuleAsync(ct);
+            await mod.InvokeVoidAsync("unobserveElementVisibility", ct, id);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS unobserveElementVisibility 失敗: {Id}", id);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
-        if (_module is not null)
+        try
         {
-            try { await _module.DisposeAsync(); } catch { /* no-op */ }
+            if (_moduleTask?.IsCompletedSuccessfully == true)
+            {
+                var module = await _moduleTask;
+                await module.DisposeAsync();
+            }
+        }
+        catch
+        {
+            // no-op
         }
     }
 }

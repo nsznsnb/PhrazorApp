@@ -73,3 +73,35 @@ export function historyBack(fallbackUrl) {
         if (fallbackUrl) window.location.assign(fallbackUrl);
     }
 }
+
+// --- Visibility observer (IntersectionObserver) ---
+const _ivMap = new Map();
+let _ivSeq = 0;
+
+/**
+ * 任意の要素IDを監視し、画面に入ったら C# の OnTargetVisibilityChanged(true/false) を呼ぶ
+ */
+export function observeElementVisibility(elementId, dotnetRef) {
+    const el = document.getElementById(elementId);
+    if (!el) return null;
+
+    const id = `iv_${++_ivSeq}`;
+    const obs = new IntersectionObserver((entries) => {
+        // どれか一つでも可視なら true
+        const visible = entries.some(e => e.isIntersecting && e.intersectionRatio > 0);
+        try { dotnetRef.invokeMethodAsync('OnTargetVisibilityChanged', visible); } catch { }
+    }, {
+        threshold: 0   // 1ピクセルでも見えたら true（必要なら 0.1 等に調整）
+    });
+
+    obs.observe(el);
+    _ivMap.set(id, obs);
+    return id;
+}
+
+export function unobserveElementVisibility(id) {
+    const obs = _ivMap.get(id);
+    if (!obs) return;
+    obs.disconnect();
+    _ivMap.delete(id);
+}
