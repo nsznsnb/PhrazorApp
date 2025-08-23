@@ -35,19 +35,21 @@ namespace PhrazorApp.Services
 
                 var registeredCount = await pQuery.CountAsync();
 
-                var reviewAgg = await (
+                const int MIN_TOTAL = 2;   // 最低試行回数
+                const int MIN_RATE = 60;  // 合格率(％)
+
+                var learnedCount = await (
                     from rl in repos.ReviewLogs.Queryable(asNoTracking: true)
                     join p in pQuery on rl.PhraseId equals p.PhraseId
                     join d in repos.TestResultDetails.Queryable(asNoTracking: true)
                         on new { rl.TestId, rl.TestResultDetailNo }
                         equals new { d.TestId, d.TestResultDetailNo }
-                    select new { rl.PhraseId, d.IsCorrect }
-                ).ToListAsync();
-
-                var learnedCount = reviewAgg
-                    .GroupBy(x => x.PhraseId)
-                    .Select(g => new { Total = g.Count(), Correct = g.Count(x => x.IsCorrect) })
-                    .Count(x => x.Total >= 5 && (double)x.Correct / x.Total >= 0.8);
+                    group d by rl.PhraseId into g
+                    let total = g.Count()
+                    let correct = g.Count(x => x.IsCorrect)              
+                    where total >= MIN_TOTAL && (100 * correct) >= (MIN_RATE * total)
+                    select 1
+                ).CountAsync();
 
                 // --- 2) 今日の格言 ---
                 ProverbModel? todayProverb = null;
