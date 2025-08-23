@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -220,7 +221,11 @@ public class Program
 
         // Identity の /Account エンドポイント
         app.MapAdditionalIdentityEndpoints();
+        // 認可付きファイル配信用エンドポイント
         app.MapFileEndpoints();
+        // ヘルスチェック用エンドポイント
+        app.MapGet("/healthz", () => Results.Ok("ok"))
+            .WithMetadata(new AllowAnonymousAttribute()); // 認証なしで200
 
         app.Run();
     }
