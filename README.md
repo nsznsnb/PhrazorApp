@@ -12,9 +12,9 @@
   ---
 
 ## 本アプリケーション使用技術
-- **言語 / フレームワーク**：C# / .NET **9.0**（**Blazor Server**）
-- **データベース**：**Azure SQL Database**（SQL Server 2025 相当）
-- **UI フレームワーク**：**[MudBlazor](https://mudblazor.com/)**
+- **言語 / フレームワーク**：C# / .NET 9.0（[Blazor](https://dotnet.microsoft.com/ja-jp/apps/aspnet/web-apps/blazor)・ホスティングモデル：**Server**）
+- **データベース**：Azure SQL Database（SQL Server 2025 相当）
+- **UI フレームワーク**：[MudBlazor](https://mudblazor.com/)
 
 ## 開発者向けドキュメント
 このプロジェクトの用語・実装方針は **[開発ガイド](./DEVELOPMENT.md)** にまとめています。
