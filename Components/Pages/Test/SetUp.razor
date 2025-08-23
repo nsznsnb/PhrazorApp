@@ -38,82 +38,81 @@
                        Label="フレーズ帳を選択"
                        MultiSelection="true"
                        SelectedValues="_f.PhraseBookIds"
-                       SelectedValuesChanged="@EventCallback.Factory.Create(this, (IEnumerable<Guid> ids) => OnPhraseBookIdsChanged(ids))"
+                       SelectedValuesChanged="@EventCallback.Factory.Create(this, (IEnumerable<Guid> ids) => OnPhraseBookIdsChangedAsync(ids))"
                        ToStringFunc="GetPhraseBookName"
                        Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (var b in _books)
                 {
-                    <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>  @* Value は Guid のまま *@
+                    <MudSelectItem T="Guid" Value="@b.Id">@b.Name</MudSelectItem>
                 }
             </MudSelect>
 
-            <!-- ジャンル／サブジャンル：検索＋折りたたみ＋固定高さスクロール -->
-            <MudText Typo="Typo.caption" Class="mt-2">ジャンル／サブジャンル（複数選択）</MudText>
+            @if (_hasAnyAvailableGenre)
+            {
+                <!-- ジャンル／サブジャンル：検索＋入れ子リスト（MudList） -->
+                <MudText Typo="Typo.caption" Class="mt-2">ジャンル／サブジャンル（複数選択）</MudText>
 
-            <MudTextField T="string"
-                          @bind-Value="_genreFilter"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Placeholder="ジャンル・サブジャンル名で絞り込み" />
-            <MudPaper Outlined="true" Elevation="0" Square="true"
-                      Class="pa-1"
-                      Style="max-height:420px; overflow:auto;">
-                <MudExpansionPanels Dense="true">
-                    @foreach (var g in _genres)
-                    {
-                        var subs = g.SubGenres?.OrderBy(x => x.OrderNo) ?? Enumerable.Empty<SubGenreModel>();
-                        var filtered = string.IsNullOrWhiteSpace(_genreFilter)
-                        ? subs
-                        : subs.Where(sg => ContainsCi(sg.Name, _genreFilter));
+                <MudTextField T="string"
+                              @bind-Value="_genreFilter"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Placeholder="ジャンル・サブジャンル名で絞り込み" />
 
-                        var anyMatch = string.IsNullOrWhiteSpace(_genreFilter)
-                        || ContainsCi(g.Name, _genreFilter)
-                        || filtered.Any();
-                        if (!anyMatch) { continue; }
+                <MudPaper Outlined="true" Elevation="0" Square="true"
+                          Class="pa-1"
+                          Style="max-height:300px; overflow:auto;">
+                    <MudList T="Guid"
+                             SelectionMode="SelectionMode.MultiSelection"
+                             SelectedValues="_f.SubGenreIds"
+                             SelectedValuesChanged="@EventCallback.Factory.Create(this, (object? e) => OnSubGenreIdsChanged(ToSet(e)))"
+                             Dense="true"
+                             CheckBoxColor="Color.Default">
+                        <MudListSubheader>ジャンル / サブジャンル</MudListSubheader>
 
-                        var g1 = g;
-                        var s1 = filtered.ToList();
+                        @foreach (var g in _genres)
+                        {
+                            // 利用可能なサブジャンル（＝少なくとも1つのフレーズが紐づく）
+                            var availableChildren = (g.SubGenres?.OrderBy(x => x.OrderNo) ?? Enumerable.Empty<SubGenreModel>())
+                            .Where(sg => _availableSubGenreIds.Contains(sg.Id));
 
-                        <MudExpansionPanel>
-                            <TitleContent>
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1"
-                                          @onclick="@(() => _openGenreId = g1.Id)">
-                                    <!-- チェックボックスはクリック伝播を止める（展開切替と独立） -->
-                                    <div @onclick:stopPropagation="true">
+                            // 検索条件：親が当たれば子は全表示、親が当たらなければ子の名前で絞る
+                            var showAllChildren = string.IsNullOrWhiteSpace(_genreFilter) || ContainsCi(g.Name, _genreFilter);
+                            var filteredChildren = showAllChildren
+                            ? availableChildren
+                            : availableChildren.Where(sg => ContainsCi(sg.Name, _genreFilter));
+
+                            var childList = filteredChildren.ToList();
+                            if (childList.Count == 0) { continue; } // 表示すべき子が無ければ親ごと非表示
+
+                            <MudListItem>
+                                <ChildContent>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <!-- 親ジャンル TriState チェック（可視の子のみで判定） -->
                                         <MudCheckBox T="bool?"
                                                      TriState="true"
-                                                     Value="@GetGenreCheckState(g1)"
-                                                     ValueChanged="@((bool? v) => OnGenreCheckChanged(g1, v))" />
-                                    </div>
-                                    <MudText>@g1.Name</MudText>
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                        (@GetSelectedCountWithin(g1)/@(g1.SubGenres?.Count ?? 0))
-                                    </MudText>
-                                </MudStack>
-                            </TitleContent>
+                                                     Value="@GetGenreCheckStateVisible(g)"
+                                                     ValueChanged="@((bool? v) => OnGenreCheckChangedVisible(g, v))" />
+                                        <MudText>@g.Name</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            (@GetSelectedCountWithinVisible(g)/@GetVisibleChildCount(g))
+                                        </MudText>
+                                    </MudStack>
+                                </ChildContent>
 
-                            <ChildContent>
-                                @if (_openGenreId == g1.Id)
-                                {
-                                    <MudList T="Guid"
-                                             SelectionMode="SelectionMode.MultiSelection"
-                                             SelectedValues="_f.SubGenreIds"
-                                             SelectedValuesChanged="@EventCallback.Factory.Create(this, (object? e) => OnSubGenreIdsChanged(ToSet(e)))"
-                                             Dense="true"
-                                             CheckBoxColor="Color.Default">
-                                        @foreach (var sg in s1)
-                                        {
-                                            <MudListItem T="Guid" Value="@sg.Id">
-                                                <ChildContent>@sg.Name</ChildContent>
-                                            </MudListItem>
-                                        }
-                                    </MudList>
-                                }
-                            </ChildContent>
-                        </MudExpansionPanel>
-                    }
-                </MudExpansionPanels>
-            </MudPaper>
+                                <!-- 常に NestedList を置く（中身のみ制御） -->
+                                <NestedList>
+                                    @foreach (var sg in childList)
+                                    {
+                                        <MudListItem T="Guid" Value="@sg.Id">
+                                            <ChildContent>@sg.Name</ChildContent>
+                                        </MudListItem>
+                                    }
+                                </NestedList>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudPaper>
+            }
 
             <!-- 期間 -->
             <MudText Typo="Typo.subtitle2" Class="mt-2">期間</MudText>
@@ -170,10 +169,9 @@
                        ValueChanged="OnShuffleChanged"
                        Color="Color.Primary" />
 
-            @* ▼ プレビュー（全件） + 選択して絞り込み *@
+            @* ▼ プレビュー *@
             @if (_hasPreview)
             {
-                <!-- ▼ スクロール先アンカー -->
                 <div id="@PreviewAnchorId"></div>
                 <SelectableTable TItem="PhraseListItemModel"
                                  @ref="_previewTable"
@@ -235,8 +233,10 @@
     private List<PhraseBookListItemModel> _books = new();
     private List<PhraseListItemModel> _preview = new();
 
-    // どのパネルの中身を表示するか（1つだけ）
-    private Guid? _openGenreId;
+    // 利用可能サブジャンル（フレーズ帳選択などに応じてサーバで算出）
+    private HashSet<Guid> _availableSubGenreIds = new();
+    private bool _hasAnyAvailableGenre;
+
     private bool _hasPreview;
     private bool _isDateRangeValid = true;
     private const string PreviewAnchorId = "setup-preview-anchor";
@@ -251,7 +251,9 @@
         _f.Limit = 10;
 
         _genres = await UiRunner.ReadAsync(() => GenreService.GetGenreViewModelListAsync()) ?? new();
-        _books  = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
+        _books = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
+
+        await RefreshAvailableSubGenresAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -270,17 +272,20 @@
         StateHasChanged();
     }
 
-    // ---- ハンドラ（既存＋一部改修） ----
-    private void OnPhraseBookIdsChanged(IEnumerable<Guid> ids)
+    // --- フレーズ帳変更 → 利用可能サブジャンル再計算
+    private async Task OnPhraseBookIdsChangedAsync(IEnumerable<Guid> ids)
     {
         _f.PhraseBookIds = ids?.ToHashSet() ?? new HashSet<Guid>();
+        await RefreshAvailableSubGenresAsync();
         InvalidatePreview();
     }
+
     private void OnSubGenreIdsChanged(HashSet<Guid> ids)
     {
         _f.SubGenreIds = ids ?? new HashSet<Guid>();
         InvalidatePreview();
     }
+
     private void OnDatePresetChanged(DateRangePreset preset)
     {
         if (_f.DatePreset == preset) return;
@@ -321,13 +326,16 @@
     {
         if (_f.Limit == v) return;
         _f.Limit = v;
-        // ここではプレビューを再計算せず OK（開始時に Take する）
+        // プレビュー再計算は不要（開始時に Take）
     }
 
-    // TriState（親ジャンル）
-    private bool? GetGenreCheckState(GenreModel g)
+    // --- TriState（可視の子のみで判定）
+    private bool? GetGenreCheckStateVisible(GenreModel g)
     {
-        var ids = g.SubGenres?.Select(x => x.Id).ToArray() ?? Array.Empty<Guid>();
+        var ids = g.SubGenres?
+            .Where(sg => _availableSubGenreIds.Contains(sg.Id))
+            .Select(x => x.Id)
+            .ToArray() ?? Array.Empty<Guid>();
         if (ids.Length == 0) return false;
 
         int sel = ids.Count(id => _f.SubGenreIds.Contains(id));
@@ -335,17 +343,41 @@
         if (sel == ids.Length) return true;
         return null;
     }
-    private void OnGenreCheckChanged(GenreModel g, bool? v)
+    private void OnGenreCheckChangedVisible(GenreModel g, bool? v)
     {
-        var ids = g.SubGenres?.Select(x => x.Id).ToArray() ?? Array.Empty<Guid>();
+        var ids = g.SubGenres?
+            .Where(sg => _availableSubGenreIds.Contains(sg.Id))
+            .Select(x => x.Id)
+            .ToArray() ?? Array.Empty<Guid>();
+
         var next = _f.SubGenreIds.ToHashSet();
 
-        if (v == true)            next.UnionWith(ids);
-        else if (v == false)      next.RemoveWhere(id => ids.Contains(id));
-        else                      next.UnionWith(ids);
+        if (v == true) next.UnionWith(ids);
+        else if (v == false) next.RemoveWhere(id => ids.Contains(id));
+        else next.UnionWith(ids);
 
         _f.SubGenreIds = next;
         InvalidatePreview();
+    }
+
+    private int GetVisibleChildCount(GenreModel g)
+        => g.SubGenres?.Count(sg => _availableSubGenreIds.Contains(sg.Id)) ?? 0;
+
+    private int GetSelectedCountWithinVisible(GenreModel g)
+        => g.SubGenres?.Count(sg => _availableSubGenreIds.Contains(sg.Id) && _f.SubGenreIds.Contains(sg.Id)) ?? 0;
+
+    // --- 利用可能サブジャンルをサービスで算出し、選択値も正規化
+    private async Task RefreshAvailableSubGenresAsync()
+    {
+        var ids = await UiRunner.ReadAsync(() => PhraseService.GetAvailableSubGenreIdsAsync(_f));
+        _availableSubGenreIds = ids ?? new HashSet<Guid>();
+
+        // 表示外（無効）になった選択値は除去
+        _f.SubGenreIds.IntersectWith(_availableSubGenreIds);
+
+        _hasAnyAvailableGenre = _genres.Any(g => g.SubGenres?.Any(sg => _availableSubGenreIds.Contains(sg.Id)) == true);
+
+        StateHasChanged();
     }
 
     private async Task PreviewAsync()
@@ -368,7 +400,6 @@
 
         if (_hasPreview)
         {
-            // ▼ テーブル描画完了後にスクロールするためフラグを立てて再描画
             _pendingScrollToPreview = true;
             StateHasChanged();
         }
@@ -409,10 +440,7 @@
            && text.Contains(term, StringComparison.OrdinalIgnoreCase);
 
     private string GetPhraseBookName(Guid id)
-    => _books.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
-
-    private int GetSelectedCountWithin(GenreModel g)
-        => g.SubGenres?.Count(sg => _f.SubGenreIds.Contains(sg.Id)) ?? 0;
+        => _books.FirstOrDefault(x => x.Id == id)?.Name ?? id.ToString();
 
     private static HashSet<Guid> ToSet(object? e)
         => e switch
@@ -435,7 +463,9 @@
         _genreFilter = string.Empty;
         _preview.Clear();
         _hasPreview = false;
-        StateHasChanged();
+
+        // 帳未選択状態で再計算（全体でフレーズが紐づくサブジャンルのみに）
+        _ = RefreshAvailableSubGenresAsync();
     }
 
     // SelectableTable 用：検索対象列

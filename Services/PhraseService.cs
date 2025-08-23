@@ -108,6 +108,35 @@ namespace PhrazorApp.Services
             });
         }
 
+        public async Task<ServiceResult<HashSet<Guid>>> GetAvailableSubGenreIdsAsync(TestFilterModel f)
+        {
+            return await _uow.ReadAsync(async repos =>
+            {
+                // フレーズ帳が指定されている場合：帳→フレーズ→フレーズ×サブジャンル
+                if (f.PhraseBookIds is { Count: > 0 })
+                {
+                    var ids =
+                        await (from i in repos.PhraseBookItems.Queryable()
+                               where f.PhraseBookIds.Contains(i.PhraseBookId)
+                               join pg in repos.PhraseGenres.Queryable() on i.PhraseId equals pg.PhraseId
+                               select pg.SubGenreId)
+                              .Distinct()
+                              .ToListAsync();
+
+                    return ServiceResult.Success(ids.ToHashSet());
+                }
+
+                // 帳指定なし：全体でフレーズに紐づくサブジャンル
+                {
+                    var ids = await repos.PhraseGenres.Queryable()
+                                    .Select(pg => pg.SubGenreId)
+                                    .Distinct()
+                                    .ToListAsync();
+                    return ServiceResult.Success(ids.ToHashSet());
+                }
+            });
+        }
+
         /// <summary>作成</summary>
         public async Task<ServiceResult<Unit>> CreatePhraseAsync(PhraseEditModel model)
         {
