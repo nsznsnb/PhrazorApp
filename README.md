@@ -1,24 +1,37 @@
-# Phrazor
-## –{ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌŠT—v
-–{ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Í‰pì•¶—ûK‚Æ‰pŒê“ú‹L“Yí‚ğƒƒCƒ“‹@”\‚Æ‚µ‚ÄA‰pŒê•\Œ»—Í‚Ì‹­‰»‚ğs‚¢‚Ü‚·B
+ï»¿# Phrazor
 
-## ŠJ”­ÒŒü‚¯ƒhƒLƒ…ƒƒ“ƒg
+## æœ¬ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®æ¦‚è¦
+æœ¬ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã¯è‹±ä½œæ–‡ç·´ç¿’ã¨è‹±èªæ—¥è¨˜æ·»å‰Šã‚’ãƒ¡ã‚¤ãƒ³æ©Ÿèƒ½ã¨ã—ã¦ã€è‹±èªè¡¨ç¾åŠ›ã®å¼·åŒ–ã‚’è¡Œã„ã¾ã™ã€‚  
+  **Webã‚µã‚¤ãƒˆï¼ˆãƒ‡ãƒ¢ï¼é‹ç”¨ç’°å¢ƒï¼‰**ï¼š<https://phrazor-b9bdfvccc5avfubc.japanwest-01.azurewebsites.net/>
+  > **æ³¨æ„**ï¼šæœ¬ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®é–²è¦§ãƒ»æ“ä½œã«ã¯ **ãƒ­ã‚°ã‚¤ãƒ³ãŒå¿…è¦** ã§ã™ã€‚  
 
-‚±‚ÌƒvƒƒWƒFƒNƒg‚Ì—pŒêEÀ‘••ûj‚Í **[Development Guide](./DEVELOPMENT.md)** ‚É‚Ü‚Æ‚ß‚Ä‚¢‚Ü‚·B
+## ã”åˆ©ç”¨ä¸Šã®æ³¨æ„
 
-## ƒVƒXƒeƒ€\¬}
+* æœ¬ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã¯ **Blazor Server** ã¨ã„ã† C# ã® Web æŠ€è¡“ã‚’ä½¿ç”¨ã—ã¦ä½œæˆã•ã‚Œã¦ã„ã¾ã™ãŒã€**WebSocket ã«ã‚ˆã‚‹å¸¸æ™‚æ¥ç¶šãŒå‰æ**ã«ãªã£ã¦ã„ã‚‹ãŸã‚ã€WebSocket ãŒé »ç¹ã«åˆ‡æ–­ã•ã‚Œã‚„ã™ã„ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ç’°å¢ƒã§ã¯ã€ä¸Šæ‰‹ãå‹•ä½œã—ã¾ã›ã‚“ã€‚ã„ãã¤ã‹ã®ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ç’°å¢ƒã§ç¢ºèªã—ãŸã¨ã“ã‚ã€ã“ã®ãƒ‘ã‚¿ãƒ¼ãƒ³ãŒ 1 ä»¶ç¢ºèªã•ã‚Œã¾ã—ãŸã€‚ãã®å ´åˆã«ã¯ **ã‚¹ãƒãƒ›ã‹ã‚‰ã”ç¢ºèª**ã„ãŸã ãã‹ã€ä»¥ä¸‹ãƒªãƒ³ã‚¯ã‹ã‚‰ **é–‹ç™ºè³‡æ–™ï¼ˆER å›³ãƒ»æ“ä½œãƒãƒ‹ãƒ¥ã‚¢ãƒ«ï¼‰** ã ã‘ã§ã‚‚ã”ç¢ºèªãã ã•ã„ã€‚[https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads](https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads)
+
+  ---
+
+## æœ¬ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ä½¿ç”¨æŠ€è¡“
+- **è¨€èª / ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¯ãƒ¼ã‚¯**ï¼šC# / .NET **9.0**ï¼ˆ**Blazor Server**ï¼‰
+- **ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹**ï¼š**Azure SQL Database**ï¼ˆæ—¢å®šã®äº’æ›æ€§ãƒ¬ãƒ™ãƒ« **170** / SQL Server 2025 ç›¸å½“ï¼‰
+- **UI ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¯ãƒ¼ã‚¯**ï¼š**[MudBlazor](https://mudblazor.com/)**
+
+## é–‹ç™ºè€…å‘ã‘ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆ
+ã“ã®ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã®ç”¨èªãƒ»å®Ÿè£…æ–¹é‡ã¯ **[é–‹ç™ºã‚¬ã‚¤ãƒ‰](./DEVELOPMENT.md)** ã«ã¾ã¨ã‚ã¦ã„ã¾ã™ã€‚
+
+## ã‚·ã‚¹ãƒ†ãƒ æ§‹æˆå›³
 
 ```mermaid
 flowchart TB
 
-  Client["ƒ†[ƒU[‚Ìƒuƒ‰ƒEƒUiHTTPSj"]
+  Client["ãƒ¦ãƒ¼ã‚¶ãƒ¼ã®ãƒ–ãƒ©ã‚¦ã‚¶ï¼ˆHTTPSï¼‰"]
 
   subgraph Azure["Azure App Service"]
     direction TB
 
     subgraph Blazor["Blazor Server"]
       direction TB
-     UI["UIiMudBlazorj"]
+     UI["UIï¼ˆMudBlazorï¼‰"]
      SVC["Services"]
      INF["Infrastructure"]
      DATA["Repositories"]
@@ -31,63 +44,63 @@ flowchart TB
   Client --> UI
 
   DATA --> SQL["Azure SQL Database"]
-  INF --> RESEND["Resendiƒ[ƒ‹‘—Mj"]
-  INF --> OPENAI["OpenAIi‰æ‘œ¶¬^“ú‹L“Yíj"]
-  INF -.—\’è/–¢À‘•.- BLOB["Azure Blob Storagei‰æ‘œj"]
+  INF --> RESEND["Resendï¼ˆãƒ¡ãƒ¼ãƒ«é€ä¿¡ï¼‰"]
+  INF --> OPENAI["OpenAIï¼ˆç”»åƒç”Ÿæˆï¼æ—¥è¨˜æ·»å‰Šï¼‰"]
+  INF -.äºˆå®š/æœªå®Ÿè£….- BLOB["Azure Blob Storageï¼ˆç”»åƒï¼‰"]
 
 
 ```
 
-## ƒfƒBƒŒƒNƒgƒŠŠT—v
+## ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªæ¦‚è¦
 
-- **Components/** c Razor ƒRƒ“ƒ|[ƒlƒ“ƒg
-  - **Account/** c Identity UI —p‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg
-    - **Pages/** c ƒTƒCƒ“ƒCƒ“/“o˜^/ŠÇ—‚È‚Ç‚Ìƒy[ƒW
-    - **Shared/** c Identity ê—p‚Ì‹¤—L•”•iiƒŒƒCƒAƒEƒg/ƒƒjƒ…[“™j
-  - **Layout/** c MainLayout, NavMenu ‚È‚Ç
-  - **Pages/** c ƒ‹[ƒeƒBƒ“ƒO‚³‚ê‚éƒy[ƒW
-  - **Shared/** c Ä—˜—pƒRƒ“ƒ|[ƒlƒ“ƒg
-    - **Controls/** c ¬UI•”•i(ƒT[ƒrƒX‚Ìˆ—‚ğŠÜ‚Ü‚È‚¢)
-    - **Containers/** c ƒT[ƒrƒX‚ğ—˜—p‚µ‚½ˆ—‚Ü‚Å’S‚¤UI•”•i
-    - **Dialogs/** c ƒ‚[ƒ_ƒ‹i*Dialog / *DialogHostj
-  - **App.razor / Routes.razor / _Imports.razor** c ƒ‹[ƒg/ƒ‹[ƒeƒBƒ“ƒO/‹¤’Ê using
+- **Components/** â€¦ Razor ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+  - **Account/** â€¦ Identity UI ç”¨ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+    - **Pages/** â€¦ ã‚µã‚¤ãƒ³ã‚¤ãƒ³/ç™»éŒ²/ç®¡ç†ãªã©ã®ãƒšãƒ¼ã‚¸
+    - **Shared/** â€¦ Identity å°‚ç”¨ã®å…±æœ‰éƒ¨å“ï¼ˆãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆ/ãƒ¡ãƒ‹ãƒ¥ãƒ¼ç­‰ï¼‰
+  - **Layout/** â€¦ MainLayout, NavMenu ãªã©
+  - **Pages/** â€¦ ãƒ«ãƒ¼ãƒ†ã‚£ãƒ³ã‚°ã•ã‚Œã‚‹ãƒšãƒ¼ã‚¸
+  - **Shared/** â€¦ å†åˆ©ç”¨ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+    - **Controls/** â€¦ å°UIéƒ¨å“(ã‚µãƒ¼ãƒ“ã‚¹ã®å‡¦ç†ã‚’å«ã¾ãªã„)
+    - **Containers/** â€¦ ã‚µãƒ¼ãƒ“ã‚¹ã‚’åˆ©ç”¨ã—ãŸå‡¦ç†ã¾ã§æ‹…ã†UIéƒ¨å“
+    - **Dialogs/** â€¦ ãƒ¢ãƒ¼ãƒ€ãƒ«ï¼ˆ*Dialog / *DialogHostï¼‰
+  - **App.razor / Routes.razor / _Imports.razor** â€¦ ãƒ«ãƒ¼ãƒˆ/ãƒ«ãƒ¼ãƒ†ã‚£ãƒ³ã‚°/å…±é€š using
 
-- **UI/** c UI §ŒäEUIˆË‘¶‘Y
-  - **Managers/** c ƒ[ƒfƒBƒ“ƒO•\¦EUI‘€ì‚ÌƒI[ƒPƒXƒgƒŒ[ƒVƒ‡ƒ“
-  - **Interop/** c JS ˜AŒgiIJSRuntime ƒ‰ƒbƒp[“™j
-  - **State/** c ‰æ–ÊŠÔ‚Å•Û‚·‚éó‘ÔiScopedj
-  - **Themes/** c ƒAƒvƒŠ‘S‘Ì‚ÌF’²‚È‚Ç‚Ìİ’è
-  - **Rendering/** c RenderModesiServer/Wasm/Auto ‚ÌƒvƒŠƒZƒbƒgj
+- **UI/** â€¦ UI åˆ¶å¾¡ãƒ»UIä¾å­˜è³‡ç”£
+  - **Managers/** â€¦ ãƒ­ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°è¡¨ç¤ºãƒ»UIæ“ä½œã®ã‚ªãƒ¼ã‚±ã‚¹ãƒˆãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³
+  - **Interop/** â€¦ JS é€£æºï¼ˆIJSRuntime ãƒ©ãƒƒãƒ‘ãƒ¼ç­‰ï¼‰
+  - **State/** â€¦ ç”»é¢é–“ã§ä¿æŒã™ã‚‹çŠ¶æ…‹ï¼ˆScopedï¼‰
+  - **Themes/** â€¦ ã‚¢ãƒ—ãƒªå…¨ä½“ã®è‰²èª¿ãªã©ã®è¨­å®š
+  - **Rendering/** â€¦ RenderModesï¼ˆServer/Wasm/Auto ã®ãƒ—ãƒªã‚»ãƒƒãƒˆï¼‰
 
-- **Services/** c ƒAƒvƒŠŒÅ—L‚Ìˆ—(ƒT[ƒrƒX)
+- **Services/** â€¦ ã‚¢ãƒ—ãƒªå›ºæœ‰ã®å‡¦ç†(ã‚µãƒ¼ãƒ“ã‚¹)
 
-- **Data/** c ƒf[ƒ^ƒx[ƒXƒAƒNƒZƒX
-  - **ApplicationDbContext.cs** c ASP.NET Identity (Code-first)
-  - **EngDbContext.cs** c EFCoreiDB-firstj
-  - **Entities/** c ƒe[ƒuƒ‹‚ğ•\Œ»‚·‚éƒNƒ‰ƒXŒQ(ƒGƒ“ƒeƒBƒeƒB)
-  - **Repositories/** c ƒe[ƒuƒ‹‘€ì‚ğ’S‚¤(ƒŒƒ|ƒWƒgƒŠ)
-  - **Migrations/** c Identity ‚Ìƒ}ƒCƒOƒŒ[ƒVƒ‡ƒ“
+- **Data/** â€¦ ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã‚¢ã‚¯ã‚»ã‚¹
+  - **ApplicationDbContext.cs** â€¦ ASP.NET Identity (Code-first)
+  - **EngDbContext.cs** â€¦ EFCoreï¼ˆDB-firstï¼‰
+  - **Entities/** â€¦ ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’è¡¨ç¾ã™ã‚‹ã‚¯ãƒ©ã‚¹ç¾¤(ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£)
+  - **Repositories/** â€¦ ãƒ†ãƒ¼ãƒ–ãƒ«æ“ä½œã‚’æ‹…ã†(ãƒ¬ãƒã‚¸ãƒˆãƒª)
+  - **Migrations/** â€¦ Identity ã®ãƒã‚¤ã‚°ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³
 
-- **Downloads/** c ŠO•””zM‚·‚éƒtƒ@ƒCƒ‹ŒQ
+- **Downloads/** â€¦ å¤–éƒ¨é…ä¿¡ã™ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ç¾¤
 
-- **Endpoints/** c Minimal API ŒQi”F‰Â•t‚«ƒtƒ@ƒCƒ‹”zM—pAPI “™)
+- **Endpoints/** â€¦ Minimal API ç¾¤ï¼ˆèªå¯ä»˜ããƒ•ã‚¡ã‚¤ãƒ«é…ä¿¡ç”¨API ç­‰)
 
-- **Infrastructure/** c ŠO•” I/OiBlob/Email/OpenAI “™j
+- **Infrastructure/** â€¦ å¤–éƒ¨ I/Oï¼ˆBlob/Email/OpenAI ç­‰ï¼‰
 
-- **Extensions/** c Šg’£ƒƒ\ƒbƒhiƒ_ƒCƒAƒƒOŒÄ‚Ño‚µ‚È‚Ç‚Ì•Ö—˜ƒƒ\ƒbƒh)
+- **Extensions/** â€¦ æ‹¡å¼µãƒ¡ã‚½ãƒƒãƒ‰ï¼ˆãƒ€ã‚¤ã‚¢ãƒ­ã‚°å‘¼ã³å‡ºã—ãªã©ã®ä¾¿åˆ©ãƒ¡ã‚½ãƒƒãƒ‰)
 
-- **Common/** c ƒAƒvƒŠ‘S‘Ì‚Åg—p‚·‚ég’è‹`Eİ’èh
-  - **Constants/** c ’è”
-  - **Csv/** c Csvæ‚É—˜—p‚·‚éƒXƒL[ƒ}(—ñ‚Ìƒƒ^î•ñ)
-  - **Enums/** c —ñ‹“‘Ì
-  - **Options/** c appsettings.json“Ç—pƒNƒ‰ƒX—Ş
-  - **Results/** c Œ‹‰ÊŒ^iServiceResult ‚È‚Çj
-  - **Validation/** c ƒoƒŠƒf[ƒVƒ‡ƒ“‚ÌƒOƒ[ƒoƒ‹İ’è
+- **Common/** â€¦ ã‚¢ãƒ—ãƒªå…¨ä½“ã§ä½¿ç”¨ã™ã‚‹â€œå®šç¾©ãƒ»è¨­å®šâ€
+  - **Constants/** â€¦ å®šæ•°
+  - **Csv/** â€¦ Csvå–è¾¼æ™‚ã«åˆ©ç”¨ã™ã‚‹ã‚¹ã‚­ãƒ¼ãƒ(åˆ—ã®ãƒ¡ã‚¿æƒ…å ±)
+  - **Enums/** â€¦ åˆ—æŒ™ä½“
+  - **Options/** â€¦ appsettings.jsonèª­è¾¼ç”¨ã‚¯ãƒ©ã‚¹é¡
+  - **Results/** â€¦ çµæœå‹ï¼ˆServiceResult ãªã©ï¼‰
+  - **Validation/** â€¦ ãƒãƒªãƒ‡ãƒ¼ã‚·ãƒ§ãƒ³ã®ã‚°ãƒ­ãƒ¼ãƒãƒ«è¨­å®š
 
-- **tools/** c ŠJ”­—pƒXƒNƒŠƒvƒgiPowerShell “™j  
-  ¦ JavaScript ‚Í **wwwroot/js/** ‚É”z’u
+- **tools/** â€¦ é–‹ç™ºç”¨ã‚¹ã‚¯ãƒªãƒ—ãƒˆï¼ˆPowerShell ç­‰ï¼‰  
+  â€» JavaScript ã¯ **wwwroot/js/** ã«é…ç½®
 
-- **wwwroot/** c Ã“Iƒtƒ@ƒCƒ‹ijs/css/‰æ‘œ ‚È‚Çj
+- **wwwroot/** â€¦ é™çš„ãƒ•ã‚¡ã‚¤ãƒ«ï¼ˆjs/css/ç”»åƒ ãªã©ï¼‰
 
-- **GlobalUsings.cs** c ƒOƒ[ƒoƒ‹ using ’è‹`
+- **GlobalUsings.cs** â€¦ ã‚°ãƒ­ãƒ¼ãƒãƒ« using å®šç¾©
 
