@@ -22,9 +22,9 @@ namespace PhrazorApp.Models.Validators
             {
                 if (list is null || list.Count == 0) return;
 
-                // 最大15件
-                if (list.Count > 15)
-                    ctx.AddFailure(string.Empty, "サブジャンルの追加は15個までです。");
+                // 最大25件
+                if (list.Count > 25)
+                    ctx.AddFailure(string.Empty, "サブジャンルの追加は25個までです。");
 
                 // 既定はちょうど1件
                 var defCount = list.Count(s => s.IsDefault);
