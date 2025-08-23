@@ -313,7 +313,7 @@ return ServiceResult.None.Error("記録に失敗しました");
 
 ```csharp
 // 読み取り（必要な列だけを投影して最小限取得）
-var list = await _uow.ReadAsync(async repos =>
+var list = await _uow.ReadAsync(async (UowRepos repos) =>
 {
     return await repos.MyEntities
         .Queryable(true) // AsNoTracking
@@ -322,7 +322,7 @@ var list = await _uow.ReadAsync(async repos =>
 });
 
 // 保存（Upsert の一例：複数 Repository を扱ってもOK）
-var saved = await _uow.ExecuteInTransactionAsync(async repos =>
+var saved = await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
 {
     var entity = await repos.MyEntities
         .Queryable(false) // Tracking
