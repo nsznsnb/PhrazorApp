@@ -5,6 +5,7 @@
 @using PhrazorApp.Utils
 @using System.Globalization
 @using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Web
 
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
@@ -45,17 +46,21 @@
 
             <!-- 主要条件（フレーズは常時表示。意味/ジャンルは md↑のみ常時表示） -->
             <MudGrid Spacing="2" Class="mb-2">
-                <!-- フレーズ：常時表示 -->
+                <!-- フレーズ：常時表示 / Enter で検索 -->
                 <MudItem xs="12" md="4">
                     <MudTextField T="string" Label="フレーズ" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  @bind-Value="_qPhrase" Immediate="true" Clearable="true" />
+                                  @bind-Value="_qPhrase" Immediate="true" Clearable="true"
+                                  OnKeyDown="OnSearchKeyDown"
+                                  @key="_inputsVersion" />
                 </MudItem>
 
-                <!-- 意味・ジャンル：md↑のみ表示 -->
+                <!-- 意味・ジャンル：md↑のみ表示（Enter で検索をサポート） -->
                 <MudHidden Breakpoint="@Breakpoint.SmAndDown">
                     <MudItem md="4">
                         <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      @bind-Value="_qMeaning" Immediate="true" Clearable="true" />
+                                      @bind-Value="_qMeaning" Immediate="true" Clearable="true"
+                                      OnKeyDown="OnSearchKeyDown"
+                                      @key="_inputsVersion" />
                     </MudItem>
 
                     <MudItem md="4">
@@ -80,10 +85,9 @@
                 </MudHidden>
             </MudGrid>
 
-            <!-- 詳細条件＋検索/クリア（md↑は左:ボタン群/右:件数。sm↓はFullWidth） -->
+            <!-- 詳細条件＋検索/クリア -->
             <MudHidden Breakpoint="@Breakpoint.SmAndDown">
                 <MudStack Row Spacing="1" AlignItems="@AlignItems.Center" Class="mt-1 mb-1">
-                    
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                Size="@BtnSize"
@@ -107,9 +111,7 @@
                         詳細条件
                     </MudButton>
 
-
                     <MudSpacer />
-
                     <MudText Color="Color.Default">表示件数: @_filtered.Count</MudText>
                 </MudStack>
             </MudHidden>
@@ -142,8 +144,6 @@
                         詳細条件
                     </MudButton>
 
-
-
                     <MudText Color="Color.Default">表示件数: @_filtered.Count</MudText>
                 </MudStack>
             </MudHidden>
@@ -155,7 +155,9 @@
                     <MudGrid Spacing="2" Class="mb-2">
                         <MudItem xs="12">
                             <MudTextField T="string" Label="意味" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                          @bind-Value="_qMeaning" Clearable="true" />
+                                          @bind-Value="_qMeaning" Clearable="true"
+                                          OnKeyDown="OnSearchKeyDown"
+                                          @key="_inputsVersion" />
                         </MudItem>
                         <MudItem xs="12">
                             <MudSelect T="string"
@@ -209,16 +211,19 @@
                                             Margin="Margin.Dense"
                                             Clearable="true" />
                     </MudItem>
-                    <!-- ★ 復習回数：『範囲』と分かるよう1カラムで横並び表示 -->
                     <MudItem xs="12" md="4">
                         <MudStack Row Spacing="1" AlignItems="AlignItems.End">
                             <MudNumericField T="int?" Label="復習回数(開始)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Step="1"
                                              InputMode="InputMode.numeric"
-                                             @bind-Value="_qReviewMin" Clearable="true" Style="min-width:120px;" />
+                                             @bind-Value="_qReviewMin" Clearable="true"
+                                             OnKeyDown="OnSearchKeyDown"
+                                             Style="min-width:120px;" />
                             <MudText Class="pb-2">〜</MudText>
                             <MudNumericField T="int?" Label="復習回数(終了)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Step="1"
                                              InputMode="InputMode.numeric"
-                                             @bind-Value="_qReviewMax" Clearable="true" Style="min-width:120px;" />
+                                             @bind-Value="_qReviewMax" Clearable="true"
+                                             OnKeyDown="OnSearchKeyDown"
+                                             Style="min-width:120px;" />
                         </MudStack>
                     </MudItem>
                 </MudGrid>
@@ -241,8 +246,8 @@
             <!-- ツールバー（ページ側で差し込み） -->
             <ExtraToolbar Context="tb">
                 @{
-                    var selView = tb.SelectedCountInView;                // 表示中の選択数
-                    var selAll  = tb.GetSelectedIdsAll()?.Count ?? 0;   // 全体選択数
+                    var selView = tb.SelectedCountInView;
+                    var selAll  = tb.GetSelectedIdsAll()?.Count ?? 0;
                     var hasAnyAll  = selAll > 0;
                 }
 
@@ -269,22 +274,22 @@
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Info"
                                Size="@BtnSize"
+                               StartIcon="@Icons.Material.TwoTone.Bookmarks"
+                               Disabled="@(selAll == 0)"
+                               OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                        フレーズ帳一括設定
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Info"
+                               Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.Label"
                                Disabled="@(selAll == 0)"
                                OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                         ジャンルー一括設定
                     </MudButton>
 
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Info"
-                               Size="@BtnSize"
-                               StartIcon="@Icons.Material.TwoTone.Bookmarks"
-                               Disabled="@(selAll == 0)"
-                               OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                        フレーズ帳に追加
-                    </MudButton>
 
-                    <!-- 右端の「一括削除」にだけバッジ（右上） -->
                     <MudBadge Content="@selAll"
                               Max="99999"
                               Overlap
@@ -317,7 +322,6 @@
 
                         <MudMenu Dense="true" OffsetY="true">
                             <ActivatorContent>
-                                <!-- モバイルは常時表示の右端「その他」ボタンにバッジ -->
                                 <MudBadge Content="@selAll"
                                           Max="99999"
                                           Overlap
@@ -339,6 +343,14 @@
                                     フレーズ復習
                                 </MudMenuItem>
 
+                                
+                                <MudMenuItem Disabled="@(selAll == 0)"
+                                             OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                    <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks"
+                                             Color="@(hasAnyAll ? Color.Secondary : Color.Default)" Class="mr-2" />
+                                    フレーズ帳一括設定
+                                </MudMenuItem>
+
                                 <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Label"
@@ -346,12 +358,6 @@
                                     ジャンル一括設定
                                 </MudMenuItem>
 
-                                <MudMenuItem Disabled="@(selAll == 0)"
-                                             OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks"
-                                             Color="@(hasAnyAll ? Color.Secondary : Color.Default)" Class="mr-2" />
-                                    フレーズ帳に追加
-                                </MudMenuItem>
 
                                 <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
@@ -368,9 +374,13 @@
             <!-- Header -->
             <HeaderContent>
                 <MudTh>フレーズ</MudTh>
+
+                <!-- ★ 追加：フレーズ帳列（ジャンルの左） -->
                 <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                    <MudTh style="min-width:180px;">フレーズ帳</MudTh>
                     <MudTh style="min-width:180px;">ジャンル</MudTh>
                 </MudHidden>
+
                 <MudTh style="min-width:120px;">操作</MudTh>
             </HeaderContent>
 
@@ -383,14 +393,29 @@
                         </MudStack>
                         <MudText Typo="Typo.subtitle1">@x.Meaning</MudText>
 
-                        <!-- 960px以下はジャンルを下段に要約表示 -->
+                        <!-- 960px以下はフレーズ下段にフレーズ帳とジャンルを要約表示 -->
                         <MudHidden Breakpoint="@Breakpoint.SmAndUp">
                             <MudStack Row Wrap="@Wrap.Wrap" Spacing="1" Class="mt-1">
+                                <!-- フレーズ帳 -->
+                                @if (x.PhraseBookNames?.Count > 0)
+                                {
+                                    @foreach (var name in x.PhraseBookNames.Take(3))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Class="mr-1 mb-1">@StringUtil.Truncate(name)</MudChip>
+                                    }
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
+                                }
+                            </MudStack>
+                            <MudStack Row Wrap="@Wrap.Wrap" Spacing="1" Class="mt-1">
+                                <!-- ジャンル/サブジャンル -->
                                 @if (x.SelectedDropItems?.Count > 0)
                                 {
                                     @foreach (var c in x.SelectedDropItems.Take(3))
                                     {
-                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="mr-1 mb-1">@c.Name</MudChip>
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="mr-1 mb-1">@StringUtil.Truncate(FormatGenreLabel(c))</MudChip>
                                     }
                                 }
                                 else
@@ -402,14 +427,31 @@
                     </MudStack>
                 </MudTd>
 
+                <!-- md↑：フレーズ帳列 → ジャンル列 -->
                 <MudHidden Breakpoint="@Breakpoint.SmAndDown">
+                    <MudTd>
+                        @if (x.PhraseBookNames?.Count > 0)
+                        {
+                            <MudStack Row Wrap="@Wrap.Wrap" Spacing="1">
+                                @foreach (var name in x.PhraseBookNames)
+                                {
+                                    <MudChip T="string" Variant="Variant.Filled" Size="Size.Small">@StringUtil.Truncate(name)</MudChip>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary">—</MudText>
+                        }
+                    </MudTd>
+
                     <MudTd>
                         @if (x.SelectedDropItems?.Count > 0)
                         {
                             <MudStack Row Wrap="@Wrap.Wrap" Spacing="1">
                                 @foreach (var c in x.SelectedDropItems)
                                 {
-                                    <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">@c.Name</MudChip>
+                                    <MudChip T="string" Variant="Variant.Outlined" Size="Size.Small">@StringUtil.Truncate(FormatGenreLabel(c))</MudChip>
                                 }
                             </MudStack>
                         }
@@ -445,21 +487,6 @@
                         </MudStack>
                     </MudHidden>
 
-                    <MudHidden Breakpoint="@Breakpoint.SmAndUp">
-                        <MudMenu Dense OffsetY>
-                            <ActivatorContent>
-                                <MudIconButton Icon="@Icons.Material.TwoTone.MoreHoriz" AriaLabel="その他" Size="@BtnSize" />
-                            </ActivatorContent>
-                            <ChildContent>
-                                <MudMenuItem OnClick="@(() => GoEdit(x.Id))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Edit" Class="mr-2" /> 編集
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OnDeleteButtonClickedAsync(x))">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.Delete" Class="mr-2" /> 削除
-                                </MudMenuItem>
-                            </ChildContent>
-                        </MudMenu>
-                    </MudHidden>
                 </MudTd>
             </RowTemplate>
 
@@ -475,6 +502,9 @@
 
     private readonly CultureInfo _ja = new("ja-JP");
     private SelectableTable<PhraseListItemModel>? _table;
+
+    // 入力再マウント用キー
+    private int _inputsVersion;
 
     // 全件 & フィルタ後
     private List<PhraseListItemModel> Elements = new();
@@ -513,11 +543,20 @@
         {
             Elements = data;
 
-            // ★ 既定：直近1か月
+            // 既定：直近1か月
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
 
             RebuildCategoryOptions();
-            RebuildPhraseBookOptions(); 
+            RebuildPhraseBookOptions();
+            ApplyFilter();
+        }
+    }
+
+    // Enterキーで検索（site.jsのフォーカス移動はそのまま許容）
+    private void OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e?.Key == "Enter")
+        {
             ApplyFilter();
         }
     }
@@ -549,7 +588,7 @@
                                                            && _qPhraseBooks.Contains(n)));
         }
 
-        // ★ 復習回数：範囲正規化（min > max の場合は入れ替え）
+        // 復習回数：範囲正規化
         int? min = _qReviewMin, max = _qReviewMax;
         if (min.HasValue && max.HasValue && min > max) (min, max) = (max, min);
         if (min.HasValue) q = q.Where(x => x.ReviewCount >= min.Value);
@@ -562,21 +601,31 @@
         if (to.HasValue)   q = q.Where(x => x.CreatedAt.HasValue && x.CreatedAt.Value.Date <= to.Value);
 
         _filtered = q.ToList();
-
         StateHasChanged();
     }
 
     private void ClearFilter()
     {
-        // フレーズは残す（必要ならクリアへ変更可）
-        _qMeaning = _qPhrasebook = null;
-        _qCategories.Clear();
-        _qPhraseBooks.Clear();
-        _qReviewMin = _qReviewMax = null;
+        // 文字条件
+        _qPhrase  = null;
+        _qMeaning = null;
 
-        // クリア後も直近1か月に戻す
+        // 複数選択は参照入替
+        _qCategories  = new(StringComparer.OrdinalIgnoreCase);
+        _qPhraseBooks = new(StringComparer.OrdinalIgnoreCase);
+
+        // 数値条件
+        _qReviewMin = null;
+        _qReviewMax = null;
+
+        // 日付（仕様に合わせて：直近1か月へ戻す）
         _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+
+        // 詳細条件は閉じる
         _showAdvanced = false;
+
+        // ★ 入力を再マウントして内部テキストも確実にリセット
+        _inputsVersion++;
 
         ApplyFilter();
     }
@@ -597,18 +646,27 @@
     {
         _phraseBookOptions = Elements
             .Where(e => e.PhraseBookNames is not null)
-            .SelectMany(e => e.PhraseBookNames!)
+            .SelectMany(e => e.PhraseBookNames!
+            )
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(n => n)
             .ToList();
     }
 
+    // 表示用：ジャンル/サブジャンル 形式に整形
+    private static string FormatGenreLabel(DropItemModel? di)
+        => (di is null || string.IsNullOrWhiteSpace(di.Name))
+            ? ""
+            : string.IsNullOrWhiteSpace(di.ParentName) ? di.Name! : $"{di.ParentName}/{di.Name}";
+
+    private static string? TryGetStringProp(object obj, string prop)
+        => obj.GetType().GetProperty(prop)?.GetValue(obj) as string;
+
     // --- Toolbar actions ---
     private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
     private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");
 
-    // ★ テスト開始：選択行（表示中ページ内）→ Writing へ
     private void StartTest(HashSet<Guid> idsInView)
     {
         if (idsInView.Count == 0)
@@ -616,19 +674,16 @@
             Snackbar.Add("テスト対象が選択されていません。", Severity.Warning);
             return;
         }
-
         var selected = _filtered.Where(x => idsInView.Contains(x.Id)).ToList();
         if (selected.Count == 0)
         {
             Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
             return;
         }
-
         ReviewSession.Set(selected, x => x.Id, x => x.Phrase, x => x.Meaning);
         NavigationManager.NavigateTo("/phrases/writing?from=list");
     }
 
-    // ★ 選択して復習：全体選択 → Review へ
     private void StartReviewSelected(HashSet<Guid> selectedIds)
     {
         if (selectedIds.Count == 0)
@@ -636,16 +691,14 @@
             Snackbar.Add("復習対象が選択されていません。", Severity.Warning);
             return;
         }
-
         var selected = _filtered.Where(x => selectedIds.Contains(x.Id)).ToList();
         if (selected.Count == 0)
         {
             Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
             return;
         }
-
         ReviewSession.Set(selected, x => x.Phrase, x => x.Meaning);
-        NavigationManager.NavigateTo("/phrases/review?shuffle=true&loop=true");
+        NavigationManager.NavigateTo("/phrases/review");
     }
 
     private async Task OpenCsvUploadDialog()
@@ -668,7 +721,7 @@
         {
             Elements = list;
             RebuildCategoryOptions();
-            RebuildPhraseBookOptions(); 
+            RebuildPhraseBookOptions();
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
             ApplyFilter();
         }
@@ -698,11 +751,10 @@
         {
             Elements = list;
             RebuildCategoryOptions();
-            RebuildPhraseBookOptions(); 
+            RebuildPhraseBookOptions();
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
             ApplyFilter();
         }
-
     }
 
     private async Task OpenBulkGenreDialog(HashSet<Guid> ids)
@@ -727,11 +779,12 @@
                 {
                     Elements = list;
                     RebuildCategoryOptions();
-                    RebuildPhraseBookOptions(); 
+                    RebuildPhraseBookOptions();
                     _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
-                    ApplyFilter();
                 }
-                Snackbar.Add("一括設定が完了しました。", Severity.Success);
+                _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
+                ApplyFilter();
+
             },
             options: DialogServiceExtensions.OptionsSm()
         );
@@ -746,7 +799,7 @@
         }
 
         await DialogService.ShowWithParamsAndCallbackAsync<BulkAddToPhrasebookDialog, bool>(
-            title: "フレーズ帳に追加",
+            title: "フレーズ帳一括設定",
             caller: this,
             values: new (Expression<Func<BulkAddToPhrasebookDialog, object?>>, object?)[] {
                 (x => x.TargetIds, ids)
@@ -759,11 +812,10 @@
                 {
                     Elements = list;
                     RebuildCategoryOptions();
-                    RebuildPhraseBookOptions(); 
+                    RebuildPhraseBookOptions();
                     _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
                     ApplyFilter();
                 }
-                Snackbar.Add("フレーズ帳へ追加しました。", Severity.Success);
             },
             options: DialogServiceExtensions.OptionsSm()
         );
@@ -790,7 +842,7 @@
         {
             Elements = list;
             RebuildCategoryOptions();
-            RebuildPhraseBookOptions(); 
+            RebuildPhraseBookOptions();
             _qCreatedRange = new DateRange(DateTime.Today.AddMonths(-1), DateTime.Today);
             ApplyFilter();
         }
