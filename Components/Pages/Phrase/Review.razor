@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @attribute [Authorize]
 
+@inject JsInteropManager JS
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ReviewSession ReviewSession
@@ -26,6 +27,13 @@
                    Disabled="@(_count == 0)" OnClick="GoWritingTest">
             英作文テストへ
         </MudButton>
+
+        <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Default" StartIcon="@Icons.Material.TwoTone.ArrowBack"
+                   OnClick="CancelAsync">
+            フレーズ再選択
+        </MudButton>
+
     </ActionCard>
 
     <BaseCard>
@@ -236,4 +244,17 @@
                 Flip(); break;
         }
     }
+
+    private async Task CancelAsync()
+    {
+        try
+        {
+            await JS.HistoryBackAsync();
+        }
+        catch
+        {
+            NavigationManager.NavigateTo("/phrases");
+        }
+    }
+
 }
