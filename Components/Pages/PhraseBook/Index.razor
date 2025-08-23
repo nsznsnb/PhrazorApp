@@ -2,6 +2,7 @@
 @attribute [Authorize]
 
 @using Microsoft.AspNetCore.Components.Web
+@using PhrazorApp.Utils
 @inject PhraseBookService PhraseBookService
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
@@ -80,7 +81,7 @@
                                 }
                                 else
                                 {
-                                    <MudText>@b.Name</MudText>
+                                    <MudText>@StringUtil.Truncate(@b.Name)</MudText>
                                 }
 
                                 <MudSpacer />

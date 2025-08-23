@@ -1,8 +1,9 @@
 ﻿@page "/diary/calendar"
 @attribute [Authorize]
 
-@using Heron.MudCalendar
 @using System.Globalization
+@using Heron.MudCalendar
+@using PhrazorApp.Utils
 
 @inject EnglishDiaryService DiaryService
 @inject NavigationManager Nav
@@ -40,7 +41,7 @@
                              Size="Size.Small"
                              Class="flex-grow-1 overflow-hidden text-start"
                              OnClick="@(() => GoToDate(ToTokyoDateOnly(item.Start)))">
-                        @item.Title
+                        @StringUtil.Truncate(item.Title)
                     </MudChip>
 
                     <!-- 削除：JST 日付で削除する -->
