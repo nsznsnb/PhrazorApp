@@ -3,11 +3,11 @@
 ## 本アプリケーションの概要
 本アプリケーションは英作文練習と英語日記添削をメイン機能として、英語表現力の強化を行います。  
   **Webサイト（デモ／運用環境）**：<https://phrazor-b9bdfvccc5avfubc.japanwest-01.azurewebsites.net/>
-  > **注意**：本アプリケーションの閲覧・操作には **ログインが必要** です。  
+  > **注意**：本アプリケーションの閲覧・操作には **ログインが必要** です。テスト用アカウントの情報は応募書類に記載しています。  
 
 ## ご利用上の注意
 
-* 本アプリケーションは **Blazor Server** という C# の Web 技術を使用して作成されていますが、**WebSocket による常時接続が前提**になっているため、WebSocket が頻繁に切断されやすいネットワーク環境では、上手く動作しません。いくつかのネットワーク環境で確認したところ、このパターンが 1 件確認されました。その場合には **スマホからご確認**いただくか、以下リンクから **開発資料（ER 図・操作マニュアル）** だけでもご確認ください。[https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads](https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads)
+* 本アプリは **Blazor Server**（SignalR / WebSocket による常時接続が前提）で動作します。ネットワークの品質や経路により **WebSocket が頻繁に切断される環境**では、操作がサーバーに届かず **実質的にご利用いただけません**。うまく利用できない場合は **現在利用中のネットワークとは異なる別回線**でお試しいただくか、\*\*開発資料（ER 図・操作マニュアル）\*\*のみ以下からご確認ください：[https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads](https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads)
 
   ---
 
