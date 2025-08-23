@@ -29,11 +29,13 @@ namespace PhrazorApp.Services
                 var nowDate = (today ?? DateTime.UtcNow).Date;
                 var endExclusive = nowDate.AddDays(1);
 
+
                 // --- 1) 登録/習得フレーズ数 ---
                 var pQuery = repos.Phrases.Queryable(asNoTracking: true)
                                           .Where(p => p.UserId == userId);
 
                 var registeredCount = await pQuery.CountAsync();
+
 
                 const int MIN_TOTAL = 2;   // 最低試行回数
                 const int MIN_RATE = 60;  // 合格率(％)
@@ -45,11 +47,15 @@ namespace PhrazorApp.Services
                         on new { rl.TestId, rl.TestResultDetailNo }
                         equals new { d.TestId, d.TestResultDetailNo }
                     group d by rl.PhraseId into g
-                    let total = g.Count()
-                    let correct = g.Count(x => x.IsCorrect)              
-                    where total >= MIN_TOTAL && (100 * correct) >= (MIN_RATE * total)
-                    select 1
-                ).CountAsync();
+                    select new
+                    {
+                        PhraseId = g.Key,
+                        Total = g.Count(),
+                        Correct = g.Count(x => x.IsCorrect == true) // bool? 対応
+                    }
+                )
+                .Where(x => x.Total >= MIN_TOTAL && (100 * x.Correct) >= (MIN_RATE * x.Total))
+                .CountAsync();
 
                 // --- 2) 今日の格言 ---
                 ProverbModel? todayProverb = null;
