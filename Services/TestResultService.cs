@@ -39,7 +39,7 @@ namespace PhrazorApp.Services
                 var testId = Guid.NewGuid();
                 var now = DateTime.UtcNow;
 
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     // ヘッダ
                     var head = new DTestResult

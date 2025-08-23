@@ -14,7 +14,7 @@ namespace PhrazorApp.Services
 
         public async Task<ServiceResult<List<ReviewTypeModel>>> GetListAsync()
         {
-            var list = await _uow.ReadAsync(async repos =>
+            var list = await _uow.ReadAsync(async (UowRepos repos) =>
             {
                 return await repos.ReviewTypes.Queryable()
                 .OrderBy(x => x.ReviewTypeName)
@@ -26,7 +26,7 @@ namespace PhrazorApp.Services
 
         public async Task<ServiceResult<ReviewTypeModel?>> GetAsync(Guid id)
         {
-            var model = await _uow.ReadAsync(async repos =>
+            var model = await _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var data = await repos.ReviewTypes.GetByIdAsync(id);
                 return data?.ToModel();
@@ -38,7 +38,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
 
@@ -61,17 +61,17 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async r =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
-                    var e = await r.ReviewTypes.GetByIdAsync(model.Id)
+                    var e = await repos.ReviewTypes.GetByIdAsync(model.Id)
                         ?? throw new InvalidOperationException("対象が見つかりません。");
 
-                    var dup = await r.ReviewTypes.Queryable(true)
+                    var dup = await repos.ReviewTypes.Queryable(true)
                         .AnyAsync(x => x.ReviewTypeName == model.Name && x.ReviewTypeId != model.Id);
                     if (dup) throw new InvalidOperationException("同名の復習種別が既に存在します。");
 
                     model.ApplyTo(e);
-                    await r.ReviewTypes.UpdateAsync(e);
+                    await repos.ReviewTypes.UpdateAsync(e);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -86,7 +86,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                var hasRef = await _uow.ReadAsync(async repos =>
+                var hasRef = await _uow.ReadAsync(async (UowRepos repos) =>
                     await repos.ReviewLogs.Queryable().AnyAsync(x => x.ReviewTypeId == id));
                 if (hasRef)
                     return ServiceResult.None.Warning("この復習種別は復習履歴で使用されています。削除できません。");

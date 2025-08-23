@@ -14,7 +14,7 @@ namespace PhrazorApp.Services
 
         public async Task<ServiceResult<List<OperationTypeModel>>> GetListAsync()
         {
-            var list = await _uow.ReadAsync(async repos =>
+            var list = await _uow.ReadAsync(async (UowRepos repos) =>
                 await repos.OperationTypes
                     .Queryable(asNoTracking: true)
                     .OrderBy(x => x.OperationTypeCode)          // ★ コード順
@@ -26,7 +26,7 @@ namespace PhrazorApp.Services
 
         public async Task<ServiceResult<OperationTypeModel?>> GetAsync(Guid id)
         {
-            var data = await _uow.ReadAsync(async repos =>
+            var data = await _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var e = await repos.OperationTypes.GetByIdAsync(id);
                 return e?.ToModel();
@@ -39,15 +39,15 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async r =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
 
-                    var dup = await r.OperationTypes.Queryable(true)
+                    var dup = await repos.OperationTypes.Queryable(true)
                         .AnyAsync(x => x.OperationTypeName == model.Name || x.OperationTypeCode == model.Code);
                     if (dup) throw new InvalidOperationException("同名または同コードの操作種別が既に存在します。");
 
-                    await r.OperationTypes.AddAsync(model.ToEntity());
+                    await repos.OperationTypes.AddAsync(model.ToEntity());
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
@@ -62,18 +62,18 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async r =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
-                    var e = await r.OperationTypes.GetByIdAsync(model.Id)
+                    var e = await repos.OperationTypes.GetByIdAsync(model.Id)
                         ?? throw new InvalidOperationException("対象が見つかりません。");
 
-                    var dup = await r.OperationTypes.Queryable(true)
+                    var dup = await repos.OperationTypes.Queryable(true)
                         .AnyAsync(x => (x.OperationTypeName == model.Name || x.OperationTypeCode == model.Code)
                                      && x.OperationTypeId != model.Id);
                     if (dup) throw new InvalidOperationException("同名または同コードの操作種別が既に存在します。");
 
                     model.ApplyTo(e);
-                    await r.OperationTypes.UpdateAsync(e);
+                    await repos.OperationTypes.UpdateAsync(e);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -88,16 +88,16 @@ namespace PhrazorApp.Services
         {
             try
             {
-                var hasRef = await _uow.ReadAsync(async r =>
-                    await r.DailyUsages.Queryable(true).AnyAsync(x => x.OperationTypeId == id));
+                var hasRef = await _uow.ReadAsync(async (UowRepos repos) =>
+                    await repos.DailyUsages.Queryable(true).AnyAsync(x => x.OperationTypeId == id));
                 if (hasRef)
                     return ServiceResult.None.Warning("この操作種別は利用状況に使用されています。削除できません。");
 
-                await _uow.ExecuteInTransactionAsync(async r =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
-                    var e = await r.OperationTypes.GetByIdAsync(id)
+                    var e = await repos.OperationTypes.GetByIdAsync(id)
                         ?? throw new InvalidOperationException("対象が見つかりません。");
-                    await r.OperationTypes.DeleteAsync(e);
+                    await repos.OperationTypes.DeleteAsync(e);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));

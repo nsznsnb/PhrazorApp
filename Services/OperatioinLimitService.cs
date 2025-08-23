@@ -44,7 +44,7 @@ namespace PhrazorApp.Services
                 var uid = _user.GetUserId();
                 var todayLocal = ToTokyoDateOnly(DateTime.UtcNow);
 
-                return await _uow.ReadAsync(async repos =>
+                return await _uow.ReadAsync(async (UowRepos repos) =>
                 {
                     // --- マスタ取得（OperationTypeCode で一致） ---
                     var op = await repos.OperationTypes
@@ -100,7 +100,7 @@ namespace PhrazorApp.Services
                 var uid = _user.GetUserId();
                 var todayLocal = ToTokyoDateOnly(DateTime.UtcNow);
 
-                return await _uow.ExecuteInTransactionAsync(async repos =>
+                return await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var op = await repos.OperationTypes
                         .Queryable(false)

@@ -23,7 +23,7 @@ namespace PhrazorApp.Services
 
         public async Task<ServiceResult<HomeDashboardModel>> GetAsync(DateTime? today = null)
         {
-            var model = await _uow.ReadAsync(async repos =>
+            var model = await _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var userId = _user.GetUserId();
                 var nowDate = (today ?? DateTime.UtcNow).Date;

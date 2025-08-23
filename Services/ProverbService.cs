@@ -21,7 +21,7 @@ namespace PhrazorApp.Services
 
         public Task<ServiceResult<List<ProverbModel>>> GetListAsync()
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var list = await repos.Proverbs.GetListProjectedAsync();
                 return ServiceResult.Success(list, "");
@@ -30,7 +30,7 @@ namespace PhrazorApp.Services
 
         public Task<ServiceResult<ProverbModel>> GetAsync(Guid id)
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var e = await repos.Proverbs.GetByIdAsync(id);
                 if (e is null) return ServiceResult.Error<ProverbModel>($"{MSG_PREFIX}が見つかりません。");
@@ -42,10 +42,10 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async r =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
-                    await r.Proverbs.AddAsync(model.ToEntityForCreate());
+                    await repos.Proverbs.AddAsync(model.ToEntityForCreate());
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_CREATE_DETAIL, MSG_PREFIX));
@@ -60,13 +60,13 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async r =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
-                    var e = await r.Proverbs.GetByIdAsync(model.Id)
+                    var e = await repos.Proverbs.GetByIdAsync(model.Id)
                         ?? throw new InvalidOperationException("対象が見つかりません。");
 
                     model.ApplyTo(e);
-                    await r.Proverbs.UpdateAsync(e);
+                    await repos.Proverbs.UpdateAsync(e);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
@@ -91,7 +91,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var ent = await repos.Proverbs.GetByTextAuthorAsync(text, author);
 
@@ -129,7 +129,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var e = await repos.Proverbs.GetByIdAsync(id) ?? throw new InvalidOperationException("not found");
                     await repos.Proverbs.DeleteAsync(e);
@@ -153,7 +153,7 @@ namespace PhrazorApp.Services
             {
                 var deleted = 0;
 
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     // BaseRepository.Queryable() を使用して対象を収集
                     var targets = await repos.Proverbs
@@ -189,7 +189,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var ents = rows
                         .Where(r => !string.IsNullOrWhiteSpace(r.Text))

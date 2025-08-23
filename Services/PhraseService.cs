@@ -26,7 +26,7 @@ namespace PhrazorApp.Services
         // 一覧（DTOに投影済みをRepoで取得）
         public Task<ServiceResult<List<PhraseListItemModel>>> GetPhraseListAsync()
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var uid = _userService.GetUserId();
                 var list = await repos.Phrases.GetListProjectedAsync(uid);
@@ -70,7 +70,7 @@ namespace PhrazorApp.Services
         // 編集ロード（Aggregate取得 → EditModel）
         public Task<ServiceResult<PhraseEditModel>> GetPhraseEditAsync(Guid id)
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 // ※ Repo: GetPhraseByIdAsync は DPhraseImage / MPhraseGenres(+MSubGenre) を含む想定
                 var e = await repos.Phrases.GetPhraseByIdAsync(id);
@@ -87,7 +87,7 @@ namespace PhrazorApp.Services
         /// </summary>
         public Task<ServiceResult<List<PhraseListItemModel>>> BuildCandidatesAsync(TestFilterModel filter)
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var uid = _userService.GetUserId();
 
@@ -113,7 +113,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var userId = _userService.GetUserId();
 
@@ -147,7 +147,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var nowUtc = DateTime.UtcNow;
 
@@ -195,7 +195,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var idSet = phraseIds.Distinct().ToArray();
                     const int chunkSize = 500;
@@ -260,7 +260,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var phraseEntity = await repos.Phrases.GetPhraseByIdAsync(model.Id);
                     if (phraseEntity == null)

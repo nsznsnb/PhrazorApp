@@ -19,7 +19,7 @@ namespace PhrazorApp.Services
 
         // 並び順で取得
         public Task<ServiceResult<List<GradeModel>>> GetListAsync()
-            => _uow.ReadAsync(async repos =>
+            => _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var list = await repos.Grades.Queryable(/*asNoTracking=*/true)
                     .OrderBy(x => x.OrderNo).ThenBy(x => x.GradeName)
@@ -29,7 +29,7 @@ namespace PhrazorApp.Services
             });
 
         public Task<ServiceResult<GradeModel?>> GetAsync(Guid id)
-            => _uow.ReadAsync(async repos =>
+            => _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var e = await repos.Grades.GetByIdAsync(id);
                 return ServiceResult.Success(e?.ToModel(), "");
@@ -53,14 +53,14 @@ namespace PhrazorApp.Services
             var symbol = SymbolFromRate(rate);
 
             // 既存を探す（NoTracking）
-            var found = await _uow.ReadAsync(async r =>
-                await r.Grades.Queryable(true).FirstOrDefaultAsync(x => x.GradeName == symbol));
+            var found = await _uow.ReadAsync(async (UowRepos repos) =>
+                await repos.Grades.Queryable(true).FirstOrDefaultAsync(x => x.GradeName == symbol));
             if (found is not null) return found;
 
             // 無ければ末尾 OrderNo で新規作成
             var now = DateTime.UtcNow;
-            var max = await _uow.ReadAsync(async r =>
-                await r.Grades.Queryable(true).MaxAsync(x => (int?)x.OrderNo) ?? -1);
+            var max = await _uow.ReadAsync(async (UowRepos repos) =>
+                await repos.Grades.Queryable(true).MaxAsync(x => (int?)x.OrderNo) ?? -1);
 
             var e = new MGrade
             {
@@ -71,7 +71,7 @@ namespace PhrazorApp.Services
                 UpdatedAt = now
             };
 
-            await _uow.ExecuteInTransactionAsync(async repos => { await repos.Grades.AddAsync(e); });
+            await _uow.ExecuteInTransactionAsync(async (UowRepos repos) => { await repos.Grades.AddAsync(e); });
             return e;
         }
 
@@ -81,7 +81,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();
 
@@ -108,7 +108,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var e = await repos.Grades.GetByIdAsync(model.Id)
                         ?? throw new InvalidOperationException("対象が見つかりません。");
@@ -132,8 +132,8 @@ namespace PhrazorApp.Services
         {
             try
             {
-                var hasRef = await _uow.ReadAsync(async r =>
-                    await r.TestResults.Queryable(true).AnyAsync(x => x.GradeId == id));
+                var hasRef = await _uow.ReadAsync(async (UowRepos repos) =>
+                    await repos.TestResults.Queryable(true).AnyAsync(x => x.GradeId == id));
                 if (hasRef)
                     return ServiceResult.None.Warning("この成績はテスト結果で使用されています。削除できません。");
 
@@ -155,7 +155,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var ids = models.Select(m => m.Id).ToList();
                     var indexMap = ids.Select((id, i) => new { id, i })

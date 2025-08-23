@@ -46,7 +46,7 @@ namespace PhrazorApp.Services
                 var (fromUtc, toUtc) = GetUtcRangeForLocalMonth(month);
                 var tz = GetTokyoTz();
 
-                var models = await _uow.ReadAsync(async repos =>
+                var models = await _uow.ReadAsync(async (UowRepos repos) =>
                     await repos.EnglishDiaries
                         .Queryable(true)
                         .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)
@@ -98,7 +98,7 @@ namespace PhrazorApp.Services
                 var uid = _user.GetUserId();
                 var (fromUtc, toUtc) = GetUtcRangeForLocalDate(date);
 
-                var model = await _uow.ReadAsync(async repos =>
+                var model = await _uow.ReadAsync(async (UowRepos repos) =>
                     await repos.EnglishDiaries
                         .Queryable(true)
                         .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)
@@ -128,7 +128,7 @@ namespace PhrazorApp.Services
                 var targetLocal = ToLocalDate(model.CreatedAt);
                 var (fromUtc, toUtc) = GetUtcRangeForLocalDate(targetLocal);
 
-                var saved = await _uow.ExecuteInTransactionAsync(async repos =>
+                var saved = await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var entity = await repos.EnglishDiaries
                         .Queryable(false)
@@ -213,7 +213,7 @@ Edit the text as instructed and return Markdown with the corrected English and a
                 var targetLocal = ToLocalDate(model.CreatedAt);
                 var (fromUtc, toUtc) = GetUtcRangeForLocalDate(targetLocal);
 
-                var saved = await _uow.ExecuteInTransactionAsync(async repos =>
+                var saved = await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var entity = await repos.EnglishDiaries
                         .Queryable(false)
@@ -262,7 +262,7 @@ Edit the text as instructed and return Markdown with the corrected English and a
 
             var result = ServiceResult.None.Success();
 
-            await _uow.ExecuteInTransactionAsync(async repos =>
+            await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
             {
                 Guid? diaryId = await repos.EnglishDiaries.Queryable(false)
                     .Where(x => x.UserId == uid && x.CreatedAt >= fromUtc && x.CreatedAt < toUtc)

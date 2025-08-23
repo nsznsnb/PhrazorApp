@@ -28,7 +28,7 @@ namespace PhrazorApp.Services
         /// <summary>ジャンル一覧</summary>
         public Task<ServiceResult<List<GenreModel>>> GetGenreViewModelListAsync()
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var genres = await repos.Genres.GetAllGenresAsync();
                 var list = genres.Select(x => x.ToModel()).ToList();
@@ -39,7 +39,7 @@ namespace PhrazorApp.Services
         /// <summary>ドロップダウン用一覧</summary>
         public Task<ServiceResult<List<DropItemModel>>> GetGenreDropItemModelListAsync()
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var genres = await repos.Genres.GetAllGenresAsync();
                 var list = genres.ToDropItemModelList();
@@ -50,7 +50,7 @@ namespace PhrazorApp.Services
         /// <summary>ジャンル詳細</summary>
         public Task<ServiceResult<GenreModel>> GetGenreViewModelAsync(Guid genreId)
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var genre = await repos.Genres.GetGenreByIdAsync(genreId);
                 var model = genre != null ? genre.ToModel() : new GenreModel();
@@ -69,7 +69,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     await repos.Genres.AddAsync(entity);   // MSubGenres がセットされていれば一括で追加
                 });
@@ -94,7 +94,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     // ※ Repo: GetGenreByIdAsync は MSubGenres を Include 済み想定
                     var old = await repos.Genres.GetGenreByIdAsync(incoming.GenreId);
@@ -131,7 +131,7 @@ namespace PhrazorApp.Services
             try
             {
                 // 1) まず使用中かどうかを “参照Txなし” で判定
-                var usage = await _uow.ReadAsync(async repos =>
+                var usage = await _uow.ReadAsync(async (UowRepos repos) =>
                 {
                     var genre = await repos.Genres.GetGenreByIdAsync(genreId);
                     if (genre is null)
@@ -159,7 +159,7 @@ namespace PhrazorApp.Services
                 }
 
                 // 2) 未使用なら削除実行（関連サブジャンル → 本体の順）
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var genre = await repos.Genres.GetGenreByIdAsync(genreId);
                     if (genre is null)

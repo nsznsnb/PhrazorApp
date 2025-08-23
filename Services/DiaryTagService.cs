@@ -24,7 +24,7 @@ namespace PhrazorApp.Services
         /// <summary>一覧取得（ユーザー単位／名前昇順）</summary>
         public Task<ServiceResult<List<DiaryTagModel>>> GetListAsync()
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 // グローバルフィルタが有効なら UserId 条件は省略可（冪等のため残してもOK）
                 var uid = _user.GetUserId();
@@ -42,7 +42,7 @@ namespace PhrazorApp.Services
         /// <summary>1件取得</summary>
         public Task<ServiceResult<DiaryTagModel>> GetAsync(Guid id)
         {
-            return _uow.ReadAsync(async repos =>
+            return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var uid = _user.GetUserId();
                 var e = await repos.DiaryTags
@@ -58,10 +58,10 @@ namespace PhrazorApp.Services
         }
 
         public Task<ServiceResult<List<DropItemModel>>> GetDiaryTagDropItemModelListAsync()
-      => _uow.ReadAsync(async r =>
+      => _uow.ReadAsync(async (UowRepos repos) =>
       {
           var uid = _user.GetUserId();
-          var tags = await r.DiaryTags.GetAllAsync();
+          var tags = await repos.DiaryTags.GetAllAsync();
 
           var list = tags
               .Select(t => new DropItemModel
@@ -84,7 +84,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var uid = _user.GetUserId();
 
@@ -123,7 +123,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var uid = _user.GetUserId();
 
@@ -162,7 +162,7 @@ namespace PhrazorApp.Services
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var uid = _user.GetUserId();
 
@@ -191,7 +191,7 @@ namespace PhrazorApp.Services
 
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var uid = _user.GetUserId();
 
