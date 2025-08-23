@@ -9,15 +9,14 @@
                    OnExecuteAsync="ApplyAsync">
 
     <MudStack Spacing="2">
-        <MudRadioGroup T="BulkPhrasebookMode" @bind-Selected="_mode">
+@*         <MudRadioGroup T="BulkPhrasebookMode" @bind-Selected="_mode">
             <MudRadio T="BulkPhrasebookMode" Option="BulkPhrasebookMode.AddToExisting" Color="Color.Primary">
-                既存のフレーズ帳に追加（重複は無視）
+                フレーズ帳に追加（重複は無視）
             </MudRadio>
-            @* 新規作成モードを使う場合はコメント解除 *@
-            @* <MudRadio T="BulkPhrasebookMode" Option="BulkPhrasebookMode.CreateNew" Color="Color.Primary">
+            <MudRadio T="BulkPhrasebookMode" Option="BulkPhrasebookMode.CreateNew" Color="Color.Primary">
                 新規フレーズ帳を作成して追加
-            </MudRadio> *@
-        </MudRadioGroup>
+            </MudRadio>
+        </MudRadioGroup> *@
 
         @if (_mode == BulkPhrasebookMode.AddToExisting)
         {

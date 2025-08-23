@@ -277,7 +277,7 @@
                                StartIcon="@Icons.Material.TwoTone.Bookmarks"
                                Disabled="@(selAll == 0)"
                                OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
-                        フレーズ帳一括設定
+                        フレーズ帳に追加
                     </MudButton>
 
                     <MudButton Variant="Variant.Outlined"
@@ -348,7 +348,7 @@
                                              OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks"
                                              Color="@(hasAnyAll ? Color.Secondary : Color.Default)" Class="mr-2" />
-                                    フレーズ帳一括設定
+                                    フレーズ帳に追加
                                 </MudMenuItem>
 
                                 <MudMenuItem Disabled="@(selAll == 0)"
@@ -803,7 +803,7 @@
         }
 
         await DialogService.ShowWithParamsAndCallbackAsync<BulkAddToPhrasebookDialog, bool>(
-            title: "フレーズ帳一括設定",
+            title: "フレーズ帳に追加",
             caller: this,
             values: new (Expression<Func<BulkAddToPhrasebookDialog, object?>>, object?)[] {
                 (x => x.TargetIds, ids)
