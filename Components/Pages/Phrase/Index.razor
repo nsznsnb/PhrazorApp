@@ -575,7 +575,12 @@
         {
             q = q.Where(x =>
                 (x.SelectedDropItems?.Any() ?? false) &&
-                x.SelectedDropItems.Any(di => !string.IsNullOrEmpty(di.Name) && _qCategories.Contains(di.Name))
+                x.SelectedDropItems.Any(di =>
+                {
+                    var label = FormatGenreLabel(di);               // 「親/子」形式へ
+                    return !string.IsNullOrWhiteSpace(label)
+                           && _qCategories.Contains(label);
+                })
             );
         }
 
@@ -634,10 +639,10 @@
         _categoryOptions = Elements
             .Where(e => e.SelectedDropItems is not null)
             .SelectMany(e => e.SelectedDropItems!)
-            .Select(di => di.Name ?? "")
-            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(di => FormatGenreLabel(di))                 
+            .Where(label => !string.IsNullOrWhiteSpace(label))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(n => n)
+            .OrderBy(label => label)
             .ToList();
     }
 
