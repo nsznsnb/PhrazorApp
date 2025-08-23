@@ -7,7 +7,7 @@
 
 ## ご利用上の注意
 
-* 本アプリは **Blazor Server**（SignalR / WebSocket による常時接続が前提）で動作します。ネットワークの品質や経路により **WebSocket が頻繁に切断される環境**では、操作がサーバーに届かず **実質的にご利用いただけません**。うまく利用できない場合は **現在利用中のネットワークとは異なる別回線**でお試しいただくか、\*\*開発資料（ER 図・操作マニュアル）\*\*のみ以下からご確認ください：[https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads](https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads)
+* 本アプリは **Blazor Server**（SignalR / WebSocket による常時接続が前提）で動作します。ネットワークの品質や経路により **WebSocket が頻繁に切断される環境**では、操作がサーバーに届かず **実質的にご利用いただけません**。うまく利用できない場合は **現在利用中のネットワークとは異なる別回線**でお試しいただくか、開発資料（ER 図・操作マニュアル）のみ以下からご確認ください：[https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads](https://github.com/nsznsnb/PhrazorApp/tree/main/Downloads)
 
   ---
 
