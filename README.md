@@ -13,7 +13,7 @@
 
 ## 本アプリケーション使用技術
 - **言語 / フレームワーク**：C# / .NET **9.0**（**Blazor Server**）
-- **データベース**：**Azure SQL Database**（既定の互換性レベル **170** / SQL Server 2025 相当）
+- **データベース**：**Azure SQL Database**（SQL Server 2025 相当）
 - **UI フレームワーク**：**[MudBlazor](https://mudblazor.com/)**
 
 ## 開発者向けドキュメント
