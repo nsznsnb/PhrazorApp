@@ -2,7 +2,7 @@
 @using MudBlazor
 
 <DialogBaseWrapper DialogAlertType="DialogAlertType.Info"
-                   DialogTitle="カテゴリ一括設定"
+                   DialogTitle="ジャンル一括設定"
                    ExecuteButtonText="設定"
                    CancelButtonText="@AppConstants.LABEL_BUTTON_CANCEL"
                    OnExecuteAsync="ApplyAsync">
@@ -24,7 +24,7 @@
             <MudRadio T="BulkGenreMode"
                       Option="BulkGenreMode.ClearAll"
                       Color="Color.Primary">
-                カテゴリを全てクリア
+                ジャンルを全てクリア
             </MudRadio>
         </MudRadioGroup>
 

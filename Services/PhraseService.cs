@@ -246,12 +246,12 @@ namespace PhrazorApp.Services
                     if (toAdd.Count > 0) await repos.PhraseGenres.AddRangeAsync(toAdd);
                 });
 
-                return ServiceResult.None.Success("カテゴリを一括設定しました。");
+                return ServiceResult.None.Success("ジャンルを一括設定しました。");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "カテゴリ一括設定で例外が発生しました。");
-                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "カテゴリ一括設定"));
+                _logger.LogError(ex, "ジャンル一括設定で例外が発生しました。");
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DETAIL, "ジャンル一括設定"));
             }
         }
 
