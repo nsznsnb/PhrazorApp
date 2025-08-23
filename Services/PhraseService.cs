@@ -310,16 +310,24 @@ namespace PhrazorApp.Services
             }
         }
 
-        /// <summary>削除</summary>
         public async Task<ServiceResult<Unit>> DeletePhraseAsync(Guid phraseId)
         {
             try
             {
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
                     var phrase = await repos.Phrases.GetPhraseByIdAsync(phraseId);
                     if (phrase == null)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
+
+                    // ★ フレーズ帳項目 / テスト結果明細 / （任意）復習ログ を先に削除
+                    var pbItems = await repos.PhraseBookItems.GetByPhraseIdsAsync(new[] { phraseId });
+                    if (pbItems.Count > 0) await repos.PhraseBookItems.DeleteRangeAsync(pbItems);
+
+                    var trDetails = await repos.TestResultDetails.GetByPhraseIdsAsync(new[] { phraseId });
+                    if (trDetails.Count > 0) await repos.TestResultDetails.DeleteRangeAsync(trDetails);
+
+
 
                     if (phrase.DPhraseImage is not null)
                         await repos.PhraseImages.DeleteAsync(phrase.DPhraseImage);
@@ -328,6 +336,9 @@ namespace PhrazorApp.Services
                         await repos.PhraseGenres.DeleteRangeAsync(phrase.MPhraseGenres);
 
                     await repos.Phrases.DeleteAsync(phrase);
+
+                    // 明細が全て消えて孤児になったテスト結果ヘッダを掃除したい場合は下記を検討
+                    //await CleanupEmptyTestResultsAsync(repos);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
@@ -339,7 +350,7 @@ namespace PhrazorApp.Services
             }
         }
 
-        /// <summary>一括削除</summary>
+
         public async Task<ServiceResult<Unit>> DeletePhrasesAsync(IEnumerable<Guid> phraseIds)
         {
             try
@@ -347,24 +358,32 @@ namespace PhrazorApp.Services
                 if (phraseIds is null || !phraseIds.Any())
                     return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_REQUIRED_DETAIL, "削除対象"));
 
-                var idSet = phraseIds.Distinct().ToArray(); // Guid 重複除去
+                var idSet = phraseIds.Distinct().ToArray();
 
-                await _uow.ExecuteInTransactionAsync(async repos =>
+                await _uow.ExecuteInTransactionAsync(async (UowRepos repos) =>
                 {
-                    const int chunkSize = 500; // SQL パラメータ上限対策
+                    const int chunkSize = 500;
                     var allPhrases = new List<DPhrase>(capacity: idSet.Length);
 
                     foreach (var chunk in idSet.Chunk(chunkSize))
                     {
-                        var phrases = await repos.Phrases.GetByPhrasesIdsAsync(chunk); // 画像・ジャンル込み取得
+                        // 本体（画像・ジャンル含む）を取得してバッファへ
+                        var phrases = await repos.Phrases.GetByPhrasesIdsAsync(chunk);
                         allPhrases.AddRange(phrases);
+
+                        // フレーズ帳項目 → テスト結果明細 を先に削除
+                        var pbItems = await repos.PhraseBookItems.GetByPhraseIdsAsync(chunk);
+                        if (pbItems.Count > 0) await repos.PhraseBookItems.DeleteRangeAsync(pbItems);
+
+                        var trDetails = await repos.TestResultDetails.GetByPhraseIdsAsync(chunk);
+                        if (trDetails.Count > 0) await repos.TestResultDetails.DeleteRangeAsync(trDetails);
+
                     }
 
-                    // 存在チェック（1件でも不足したらエラー）
                     if (allPhrases.Count != idSet.Length)
                         throw new InvalidOperationException(string.Format(AppMessages.MSG_E_NOT_FOUND, MSG_PREFIX));
 
-                    // 子→親の順に削除
+                    // 既存どおり：子 → 親
                     var genres = allPhrases.Where(p => p.MPhraseGenres is { Count: > 0 })
                                            .SelectMany(p => p.MPhraseGenres)
                                            .ToList();
@@ -373,13 +392,13 @@ namespace PhrazorApp.Services
                                            .Select(p => p.DPhraseImage!)
                                            .ToList();
 
-                    if (genres.Count > 0)
-                        await repos.PhraseGenres.DeleteRangeAsync(genres);
-
-                    if (images.Count > 0)
-                        await repos.PhraseImages.DeleteRangeAsync(images);
+                    if (genres.Count > 0) await repos.PhraseGenres.DeleteRangeAsync(genres);
+                    if (images.Count > 0) await repos.PhraseImages.DeleteRangeAsync(images);
 
                     await repos.Phrases.DeleteRangeAsync(allPhrases);
+
+                    // 孤児ヘッダ掃除
+                    //await CleanupEmptyTestResultsAsync(repos);
                 });
 
                 return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_DELETE_DETAIL, MSG_PREFIX));
@@ -388,6 +407,23 @@ namespace PhrazorApp.Services
             {
                 _logger.LogError(ex, "フレーズ一括削除で例外が発生しました。");
                 return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_DELETE_DETAIL, MSG_PREFIX));
+            }
+        }
+
+        private static async Task CleanupEmptyTestResultsAsync(UowRepos repos)
+        {
+            // 明細が1件も無いテスト結果ヘッダを抽出して削除
+            // ヘッダ側は削除するので NoTracking=false、サブクエリ側は読み取りのみなので NoTracking=true
+            var emptyHeaders = await (
+                from tr in repos.TestResults.Queryable(asNoTracking: false)
+                where !repos.TestResultDetails.Queryable(true)
+                             .Any(d => d.TestId == tr.TestId)
+                select tr
+            ).ToListAsync();
+
+            if (emptyHeaders.Count > 0)
+            {
+                await repos.TestResults.DeleteRangeAsync(emptyHeaders);
             }
         }
     }

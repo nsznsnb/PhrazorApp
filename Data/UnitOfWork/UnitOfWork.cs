@@ -103,7 +103,7 @@ namespace PhrazorApp.Data.UnitOfWork
                     }
                     catch
                     {
-                        try { await tx.RollbackAsync(); } catch { /* ログするならここ */ }
+                        try { await tx.RollbackAsync(); } catch(Exception ex) { Console.WriteLine(ex); }
                         throw;
                     }
                 });
