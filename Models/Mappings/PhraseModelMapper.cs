@@ -73,8 +73,8 @@ namespace PhrazorApp.Models.Mappings
                 Id = p.PhraseId,
                 Phrase = p.Phrase ?? string.Empty,
                 Meaning = p.Meaning ?? string.Empty,
-                CreatedAt = p.CreatedAt,                 // EngDbContext に従う
-                ReviewCount = p.DReviewLogs.Count(),     // ★ サブクエリで件数取得
+                CreatedAt = p.CreatedAt,
+                ReviewCount = p.DReviewLogs.Count(),
 
                 SelectedDropItems = p.MPhraseGenres
                     .OrderBy(pg => pg.MSubGenre.OrderNo)
@@ -82,7 +82,8 @@ namespace PhrazorApp.Models.Mappings
                     {
                         Key1 = pg.GenreId,
                         Key2 = pg.SubGenreId,
-                        Name = pg.MSubGenre.SubGenreName,
+                        Name = pg.MSubGenre.SubGenreName,              // 小分類
+                        ParentName = pg.MSubGenre.Genre.GenreName,           // ★ 親（大分類）
                         DropTarget = DropItemType.Target
                     })
                     .ToList()

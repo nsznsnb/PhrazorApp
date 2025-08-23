@@ -7,6 +7,7 @@
 
         public Guid? Key2 { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string ParentName { get; set; } = string.Empty;
         public DropItemType DropTarget { get; set; } = DropItemType.UnAssigned;
     }
 }
