@@ -1,11 +1,9 @@
 ﻿@page "/phrases/writing"
 @page "/tests/writing"
-
 @attribute [Authorize]
 
 @using System.Text
 @using System.Text.RegularExpressions
-@using Microsoft.JSInterop
 
 @inject JsInteropManager JS
 @inject NavigationManager Navigation
@@ -25,7 +23,6 @@
             @(_count == 0 ? "（データなし）" : $"{_index + 1} / {_count}")
         </MudText>
 
-        <!-- 正答ダイアログ切替 -->
         <MudSwitch T="bool"
                    @bind-Value="_showCorrectBeforeNext"
                    Color="Color.Primary"
@@ -36,41 +33,42 @@
 
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
                    StartIcon="@Icons.Material.TwoTone.Lightbulb"
-                   Disabled="@(!_canHint)" OnClick="GiveHint">
-            ヒント
+                   Disabled="@(!_canHint)" OnClick="GiveHint"
+                   accesskey="h">
+            ヒント <span class="kbd ml-1">Alt + H</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Info"
                    StartIcon="@Icons.Material.TwoTone.Visibility"
-                   OnClick="@(() => _peek = !_peek)">
-            チラ見
+                   OnClick="@(() => _peek = !_peek)"
+                   accesskey="i">
+            チラ見 <span class="kbd ml-1">Alt + I</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Error"
                    StartIcon="@Icons.Material.TwoTone.StopCircle"
-                   OnClick="CancelAsync">
-            テスト中止
+                   OnClick="CancelAsync"
+                   accesskey="x">
+            テスト中止 <span class="kbd ml-1">Alt + X</span>
         </MudButton>
     </ActionCard>
 
     <BaseCard>
         <MudStack Spacing="3" AlignItems="AlignItems.Center" Class="py-4">
 
-            <!-- 進捗（レスポンシブ幅） -->
+            <!-- 進捗 -->
             <MudGrid Justify="Justify.Center">
                 <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
                     <MudProgressLinear Value="@ProgressPercent" Rounded="true" />
                 </MudItem>
             </MudGrid>
 
-            <!-- 出題（No 左上・本文は中央）。高さ固定 -->
+            <!-- 出題 -->
             <MudGrid Justify="Justify.Center" Class="mb-1">
                 <MudItem Xs="12" Sm="10" Md="8" Lg="7" Xl="6">
                     <MudCard Elevation="10" Class="p-6 qcard">
                         <MudStack Spacing="1" Class="q-stack">
                             <MudText Typo="Typo.subtitle2" Align="Align.Left">No. @_indexPlus1</MudText>
-
-                            <!-- 本文は中央寄せ・余った高さを占有・必要ならスクロール -->
                             <div class="q-body">
                                 <MudText Typo="Typo.h6" Align="Align.Center">@_current.Back</MudText>
                             </div>
@@ -79,56 +77,60 @@
                 </MudItem>
             </MudGrid>
 
-            <!-- 回答（上=入力 / 下=入力補助：どちらも MudTextField） -->
+            <!-- 回答（上=入力 / 下=入力補助） -->
             <MudGrid Justify="Justify.Center">
-                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6" >
-                    @* Enterで解答するため OnSubmit を使用 *@
+                <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
                     <EditForm Model="_form" OnSubmit="SubmitAsync">
                         <MudStack @key="_index" Spacing="1" AlignItems="AlignItems.Stretch">
 
+                            <!-- 回答欄：Enter で解答。Alt 系は各アクション -->
                             <MudTextField T="string"
                                           @bind-Value="Answer"
                                           Variant="Variant.Text"
+                                          Lines="2" MaxLines="12"
                                           FullWidth="true"
                                           AutoFocus="true"
                                           Adornment="Adornment.Start"
                                           AdornmentIcon="@Icons.Material.TwoTone.EditNote"
                                           Immediate="true"
-                                          Class="mono-input"
-                                          OnKeyDown="HandleAnswerKeyDown"
-                                          InputAttributes="_noAutoAttrs" />
+                                          Class="mono-input multi tf-answer"
+                                          OnKeyDown="HandleAnswerKeyDown" />
 
+                            <!-- 入力補助欄（ReadOnly）。同じ折返し条件 -->
                             <MudTextField T="string"
                                           Value="@_assistText"
                                           ReadOnly="true"
                                           Variant="Variant.Text"
+                                          Lines="2" MaxLines="12"
                                           FullWidth="true"
                                           Adornment="Adornment.Start"
                                           AdornmentIcon="@Icons.Material.TwoTone.EditNote"
-                                          Class="mono-input assist-input"
-                                          InputAttributes="_noAutoAttrs" />
+                                          Class="mono-input multi assist-input" />
 
-                            <!-- ボタン＆集計（詰めて並べ、必要時のみ折返し） -->
+                            <!-- ボタン＆集計 -->
                             <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
                                       AlignItems="AlignItems.Center" Justify="Justify.Center"
                                       Class="mt-2">
 
                                 <MudButton ButtonType="ButtonType.Submit"
                                            Variant="Variant.Filled" Color="Color.Primary"
-                                           StartIcon="@Icons.Material.TwoTone.CheckCircle">
-                                    解答
+                                           StartIcon="@Icons.Material.TwoTone.CheckCircle"
+                                           accesskey="s">
+                                    解答 <span class="kbd ml-1">Enter</span>
                                 </MudButton>
 
                                 <MudButton Variant="Variant.Outlined" Color="Color.Warning"
                                            StartIcon="@Icons.Material.TwoTone.SkipNext"
-                                           OnClick="SkipAsWrongAsync">
-                                    次へ（×扱い）
+                                           OnClick="SkipAsWrongAsync"
+                                           accesskey="n">
+                                    次へ（×扱い） <span class="kbd ml-1">Alt + N</span>
                                 </MudButton>
 
                                 <MudButton Variant="Variant.Outlined" Color="Color.Default"
                                            StartIcon="@Icons.Material.TwoTone.RestartAlt"
-                                           OnClick="ClearInput">
-                                    クリア
+                                           OnClick="ClearInput"
+                                           accesskey="c">
+                                    クリア <span class="kbd ml-1">Alt + C</span>
                                 </MudButton>
 
                                 <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
@@ -157,27 +159,23 @@
 </MudStack>
 
 <style>
-    /* 入力と補助を等幅で完全一致させる */
     :root {
-        --mono-font-stack: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", "Source Code Pro", "Noto Sans Mono", "Liberation Mono", monospace;
+        --mono-font-stack: ui-monospace,"Cascadia Mono",Consolas,"SFMono-Regular","Source Code Pro","Noto Sans Mono","Liberation Mono",monospace;
         --mono-size: 1rem;
         --mono-line: 1.5rem;
-        --qcard-h: 180px; /* 出題カードの固定高さ。 */
+        --qcard-h: 180px;
     }
 
-    /* カード自体の高さを固定 */
     .qcard {
         height: var(--qcard-h);
     }
 
-    /* 中身がカードの高さにフィットするように */
     .q-stack {
         height: 100%;
         display: flex;
         flex-direction: column;
     }
 
-    /* 本文領域：縦中央・余白を占有・オーバー時のみスクロール */
     .q-body {
         flex: 1;
         display: flex;
@@ -185,19 +183,22 @@
         justify-content: center;
         overflow-y: auto;
         text-align: center;
-        /* 単語が長いときも折り返す */
         overflow-wrap: anywhere;
         word-break: normal;
     }
 
-    .mono-input .mud-input-slot input {
+    /* TextArea の見た目を一致させる */
+    .mono-input .mud-input-slot textarea {
         font-family: var(--mono-font-stack) !important;
         font-size: var(--mono-size) !important;
         line-height: var(--mono-line) !important;
         letter-spacing: 0 !important;
+        white-space: pre-wrap;
+        overflow: hidden;
+        resize: none;
     }
 
-    .assist-input .mud-input-slot input {
+    .assist-input .mud-input-slot textarea {
         color: rgba(0,0,0,.54);
         caret-color: transparent;
     }
@@ -205,23 +206,28 @@
     .assist-input .mud-input-adornment-start {
         visibility: hidden;
     }
+
+    /* キー表示の pill */
+    .kbd {
+        display: inline-block;
+        padding: 0 .35rem;
+        border: 1px solid rgba(0,0,0,.18);
+        background: rgba(0,0,0,.06);
+        border-radius: .25rem;
+        font-family: var(--mono-font-stack);
+        font-size: .75rem;
+        line-height: 1.25rem;
+        vertical-align: baseline;
+    }
+
+    .ml-1 {
+        margin-left: .35rem;
+    }
 </style>
 
 @code {
     [Parameter, SupplyParameterFromQuery] public string? Return { get; set; }
 
-    // ブラウザの補完/修正/自動大文字化/スペルチェックを無効化
-    private readonly Dictionary<string, object> _noAutoAttrs = new()
-    {
-        ["autocomplete"] = "off",
-        ["autocorrect"] = "off",
-        ["autocapitalize"] = "none",
-        ["spellcheck"] = "false",
-        // 必要に応じて name を固定して誤検出を避ける
-        ["name"] = "phrase-answer"
-    };
-
-    // 設定：正答ダイアログ（次へ進む前に表示）
     private bool _showCorrectBeforeNext;
 
     // データ
@@ -239,7 +245,7 @@
     private int _wrongCount;
     private double ProgressPercent => _count == 0 ? 0 : (_answeredCount * 100.0 / _count);
 
-    // 入力モデル（副作用は setter へ）
+    // 入力モデル
     private sealed class AnswerForm { public string Answer { get; set; } = string.Empty; }
     private AnswerForm _form = new();
     private string Answer
@@ -251,15 +257,14 @@
     // 単語ヒント
     private static readonly Regex WordRegex = new(@"[A-Za-z0-9'’]+", RegexOptions.Compiled);
     private List<(int start, int length)> _wordSpans = new();
-    private HashSet<int> _revealedWords = new(); // 単語インデックス（0-based）
+    private HashSet<int> _revealedWords = new();
     private bool _canHint => _wordSpans.Count > _revealedWords.Count;
 
-    // 入力補助の文字列（未公開＆未正答は '·'）
+    // 補助文字列
     private string _assistText = string.Empty;
 
     private bool _peek;
     private bool _submitting;
-
 
     protected override void OnInitialized()
     {
@@ -292,25 +297,42 @@
         RebuildAssist();
     }
 
-    private List<int> RemainingWordIndices()
+    // 未解答 or 不一致の単語のみ候補にする
+    private List<int> UnsolvedWordIndices()
     {
+        var t = _current.Front ?? string.Empty;
+        var u = _form.Answer ?? string.Empty;
+
+        bool CharOk(int i)
+        {
+            if (i >= u.Length) return false;
+            var a = NormalizeAsciiPunct(t[i]);
+            var b = NormalizeAsciiPunct(u[i]);
+            return char.ToLowerInvariant(a) == char.ToLowerInvariant(b);
+        }
+
         var list = new List<int>();
-        for (int i = 0; i < _wordSpans.Count; i++)
-            if (!_revealedWords.Contains(i)) list.Add(i);
+        for (int wi = 0; wi < _wordSpans.Count; wi++)
+        {
+            if (_revealedWords.Contains(wi)) continue;
+            var (s, len) = _wordSpans[wi];
+            bool fullyCorrect = true;
+            for (int j = 0; j < len; j++)
+                if (!CharOk(s + j)) { fullyCorrect = false; break; }
+            if (!fullyCorrect) list.Add(wi);
+        }
         return list;
     }
 
     private void GiveHint()
     {
-        var remain = RemainingWordIndices();
-        if (remain.Count == 0) return;
+        var candidates = UnsolvedWordIndices();
+        if (candidates.Count == 0) return;
 
         var rnd = new Random();
-        var pick = remain[rnd.Next(remain.Count)];
+        var pick = candidates[rnd.Next(candidates.Count)];
         _revealedWords.Add(pick);
-
         RebuildAssist();
-
     }
 
     private void RebuildAssist()
@@ -321,21 +343,19 @@
         var sb = new StringBuilder(t.Length);
         for (int i = 0; i < t.Length; i++)
         {
-            char expected = t[i];
-            char disp = NormalizeAsciiPunct(expected);
-
+            var expected = NormalizeAsciiPunct(t[i]);
             if (IsWordChar(expected))
             {
                 bool hinted = IsInRevealedWord(i);
                 bool typedOk = i < u.Length &&
                                char.ToLowerInvariant(NormalizeAsciiPunct(u[i])) ==
-                               char.ToLowerInvariant(disp);
+                               char.ToLowerInvariant(expected);
 
-                sb.Append((hinted || typedOk) ? disp : '·');
+                sb.Append((hinted || typedOk) ? expected : '·');
             }
             else
             {
-                sb.Append(disp);
+                sb.Append(expected);
             }
         }
         _assistText = sb.ToString();
@@ -364,13 +384,43 @@
         _ => ch
     };
 
+    // —— キーボード操作（入力欄にフォーカスがある前提） ——
     private async Task HandleAnswerKeyDown(KeyboardEventArgs e)
     {
-        // IME確定後の Enter/NumpadEnter を拾う。修飾キー付きは無視。
-        if ((e.Key == "Enter" || e.Key == "NumpadEnter") && !e.AltKey && !e.CtrlKey && !e.ShiftKey)
-            await SubmitAsync();
-    }
+        // 1) Alt 系のショートカット
+        if (e.AltKey)
+        {
+            switch (e.Key)
+            {
+                case "h" or "H":
+                    if (_canHint) GiveHint();
+                    return;
+                case "i" or "I":        
+                    _peek = !_peek;
+                    StateHasChanged();
+                    return;
+                case "c" or "C":
+                    ClearInput();
+                    return;
+                case "x" or "X":
+                    await CancelAsync();
+                    return;
+                case "n" or "N":            
+                    await SkipAsWrongAsync();
+                    return;
+                case "s" or "S":
+                    await SubmitAsync();
+                    return;
+            }
+        }
 
+        // 2) Enter で解答（修飾キーなし）
+        if (!e.AltKey && !e.CtrlKey && !e.ShiftKey &&
+            (e.Key == "Enter" || e.Key == "NumpadEnter"))
+        {
+            await SubmitAsync();
+        }
+    }
 
     private async Task SubmitAsync()
     {
@@ -378,7 +428,6 @@
         _submitting = true;
         try
         {
-            // ここから元の SubmitAsync 本体（そのまま流用）
             var input = _form.Answer;
             if (string.IsNullOrWhiteSpace(input))
             {
@@ -420,7 +469,6 @@
         }
     }
 
-
     private async Task SkipAsWrongAsync() => await ProceedWrongAsync();
 
     private async Task ProceedWrongAsync()
@@ -443,8 +491,8 @@
 
     private static string NormalizeForJudge(string s)
     {
-        var onlyLettersSpaces = new string(s.Where(ch => char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch)).ToArray());
-        var collapsed = Regex.Replace(onlyLettersSpaces, "\\s+", " ").Trim();
+        var only = new string(s.Where(ch => char.IsLetterOrDigit(ch) || char.IsWhiteSpace(ch)).ToArray());
+        var collapsed = Regex.Replace(only, "\\s+", " ").Trim();
         return collapsed.ToLowerInvariant();
     }
 
@@ -472,7 +520,6 @@
             Navigation.NavigateTo(Return);
             return;
         }
-
         try
         {
             await JS.HistoryBackAsync();
@@ -485,7 +532,6 @@
 
     private async Task ShowCorrectDialogAsync(string? note = null)
     {
-        // 正答（Front）＋ 和訳（Back）を軽く整形して表示
         var html =
             "<div style='white-space:pre-wrap;font-weight:600'>" +
             System.Net.WebUtility.HtmlEncode(_current.Front) +
