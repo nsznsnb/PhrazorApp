@@ -115,13 +115,15 @@ public class Program
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
         }
 
-        // Azure Blob（接続文字列が無い場合は例外）
-        builder.Services.AddSingleton(sp =>
-        {
-            var cs = sp.GetRequiredService<IConfiguration>()["AzureBlob:ConnectionString"]
-                     ?? throw new InvalidOperationException("AzureBlob:ConnectionString が未設定です。");
-            return new BlobServiceClient(cs);
-        });
+
+        // ---- Azure Storage（画像）-------------------------
+        var azSection = cfg.GetSection("AzureStorage");
+        var storageConnStr = azSection.GetValue<string>("ConnectionString")
+            ?? throw new InvalidOperationException("AzureStorage:ConnectionString が未設定です。");
+        var imagesContainerName = azSection.GetValue<string>("Containers:Images") ?? "phraseimage";
+
+        // BlobServiceClient（インフラ用）
+        builder.Services.AddSingleton(new BlobServiceClient(storageConnStr));
         builder.Services.AddSingleton<BlobStorageClient>();
 
         // ─────────────────────────────────────────
@@ -183,7 +185,7 @@ public class Program
         // オプション（Options パターン）
         // ─────────────────────────────────────────
         builder.Services.Configure<SeedUserOptions>(cfg.GetSection("SeedUser"));
-        builder.Services.Configure<AzureBlobOptions>(cfg.GetSection("AzureBlob"));
+        builder.Services.Configure<AzureStorageOptions>(cfg.GetSection("AzureStorage"));
         builder.Services.Configure<OpenAiOptions>(cfg.GetSection("OpenAI"));
         builder.Services.Configure<ResendOptions>(cfg.GetSection("Resend"));
 
