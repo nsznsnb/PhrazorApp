@@ -439,8 +439,8 @@
             SavedAtUtc = DateTime.UtcNow
         };
 
-        await PSS.SetAsync(ReviewStorage.ReviewStateV1, state);
-        await PSS.SetAsync(ReviewStorage.ShufflePrefV1, _f.Shuffle);
+        await PSS.SetAsync(ReviewStorageKey.ReviewStateV1, state);
+        await PSS.SetAsync(ReviewStorageKey.ShufflePrefV1, _f.Shuffle);
 
         var rel = Nav.ToBaseRelativePath(Nav.Uri);
         var returnUrl = "/" + rel.TrimStart('/');

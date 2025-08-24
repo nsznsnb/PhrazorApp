@@ -279,7 +279,7 @@
     {
         try
         {
-            var got = await PSS.GetAsync<ReviewState>(ReviewStorage.ReviewStateV1);
+            var got = await PSS.GetAsync<ReviewState>(ReviewStorageKey.ReviewStateV1);
             var s = got.Success ? got.Value : null;
             if (s is null || s.Items.Count == 0) return false;
 
@@ -499,7 +499,7 @@
                 Rows = _rows.ToList(),
                 SavedAtUtc = DateTime.UtcNow
             };
-            await PSS.SetAsync(ReviewStorage.ReviewResultV1, result);
+            await PSS.SetAsync(ReviewStorageKey.ReviewResultV1, result);
 
             // （任意）出題状態は残しておく。結果ページ側で再テスト時に上書きされる
             Navigation.NavigateTo("/tests/result");

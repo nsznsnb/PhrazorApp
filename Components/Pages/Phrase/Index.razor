@@ -724,10 +724,10 @@
             Shuffled = false,
             SavedAtUtc = DateTime.UtcNow
         };
-        await PSS.SetAsync(ReviewStorage.ReviewStateV1, state);
+        await PSS.SetAsync(ReviewStorageKey.ReviewStateV1, state);
 
         // 進行中の旧結果は念のためクリア（任意）
-        await PSS.DeleteAsync(ReviewStorage.ReviewResultV1);
+        await PSS.DeleteAsync(ReviewStorageKey.ReviewResultV1);
     }
 
     private async Task OpenCsvUploadDialog()

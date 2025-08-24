@@ -196,7 +196,7 @@
         // ★ 既存セッションを PSS から復元できた場合は "継続" とみなし、ここではシャッフルしない
         if (!_restoredFromPss && !Shuffle.HasValue && _count > 1)
         {
-            var r = await PSS.GetAsync<bool>(ReviewStorage.ShufflePrefV1);
+            var r = await PSS.GetAsync<bool>(ReviewStorageKey.ShufflePrefV1);
             if (r.Success && r.Value)
             {
                 ShuffleInPlace(_items, null);
@@ -227,14 +227,14 @@
             Shuffled = shuffled,
             SavedAtUtc = DateTime.UtcNow
         };
-        await PSS.SetAsync(ReviewStorage.ReviewStateV1, s);
+        await PSS.SetAsync(ReviewStorageKey.ReviewStateV1, s);
     }
 
     private async Task<bool> TryRestoreAsync()
     {
         try
         {
-            var got = await PSS.GetAsync<ReviewState>(ReviewStorage.ReviewStateV1);
+            var got = await PSS.GetAsync<ReviewState>(ReviewStorageKey.ReviewStateV1);
             var s = got.Success ? got.Value : null;
             if (s is null || s.Items.Count == 0) return false;
 
@@ -269,7 +269,7 @@
         _index = 0;
         _isBack = false;
         UpdateSlider();
-        await PSS.SetAsync(ReviewStorage.ShufflePrefV1, true);
+        await PSS.SetAsync(ReviewStorageKey.ShufflePrefV1, true);
         await SaveStateAsync(shuffled: true);
     }
 

@@ -126,7 +126,7 @@
     // ---- ライフサイクル：結果復元＋二重保存ガード ----
     protected override async Task OnInitializedAsync()
     {
-        var got = await PSS.GetAsync<TestResultState>(ReviewStorage.ReviewResultV1);
+        var got = await PSS.GetAsync<TestResultState>(ReviewStorageKey.ReviewResultV1);
         var s = got.Success ? got.Value : null;
 
         if (s is null || s.Rows.Count == 0)
@@ -141,7 +141,7 @@
 
         // 内容署名を計算して、同一なら保存はスキップ
         _currentSig = ComputeResultSignature(_rows);
-        var gotSig = await PSS.GetAsync<string>(ReviewStorage.ReviewResultSigV1);
+        var gotSig = await PSS.GetAsync<string>(ReviewStorageKey.ReviewResultSigV1);
         if (gotSig.Success && string.Equals(gotSig.Value, _currentSig, StringComparison.Ordinal))
         {
             _saved = true;
@@ -164,9 +164,9 @@
             Snackbar.Add("テスト結果を保存しました。", Severity.Success);
 
             // 保存成功後：結果を掃除、署名を保存
-            await PSS.DeleteAsync(ReviewStorage.ReviewResultV1);
+            await PSS.DeleteAsync(ReviewStorageKey.ReviewResultV1);
             if (!string.IsNullOrEmpty(_currentSig))
-                await PSS.SetAsync(ReviewStorage.ReviewResultSigV1, _currentSig);
+                await PSS.SetAsync(ReviewStorageKey.ReviewResultSigV1, _currentSig);
         }
         else
         {
@@ -203,10 +203,10 @@
             Shuffled = false,
             SavedAtUtc = DateTime.UtcNow
         };
-        await PSS.SetAsync(ReviewStorage.ReviewStateV1, state);
+        await PSS.SetAsync(ReviewStorageKey.ReviewStateV1, state);
 
         // 書き取りページでの「中止→戻る」時の導線制御に使う場合（任意）
-        await PSS.SetAsync(ReviewStorage.ReviewRetestFlagV1, true);
+        await PSS.SetAsync(ReviewStorageKey.ReviewRetestFlagV1, true);
 
         Nav.NavigateTo("/phrases/writing");
     }
@@ -216,7 +216,7 @@
     // PSS の ReviewState からカードを復元（PhraseId付き）
     private async Task<List<ReviewCardDto>> LoadSourceCardsAsync()
     {
-        var got = await PSS.GetAsync<ReviewState>(ReviewStorage.ReviewStateV1);
+        var got = await PSS.GetAsync<ReviewState>(ReviewStorageKey.ReviewStateV1);
         var st = got.Success ? got.Value : null;
         if (st is not null && st.Items.Count > 0)
             return st.Items.ToList();
