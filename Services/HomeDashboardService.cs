@@ -6,9 +6,10 @@ namespace PhrazorApp.Services
 {
     /// <summary>
     /// ホームダッシュボード集計サービス
-    /// - 「習得フレーズ」は暫定ルール：レビュー総数 >= 5 ＆ 正答率 >= 80%
-    /// - 直近1か月の新規登録は日単位、実データのみ（全ゼロならカードは空状態）
+    /// - 「習得フレーズ」: 最低試行回数 & 正答率のしきい値で判定（本クラス内の定数で調整）
+    /// - 直近1か月の新規登録は日単位（ゼロの日も含めて30日分を生成）
     /// - 成績構成比（S/A/B/D）は全テスト累計の割合
+    /// - ReviewLogs は現状未使用のため参照しない
     /// </summary>
     public sealed class HomeDashboardService
     {
@@ -29,16 +30,16 @@ namespace PhrazorApp.Services
                 var nowDate = (today ?? DateTime.UtcNow).Date;
                 var endExclusive = nowDate.AddDays(1);
 
-
+                // --- 1) 登録/習得フレーズ数 ---
                 var pQuery = repos.Phrases.Queryable(asNoTracking: true)
-                                      .Where(p => p.UserId == userId);
+                                           .Where(p => p.UserId == userId);
 
                 var registeredCount = await pQuery.CountAsync();
 
-                const int MIN_TOTAL = 2;   // 最低試行回数
-                const int MIN_RATE = 60;  // 合格率(%)
+                const int MIN_TOTAL = 2; // 最低試行回数（必要なら 1 や 5 に調整）
+                const int MIN_RATE = 60; // 合格率(％)
 
-                // 翻訳しやすい並び：group → select new → where → CountAsync
+                // TestResultDetails × Phrases で習得判定（ReviewLogs は使わない）
                 var learnedCount = await (
                     from d in repos.TestResultDetails.Queryable(asNoTracking: true)
                     where d.PhraseId != Guid.Empty
@@ -72,13 +73,17 @@ namespace PhrazorApp.Services
                         .FirstAsync();
                 }
 
-                // --- 3) 学習記録（日次レビュー回数 直近14日：連続学習日数に使用） ---
+                // --- 3) 学習記録（日次レビュー回数 直近14日：連続学習日数に使用）
+                // ReviewLogs を使わず、テスト結果から「回答数」を日別集計
                 var start14 = nowDate.AddDays(-13);
+
                 var rawDaily = await (
-                    from rl in repos.ReviewLogs.Queryable(asNoTracking: true)
-                    join p in pQuery on rl.PhraseId equals p.PhraseId
-                    where rl.ReviewDate >= start14 && rl.ReviewDate < endExclusive
-                    group rl by rl.ReviewDate.Date into g
+                    from t in repos.TestResults.Queryable(asNoTracking: true)
+                    where t.UserId == userId
+                          && t.CreatedAt >= start14 && t.CreatedAt < endExclusive
+                    join d in repos.TestResultDetails.Queryable(asNoTracking: true)
+                        on t.TestId equals d.TestId
+                    group d by t.CreatedAt.Date into g
                     select new { Day = g.Key, Count = g.Count() }
                 ).ToListAsync();
 
@@ -88,12 +93,12 @@ namespace PhrazorApp.Services
                                rawDaily.FirstOrDefault(x => x.Day == d)?.Count ?? 0))
                     .ToList();
 
-                // --- 4) 直近8週間の新規フレーズ（KPI：今週/先週比に利用） ---
+                // --- 4) 直近8週間の新規フレーズ（KPI：今週/先週比に利用）
                 var rawWeekly = await (
                     from p in pQuery
                     let daysAgo = EF.Functions.DateDiffDay(p.CreatedAt, nowDate) // int? が返る
                     where daysAgo >= 0 && daysAgo < 56
-                    group p by (daysAgo / 7) into g                      // 0=今週, 1=先週, ...
+                    group p by (daysAgo / 7) into g                  // 0=今週, 1=先週, ...
                     select new { WeeksAgo = g.Key, Count = g.Count() }
                 ).ToListAsync();
 
@@ -105,7 +110,7 @@ namespace PhrazorApp.Services
                     })
                     .ToList();
 
-                // --- 5) 直近1か月の新規フレーズ（日次／実データのみ） ---
+                // --- 5) 直近1か月の新規フレーズ（日次）
                 var monthStart = nowDate.AddDays(-29); // 今日含む30日間
                 var rawMonth = await pQuery
                     .Where(p => p.CreatedAt >= monthStart && p.CreatedAt < endExclusive)
@@ -119,11 +124,12 @@ namespace PhrazorApp.Services
                                rawMonth.FirstOrDefault(x => x.Day == d)?.Count ?? 0))
                     .ToList();
 
-                // --- 6) 成績構成比（S/A/B/D の件数） ---
+                // --- 6) 成績構成比（S/A/B/D の件数）
                 var gradeCounts = await (
                     from t in repos.TestResults.Queryable(asNoTracking: true)
-                    join g in repos.Grades.Queryable(asNoTracking: true) on t.GradeId equals g.GradeId
                     where t.UserId == userId
+                    join g in repos.Grades.Queryable(asNoTracking: true)
+                        on t.GradeId equals g.GradeId
                     group g by g.GradeName into gg
                     select new { Grade = gg.Key, Count = gg.Count() }
                 ).ToListAsync();
@@ -140,9 +146,9 @@ namespace PhrazorApp.Services
                     LearnedPhraseCount = learnedCount,
                     TodayProverb = todayProverb,
                     DailyReviews = daily,               // 連続学習用
-                    WeeklyNewPhrases = weeklyList,      // KPI用
-                    LastMonthNewPhrases = lastMonthNew, // 左下
-                    GradeDistribution = gradeDistribution // 右下（Donut）
+                    WeeklyNewPhrases = weeklyList,         // KPI用
+                    LastMonthNewPhrases = lastMonthNew,       // 左下
+                    GradeDistribution = gradeDistribution   // 右下（Donut）
                 };
             });
 

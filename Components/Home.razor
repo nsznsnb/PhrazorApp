@@ -7,7 +7,7 @@
 
 <MudGrid>
 
-    <!-- 1行目：KPI 3枚（従来どおり） -->
+    <!-- 1行目：KPI 3枚 -->
     <!-- 登録フレーズ数 -->
     <MudItem xs="12" sm="6" md="4" lg="4" xl="4">
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:200px;">
@@ -15,6 +15,7 @@
                 <MudText Typo="Typo.subtitle2" Style="opacity:.75;">登録フレーズ数</MudText>
                 <MudText Typo="Typo.h3" Style="font-size:clamp(1.75rem,6vw,2.5rem);">
                     @(_vm?.RegisteredPhraseCount ?? 0)
+                    <span style="font-size:.6em;opacity:.7;margin-left:.25rem;">件</span>
                 </MudText>
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top:auto;">
                     <MudIcon Icon="@Icons.Material.TwoTone.TrendingUp" />
@@ -33,6 +34,7 @@
                 <MudText Typo="Typo.subtitle2" Style="opacity:.75;">習得フレーズ数</MudText>
                 <MudText Typo="Typo.h3" Style="font-size:clamp(1.75rem,6vw,2.5rem);">
                     @(_vm?.LearnedPhraseCount ?? 0)
+                    <span style="font-size:.6em;opacity:.7;margin-left:.25rem;">件</span>
                 </MudText>
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="margin-top:auto;">
                     <MudIcon Icon="@Icons.Material.TwoTone.Bolt" />
@@ -52,11 +54,11 @@
 
                 @if (_vm?.TodayProverb is not null)
                 {
-                    <MudText Typo="Typo.h6" MaxLines="2">“@_vm.TodayProverb.Text”</MudText>
+                    <MudText Typo="Typo.h6" class="line-clamp-2">“@_vm.TodayProverb.Text”</MudText>
                     <MudText Typo="Typo.body2" Style="opacity:.8;">— @_vm.TodayProverb.Author</MudText>
                     @if (!string.IsNullOrWhiteSpace(_vm.TodayProverb.Meaning))
                     {
-                        <MudText Typo="Typo.caption" Style="opacity:.7; margin-top:4px;" MaxLines="2">
+                        <MudText Typo="Typo.caption" class="line-clamp-2" Style="opacity:.7;margin-top:4px;">
                             @_vm.TodayProverb.Meaning
                         </MudText>
                     }
@@ -71,14 +73,13 @@
         </MudPaper>
     </MudItem>
 
-    <!-- 2行目：グラフ 2枚（高さを揃える） -->
-    <!-- 直近1か月 新規フレーズ登録数（Line／実データのみ） -->
+    <!-- 2行目：グラフ 2枚 -->
+    <!-- 直近1か月 新規フレーズ登録数（Line） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <!-- ▼ 左のカード：基準高さ -->
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:420px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
                 <MudText Typo="Typo.subtitle1">直近1か月 新規フレーズ登録数</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Default">日次/推移</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Default">日次/推移（単位: 件）</MudText>
             </MudStack>
 
             @if (HasMonthData)
@@ -101,35 +102,38 @@
 
     <!-- 成績構成比（Donut） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <!-- ▼ 右のカードも同じ高さ -->
         <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:420px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-                <MudText Typo="Typo.subtitle1">成績の割合（全テスト）</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudText Typo="Typo.subtitle1">成績の割合（全テスト）</MudText>
+                    <!-- 定義はこのツールチップ1か所。％は構成割合であることも明示 -->
+                    <MudTooltip Text="@GradeTooltip">
+                        <MudIconButton Icon="@Icons.Material.TwoTone.Info" Color="Color.Info" Size="Size.Small" />
+                    </MudTooltip>
+                </MudStack>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    総テスト数 @TotalTests
+                    総テスト数 @TotalTests 件
                 </MudText>
             </MudStack>
 
             @if (HasGradeData)
             {
-                <!-- ▼ チップ分の高さを確保するため Donut は少し低め -->
                 <MudChart ChartType="ChartType.Donut"
                           InputData="@DonutData"
                           InputLabels="@DonutLabels"
                           ChartOptions="@_donutOptions"
                           Width="100%" Height="300px" />
 
-                <!-- ▼ チップの色も画像に合わせる（S=Gold, A=Green, B=Blue, D=Gray） -->
                 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
                           Class="mt-2" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd">
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
-                             Style="background:#FFC107;color:#000;">S @SCount（@SPct）</MudChip>
+                             Style="background:#FFC107;color:#000;">S @SCount 件（@SPct）</MudChip>
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
-                             Style="background:#2E7D32;color:#fff;">A @ACount（@APct）</MudChip>
+                             Style="background:#2E7D32;color:#fff;">A @ACount 件（@APct）</MudChip>
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
-                             Style="background:#1565C0;color:#fff;">B @BCount（@BPct）</MudChip>
+                             Style="background:#1565C0;color:#fff;">B @BCount 件（@BPct）</MudChip>
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Label="true"
-                             Style="background:#757575;color:#fff;">D @DCount（@DPct）</MudChip>
+                             Style="background:#757575;color:#fff;">D @DCount 件（@DPct）</MudChip>
                 </MudStack>
             }
             else
@@ -143,22 +147,40 @@
 
 </MudGrid>
 
+<style>
+    /* MudText の MaxLines 代替 */
+    .line-clamp-2 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+</style>
+
 @code {
     private HomeDashboardModel? _vm;
 
-    // MudBlazor 8.0 の API
+    // === 成績の閾値（必要に応じて調整） ===
+    private const int GradeSMin = 90; // S: 90%+
+    private const int GradeAMin = 75; // A: 75–89%
+    private const int GradeBMin = 60; // B: 60–74%  （D は 〜59%）
+
+    // ツールチップ（定義はここだけ / ％は構成割合の意味）
+    private string GradeTooltip =>
+        $"正答率: S≥{GradeSMin}% / A={GradeAMin}-{GradeSMin - 1}% / B={GradeBMin}-{GradeAMin - 1}% / D≤{GradeBMin - 1}%";
+
+    // MudBlazor 8.0 API
     private readonly AxisChartOptions _axisChartOptions = new() { MatchBoundsToSize = false };
     private readonly ChartOptions _chartOptions = new() { ShowLegend = false };
 
-    // ドーナツ用パレット（SVGに合わせて単色化：Gold / Green / Blue / Gray）
+    // ドーナツ用パレット（S=Gold, A=Green, B=Blue, D=Gray）
     private static readonly string[] _donutPalette = new[]
     {
-        "#FFC107", // S: gold（SVGの #FFE082～#FFC107～#C9A227 より中間色）
-        "#2E7D32", // A: green（SVGの #A5D6A7～#2E7D32）
-        "#1565C0", // B: blue  （SVGの #90CAF9～#1565C0）
-        "#757575", // D: gray  （SVGの #BDBDBD～#757575）
+        "#FFC107", // S
+        "#2E7D32", // A
+        "#1565C0", // B
+        "#757575", // D
     };
-
 
     private readonly ChartOptions _donutOptions = new()
     {
@@ -197,9 +219,8 @@
     private double[] DonutData =>
         _vm?.GradeDistribution?.Select(x => x.Value).ToArray() ?? Array.Empty<double>();
 
-    private string[] DonutLabels =>
-        _vm?.GradeDistribution?.Select(x => x.Label).ToArray()
-        ?? new[] { "S", "A", "B", "D" };
+    // 表示ラベルはシンプルに（定義はツールチップに集約）
+    private string[] DonutLabels => new[] { "S", "A", "B", "D" };
 
     private int TotalTests => (int)(_vm?.GradeDistribution?.Sum(x => x.Value) ?? 0);
 
