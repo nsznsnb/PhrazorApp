@@ -112,6 +112,46 @@ public sealed class JsInteropManager : IAsyncDisposable
         }
     }
 
+    public async ValueTask SessionSetAsync(string key, string json, CancellationToken ct = default)
+    {
+        try
+        {
+            var mod = await EnsureModuleAsync(ct);
+            await mod.InvokeVoidAsync("ssSet", ct, key, json);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS sessionStorage set 失敗: {Key}", key);
+        }
+    }
+
+    public async ValueTask<string?> SessionGetAsync(string key, CancellationToken ct = default)
+    {
+        try
+        {
+            var mod = await EnsureModuleAsync(ct);
+            return await mod.InvokeAsync<string?>("ssGet", ct, key);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS sessionStorage get 失敗: {Key}", key);
+            return null;
+        }
+    }
+
+    public async ValueTask SessionRemoveAsync(string key, CancellationToken ct = default)
+    {
+        try
+        {
+            var mod = await EnsureModuleAsync(ct);
+            await mod.InvokeVoidAsync("ssRemove", ct, key);
+        }
+        catch (JSException ex)
+        {
+            _logger.LogWarning(ex, "JS sessionStorage remove 失敗: {Key}", key);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         try

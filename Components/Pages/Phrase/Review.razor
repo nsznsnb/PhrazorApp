@@ -141,8 +141,12 @@
 </MudStack>
 
 @code {
+    [Parameter, SupplyParameterFromQuery] public string? Return { get; set; }
     [Parameter, SupplyParameterFromQuery] public bool? Shuffle { get; set; }
     [Parameter, SupplyParameterFromQuery] public int? Start { get; set; }
+
+    private string BuildReturnQuery() => string.IsNullOrWhiteSpace(Return) ? "" : $"?Return={Uri.EscapeDataString(Return)}";
+
 
     private List<ReviewSession.Card> _items = new();
     private int _index;
@@ -156,22 +160,18 @@
 
     protected override void OnParametersSet()
     {
+
+        // まずは「メモリ上の ReviewSession」だけで初期化（空でもOK）
         _items = new List<ReviewSession.Card>(ReviewSession.Items);
         _count = _items.Count;
-        if (_count == 0)
+        if (_count > 0)
         {
-            Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
-            NavigationManager.NavigateTo("/phrases");
-            return;
+            _index = Math.Clamp(Start ?? 0, 0, _count - 1);
+            if ((Shuffle ?? false) && _count > 1)
+                ShuffleInPlace(_items, null);
+            _isBack = false;
+            UpdateSlider();
         }
-
-        _index = Math.Clamp(Start ?? 0, 0, _count - 1);
-
-        if ((Shuffle ?? false) && _count > 1)
-            ShuffleInPlace(_items, null);
-
-        _isBack = false;
-        UpdateSlider();
     }
 
     private void OnSliderChanged(int value)
@@ -188,19 +188,41 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+
         if (!firstRender) return;
 
-        if (!Shuffle.HasValue)
+        // sessionStorage 復元を有効化
+        ReviewSession.AttachJs(JS);
+        await ReviewSession.RestoreAsync();
+
+        // 復元できたら画面状態へ反映
+        if (_count == 0 && ReviewSession.Items.Count > 0)
         {
-            var rShuf = await PSS.GetAsync<bool>("review.shufflePref");
-            if (rShuf.Success && rShuf.Value && _count > 1)
+            _items = new List<ReviewSession.Card>(ReviewSession.Items);
+            _count = _items.Count;
+            _index = Math.Clamp(Start ?? 0, 0, _count - 1);
+
+            // クエリに Shuffle 指定がなければ、保存済みの Shuffle 設定を参照
+            bool shouldShuffle = (Shuffle ?? false);
+            if (!Shuffle.HasValue)
             {
-                ShuffleInPlace(_items, null);
-                _index = 0;
-                _isBack = false;
-                UpdateSlider();
-                StateHasChanged();
+                var pref = await JS.SessionGetAsync(SessionStorageKey.ShufflePrefV1);
+                if (string.Equals(pref, "true", StringComparison.OrdinalIgnoreCase))
+                    shouldShuffle = true;
             }
+            if (shouldShuffle && _count > 1)
+                ShuffleInPlace(_items, null);
+
+            _isBack = false;
+            UpdateSlider();
+            StateHasChanged();
+        }
+
+        // 復元できなかったときのみ、案内して戻す
+        if (_count == 0)
+        {
+            Snackbar.Add("復習対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
+            NavigationManager.NavigateTo("/phrases");
         }
     }
 
@@ -221,7 +243,7 @@
 
     private void UpdateSlider() => _sliderValue = _index + 1;
     private void Flip() => _isBack = !_isBack;
-    private void GoWritingTest() => NavigationManager.NavigateTo("/phrases/writing");
+    private void GoWritingTest() => NavigationManager.NavigateTo($"/phrases/writing{BuildReturnQuery()}");
 
     private static void ShuffleInPlace<T>(IList<T> list, int? seed)
     {
@@ -247,14 +269,9 @@
 
     private async Task CancelAsync()
     {
-        try
-        {
-            await JS.HistoryBackAsync();
-        }
-        catch
-        {
-            NavigationManager.NavigateTo("/phrases");
-        }
+        if (!string.IsNullOrWhiteSpace(Return)) { NavigationManager.NavigateTo(Return); return; }
+        try { await JS.HistoryBackAsync(); } catch { NavigationManager.NavigateTo("/phrases"); }
+
     }
 
 }

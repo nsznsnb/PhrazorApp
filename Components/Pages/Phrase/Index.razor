@@ -5,8 +5,8 @@
 @using PhrazorApp.Utils
 @using System.Globalization
 @using System.Linq.Expressions
-@using Microsoft.AspNetCore.Components.Web
 
+@inject JsInteropManager JS
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -498,6 +498,8 @@
 </MudStack>
 
 @code {
+    [Parameter, SupplyParameterFromQuery] public string? Return { get; set; }
+
     private const Size BtnSize = Size.Small; // このページは Small を採用
 
     private readonly CultureInfo _ja = new("ja-JP");
@@ -549,6 +551,15 @@
             RebuildPhraseBookOptions();
             ApplyFilter();
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        // Set() 時の自動保存を有効化（初回レンダー後に1回だけ）
+        ReviewSession.AttachJs(JS);
+        // なくても動きますが、復元したい場合は有効化
+        await ReviewSession.RestoreAsync();
     }
 
     // Enterキーで検索（site.jsのフォーカス移動はそのまま許容）
@@ -685,7 +696,8 @@
             return;
         }
         ReviewSession.Set(selected, x => x.Id, x => x.Phrase, x => x.Meaning);
-        NavigationManager.NavigateTo("/phrases/writing?from=list");
+        var url = $"/phrases/writing?from=list&Return={Uri.EscapeDataString("/phrases")}";
+        NavigationManager.NavigateTo(url);
     }
 
     private void StartReviewSelected(HashSet<Guid> selectedIds)
@@ -702,7 +714,9 @@
             return;
         }
         ReviewSession.Set(selected, x => x.Phrase, x => x.Meaning);
-        NavigationManager.NavigateTo("/phrases/review");
+        var url = $"/phrases/review?from=list&Return={Uri.EscapeDataString("/phrases")}";
+        NavigationManager.NavigateTo(url);
+
     }
 
     private async Task OpenCsvUploadDialog()

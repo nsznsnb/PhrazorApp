@@ -91,6 +91,10 @@
 </MudStack>
 
 @code {
+    [Parameter, SupplyParameterFromQuery] public string? Return { get; set; }
+    private string BuildReturnQuery(string fallback = "/phrases")
+        => $"?Return={Uri.EscapeDataString(string.IsNullOrWhiteSpace(Return) ? fallback : Return)}";
+
     private bool _saved;
     private string? _gradeName;
     private int _wrongCount => TestResult.Total - TestResult.Correct;
@@ -120,15 +124,33 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _saved) return;
+        if (!firstRender) return;
 
+        // ★ sessionStorage 経由の自動復元を有効化（初回レンダー後に1回だけ）
+        ReviewSession.AttachJs(JS);
+        TestResult.AttachJs(JS);
+        await ReviewSession.RestoreAsync();
+        await TestResult.RestoreAsync();
+
+        // 復元できなかったら案内して戻す
+        if (TestResult.Total == 0 || ReviewSession.Items.Count == 0)
+        {
+            Snackbar.Add("テスト結果が見つかりません。もう一度テストを実行してください。", Severity.Warning);
+            Nav.NavigateTo("/phrases");
+            return;
+        }
+
+        // すでに保存済みならスキップ
+        if (_saved) return;
+
+        // 保存（従来どおり）
         var res = await UiRunner.WriteAsync<Guid>(
             () => TestResultService.SaveAsync(TestResult, ReviewSession.Items));
 
         if (res.IsSuccess)
         {
             _saved = true;
-            _gradeName = LocalGradeSymbol;
+            _gradeName = LocalGradeSymbol; // 表示用の成績記号（DB確定前でも表示を揃える）
             Snackbar.Add("テスト結果を保存しました。", Severity.Success);
         }
         else
@@ -142,19 +164,22 @@
     private void RetestWrong()
     {
         var wrong = TestResult.WrongOnly();
-        ReviewSession.Set(wrong, x => x.Front, x => x.Back);
-        Nav.NavigateTo("/phrases/writing");
+        ReviewSession.Set(wrong, r => r.PhraseId, r => r.Front, r => r.Back);
+        // Return を引き継いで Writing へ（履歴置換で Result へ戻れないように）
+        Nav.NavigateTo($"/phrases/writing{BuildReturnQuery()}", replace: true);
     }
 
     private void RetestAll()
     {
-        ReviewSession.Set(TestResult.Items, x => x.Front, x => x.Back);
-        Nav.NavigateTo("/phrases/writing");
+        ReviewSession.Set(TestResult.Items, r => r.PhraseId, r => r.Front, r => r.Back);
+        Nav.NavigateTo($"/phrases/writing{BuildReturnQuery()}", replace: true);
     }
 
     private Task FinishAsync()
     {
-        Nav.NavigateTo("/");   // ← Home へ
+        // 任意：Finish も Return があれば優先（なければ従来どおり Home）
+        if (!string.IsNullOrWhiteSpace(Return)) Nav.NavigateTo(Return!, replace: true);
+        else Nav.NavigateTo("/");
         return Task.CompletedTask;
     }
 }

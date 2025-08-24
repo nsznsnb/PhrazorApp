@@ -105,3 +105,16 @@ export function unobserveElementVisibility(id) {
     obs.disconnect();
     _ivMap.delete(id);
 }
+
+// --- sessionStorage helpers ---
+export function ssGet(key) {
+    try { return sessionStorage.getItem(key); } catch { return null; }
+}
+
+export function ssSet(key, value) {
+    try { sessionStorage.setItem(key, value ?? ""); } catch { /* no-op */ }
+}
+
+export function ssRemove(key) {
+    try { sessionStorage.removeItem(key); } catch { /* no-op */ }
+}

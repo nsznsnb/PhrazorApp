@@ -33,15 +33,13 @@
 
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
                    StartIcon="@Icons.Material.TwoTone.Lightbulb"
-                   Disabled="@(!_canHint)" OnClick="GiveHint"
-                   accesskey="h">
+                   Disabled="@(!_canHint)" OnClick="GiveHint">
             ヒント <span class="kbd ml-1">Alt + h</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Info"
                    StartIcon="@Icons.Material.TwoTone.Visibility"
-                   OnClick="@(() => _peek = !_peek)"
-                   accesskey="i">
+                   OnClick="@(() => _peek = !_peek)">
             チラ見 <span class="kbd ml-1">Alt + i</span>
         </MudButton>
 
@@ -114,22 +112,19 @@
 
                                 <MudButton ButtonType="ButtonType.Submit"
                                            Variant="Variant.Filled" Color="Color.Primary"
-                                           StartIcon="@Icons.Material.TwoTone.CheckCircle"
-                                           accesskey="s">
+                                           StartIcon="@Icons.Material.TwoTone.CheckCircle">
                                     解答 <span class="kbd ml-1">Enter</span>
                                 </MudButton>
 
                                 <MudButton Variant="Variant.Outlined" Color="Color.Warning"
                                            StartIcon="@Icons.Material.TwoTone.SkipNext"
-                                           OnClick="SkipAsWrongAsync"
-                                           accesskey="n">
+                                           OnClick="SkipAsWrongAsync">
                                     次へ（×扱い） <span class="kbd ml-1">Alt + n</span>
                                 </MudButton>
 
                                 <MudButton Variant="Variant.Outlined" Color="Color.Default"
                                            StartIcon="@Icons.Material.TwoTone.RestartAlt"
-                                           OnClick="ClearInput"
-                                           accesskey="c">
+                                           OnClick="ClearInput">
                                     クリア <span class="kbd ml-1">Alt + c</span>
                                 </MudButton>
 
@@ -268,18 +263,42 @@
 
     protected override void OnInitialized()
     {
+        // まずメモリ上の状態だけで初期化（空でもOK／リダイレクトしない）
         _items = new List<ReviewSession.Card>(ReviewSession.Items);
         _count = _items.Count;
+        if (_count > 0)
+        {
+            _index = 0;
+            LoadCurrent();
+        }
+    }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+    
+        // sessionStorage を有効化＆復元
+        ReviewSession.AttachJs(JS);
+        TestResultSession.AttachJs(JS);
+        await ReviewSession.RestoreAsync();
+        await TestResultSession.RestoreAsync(); // 完了後の再表示など将来用途にも対応
+    
+        // 復元できたら表示へ反映
+        if (_count == 0 && ReviewSession.Items.Count > 0)
+        {
+            _items = new List<ReviewSession.Card>(ReviewSession.Items);
+            _count = _items.Count;
+            _index = 0;
+            LoadCurrent();
+            StateHasChanged();
+        }
+    
+        // 復元できなかったら案内して戻す
         if (_count == 0)
         {
             Snackbar.Add("テスト対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
             Navigation.NavigateTo("/phrases");
-            return;
         }
-
-        _index = 0;
-        LoadCurrent();
     }
 
     private void LoadCurrent()
@@ -442,7 +461,7 @@
             {
                 _correctCount++;
                 _answeredCount++;
-                _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true));
+                _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true, _current.PhraseId));
                 Snackbar.Add("正解です！", Severity.Success);
 
                 if (_showCorrectBeforeNext)
@@ -475,7 +494,7 @@
     {
         _wrongCount++;
         _answeredCount++;
-        _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false));
+        _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false, _current.PhraseId));
 
         if (_showCorrectBeforeNext)
             await ShowCorrectDialogAsync("不正解として記録しました。正答を確認して次へ進みます。");
@@ -501,8 +520,7 @@
         if (_answeredCount >= _count)
         {
             TestResultSession.Set(_rows);
-            Navigation.NavigateTo("/tests/result");
-            return;
+            Navigation.NavigateTo(string.IsNullOrWhiteSpace(Return) ? "/tests/result" : $"/tests/result?Return={Uri.EscapeDataString(Return!)}");
         }
 
         _index = Math.Min(_index + 1, _count - 1);
