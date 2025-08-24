@@ -127,14 +127,10 @@ public class Program
         // ─────────────────────────────────────────
         // UI 層（Blazor Server の Circuit 単位で状態を持つため Scoped）
         // ─────────────────────────────────────────
-        builder.Services.AddScoped<ReviewSession>();
-        builder.Services.AddScoped<TestResultSession>();
         builder.Services.AddScoped<LoadingManager>();
         builder.Services.AddScoped<JsInteropManager>();
         builder.Services.AddScoped<UiOperationRunner>();
         builder.Services.AddScoped<PageMessageStore>();
-        // ProtectedSessionStorage を使う場合のみ有効化
-        // builder.Services.AddProtectedBrowserStorage();
 
         // ─────────────────────────────────────────
         // ドメインサービス（業務ロジック）

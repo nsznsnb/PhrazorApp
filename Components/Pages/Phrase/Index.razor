@@ -6,13 +6,15 @@
 @using System.Globalization
 @using System.Linq.Expressions
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using PhrazorApp.UI.State
 
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject PhraseService PhraseService
 @inject UiOperationRunner UiOperationRunner
-@inject ReviewSession ReviewSession
+@inject ProtectedSessionStorage PSS
 
 <PageTitle>フレーズ一覧</PageTitle>
 
@@ -258,7 +260,7 @@
                                Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                Disabled="@(selView == 0)"
-                               OnClick="@(() => StartTest(tb.GetSelectedIdsInView()))">
+                               OnClick="@(() => StartTestAsync(tb.GetSelectedIdsInView()))">
                         テスト開始
                     </MudButton>
 
@@ -267,7 +269,7 @@
                                Size="@BtnSize"
                                StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                Disabled="@(selAll == 0)"
-                               OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                               OnClick="@(() => StartReviewSelectedAsync(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                         フレーズ復習
                     </MudButton>
 
@@ -288,7 +290,6 @@
                                OnClick="@(() => OpenBulkGenreDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                         ジャンル一括設定
                     </MudButton>
-
 
                     <MudBadge Content="@selAll"
                               Max="99999"
@@ -316,7 +317,7 @@
                                    StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                    FullWidth="true"
                                    Disabled="@(selView == 0)"
-                                   OnClick="@(() => StartTest(tb.GetSelectedIdsInView()))">
+                                   OnClick="@(() => StartTestAsync(tb.GetSelectedIdsInView()))">
                             テスト開始
                         </MudButton>
 
@@ -337,13 +338,12 @@
                             </ActivatorContent>
                             <ChildContent>
                                 <MudMenuItem Disabled="@(selAll == 0)"
-                                             OnClick="@(() => StartReviewSelected(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
+                                             OnClick="@(() => StartReviewSelectedAsync(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.PlayArrow"
                                              Color="@(hasAnyAll ? Color.Primary : Color.Default)" Class="mr-2" />
                                     フレーズ復習
                                 </MudMenuItem>
 
-                                
                                 <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(() => OpenBulkPhrasebookDialog(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
                                     <MudIcon Icon="@Icons.Material.TwoTone.Bookmarks"
@@ -357,7 +357,6 @@
                                              Color="@(hasAnyAll ? Color.Info : Color.Default)" Class="mr-2" />
                                     ジャンル一括設定
                                 </MudMenuItem>
-
 
                                 <MudMenuItem Disabled="@(selAll == 0)"
                                              OnClick="@(async () => await OnBulkDeleteRequested(tb.GetSelectedIdsAll() ?? new HashSet<Guid>()))">
@@ -639,7 +638,7 @@
         _categoryOptions = Elements
             .Where(e => e.SelectedDropItems is not null)
             .SelectMany(e => e.SelectedDropItems!)
-            .Select(di => FormatGenreLabel(di))                 
+            .Select(di => FormatGenreLabel(di))
             .Where(label => !string.IsNullOrWhiteSpace(label))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(label => label)
@@ -650,8 +649,7 @@
     {
         _phraseBookOptions = Elements
             .Where(e => e.PhraseBookNames is not null)
-            .SelectMany(e => e.PhraseBookNames!
-            )
+            .SelectMany(e => e.PhraseBookNames!)
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(n => n)
@@ -671,7 +669,7 @@
     private void GoCreate() => NavigationManager.NavigateTo("/phrases/create");
     private void GoEdit(Guid id) => NavigationManager.NavigateTo($"/phrases/edit/{id}");
 
-    private void StartTest(HashSet<Guid> idsInView)
+    private async Task StartTestAsync(HashSet<Guid> idsInView)
     {
         if (idsInView.Count == 0)
         {
@@ -684,11 +682,14 @@
             Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
             return;
         }
-        ReviewSession.Set(selected, x => x.Id, x => x.Phrase, x => x.Meaning);
-        NavigationManager.NavigateTo("/phrases/writing?from=list");
+
+        await SaveCardsToSessionAsync(selected);
+        var rel = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var returnUrl = "/" + rel.TrimStart('/');
+        NavigationManager.NavigateTo($"/phrases/writing?return={Uri.EscapeDataString(returnUrl)}");
     }
 
-    private void StartReviewSelected(HashSet<Guid> selectedIds)
+    private async Task StartReviewSelectedAsync(HashSet<Guid> selectedIds)
     {
         if (selectedIds.Count == 0)
         {
@@ -701,8 +702,32 @@
             Snackbar.Add("選択に一致する項目が見つかりません。", Severity.Warning);
             return;
         }
-        ReviewSession.Set(selected, x => x.Phrase, x => x.Meaning);
-        NavigationManager.NavigateTo("/phrases/review");
+
+        await SaveCardsToSessionAsync(selected);
+        var rel = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var returnUrl = "/" + rel.TrimStart('/');
+        NavigationManager.NavigateTo($"/phrases/review?return={Uri.EscapeDataString(returnUrl)}");
+    }
+
+    private async Task SaveCardsToSessionAsync(List<PhraseListItemModel> items)
+    {
+        var state = new ReviewState
+        {
+            Items = items.Select(x => new ReviewCardDto
+            {
+                PhraseId = x.Id,
+                Front    = x.Phrase ?? "",
+                Back     = x.Meaning ?? ""
+            }).ToList(),
+            Index = 0,
+            IsBack = false,
+            Shuffled = false,
+            SavedAtUtc = DateTime.UtcNow
+        };
+        await PSS.SetAsync(ReviewStorage.ReviewStateV1, state);
+
+        // 進行中の旧結果は念のためクリア（任意）
+        await PSS.DeleteAsync(ReviewStorage.ReviewResultV1);
     }
 
     private async Task OpenCsvUploadDialog()

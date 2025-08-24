@@ -4,13 +4,15 @@
 
 @using System.Text
 @using System.Text.RegularExpressions
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.AspNetCore.Components.Web
+@using PhrazorApp.Models.Dtos
 
 @inject JsInteropManager JS
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inject ReviewSession ReviewSession
-@inject TestResultSession TestResultSession
+@inject ProtectedSessionStorage PSS   // PSSのみで復元・保存
 
 <PageTitle>英作文テスト</PageTitle>
 
@@ -77,13 +79,12 @@
                 </MudItem>
             </MudGrid>
 
-            <!-- 回答（上=入力 / 下=入力補助） -->
+            <!-- 回答 -->
             <MudGrid Justify="Justify.Center">
                 <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
                     <EditForm Model="_form" OnSubmit="SubmitAsync">
                         <MudStack @key="_index" Spacing="1" AlignItems="AlignItems.Stretch">
 
-                            <!-- 回答欄：Enter で解答。Alt 系は各アクション -->
                             <MudTextField T="string"
                                           @bind-Value="Answer"
                                           Variant="Variant.Text"
@@ -96,7 +97,6 @@
                                           Class="mono-input multi tf-answer"
                                           OnKeyDown="HandleAnswerKeyDown" />
 
-                            <!-- 入力補助欄（ReadOnly）。同じ折返し条件 -->
                             <MudTextField T="string"
                                           Value="@_assistText"
                                           ReadOnly="true"
@@ -107,7 +107,6 @@
                                           AdornmentIcon="@Icons.Material.TwoTone.EditNote"
                                           Class="mono-input multi assist-input" />
 
-                            <!-- ボタン＆集計 -->
                             <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
                                       AlignItems="AlignItems.Center" Justify="Justify.Center"
                                       Class="mt-2">
@@ -187,7 +186,6 @@
         word-break: normal;
     }
 
-    /* TextArea の見た目を一致させる */
     .mono-input .mud-input-slot textarea {
         font-family: var(--mono-font-stack) !important;
         font-size: var(--mono-size) !important;
@@ -207,7 +205,6 @@
         visibility: hidden;
     }
 
-    /* キー表示の pill */
     .kbd {
         display: inline-block;
         padding: 0 .35rem;
@@ -230,15 +227,15 @@
 
     private bool _showCorrectBeforeNext;
 
-    // データ
-    private List<ReviewSession.Card> _items = new();
+    // ---- データ（PSSのDTOをそのまま使う） ----
+    private List<ReviewCardDto> _items = new();
     private int _index;
     private int _count;
     private int _indexPlus1 => _index + 1;
-    private ReviewSession.Card _current = new(Guid.Empty, "", "");
+    private ReviewCardDto _current = new() { PhraseId = Guid.Empty, Front = "", Back = "" };
 
-    // 集計
-    private readonly List<TestResultSession.Row> _rows = new();
+    // ---- 集計（PSSへ保存するDTO） ----
+    private readonly List<TestResultRowDto> _rows = new();
     private int _attemptsLeft = 5;
     private int _answeredCount;
     private int _correctCount;
@@ -248,11 +245,7 @@
     // 入力モデル
     private sealed class AnswerForm { public string Answer { get; set; } = string.Empty; }
     private AnswerForm _form = new();
-    private string Answer
-    {
-        get => _form.Answer;
-        set { _form.Answer = value ?? string.Empty; RebuildAssist(); }
-    }
+    private string Answer { get => _form.Answer; set { _form.Answer = value ?? string.Empty; RebuildAssist(); } }
 
     // 単語ヒント
     private static readonly Regex WordRegex = new(@"[A-Za-z0-9'’]+", RegexOptions.Compiled);
@@ -266,20 +259,35 @@
     private bool _peek;
     private bool _submitting;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _items = new List<ReviewSession.Card>(ReviewSession.Items);
-        _count = _items.Count;
-
-        if (_count == 0)
+        // PSS（共通DTO）から復元
+        var ok = await TryRestoreFromSessionAsync();
+        if (!ok)
         {
-            Snackbar.Add("テスト対象が設定されていません。フレーズ一覧から選択して開始してください。", Severity.Warning);
+            Snackbar.Add("テスト対象が設定されていません。復習または候補一覧から選択してください。", Severity.Warning);
             Navigation.NavigateTo("/phrases");
             return;
         }
 
+        // テストは常に先頭から開始（レビュー位置の Index は無視）
         _index = 0;
         LoadCurrent();
+    }
+
+    private async Task<bool> TryRestoreFromSessionAsync()
+    {
+        try
+        {
+            var got = await PSS.GetAsync<ReviewState>(ReviewStorage.ReviewStateV1);
+            var s = got.Success ? got.Value : null;
+            if (s is null || s.Items.Count == 0) return false;
+
+            _items = s.Items.ToList();
+            _count = _items.Count;
+            return _count > 0;
+        }
+        catch { return false; }
     }
 
     private void LoadCurrent()
@@ -297,7 +305,7 @@
         RebuildAssist();
     }
 
-    // 未解答 or 不一致の単語のみ候補にする
+    // —— ヒント・補助の構築 ——
     private List<int> UnsolvedWordIndices()
     {
         var t = _current.Front ?? string.Empty;
@@ -384,37 +392,22 @@
         _ => ch
     };
 
-    // —— キーボード操作（入力欄にフォーカスがある前提） ——
+    // —— キーボード操作 ——
     private async Task HandleAnswerKeyDown(KeyboardEventArgs e)
     {
-        // 1) Alt 系のショートカット
         if (e.AltKey)
         {
             switch (e.Key)
             {
-                case "h" or "H":
-                    if (_canHint) GiveHint();
-                    return;
-                case "i" or "I":        
-                    _peek = !_peek;
-                    StateHasChanged();
-                    return;
-                case "c" or "C":
-                    ClearInput();
-                    return;
-                case "x" or "X":
-                    await CancelAsync();
-                    return;
-                case "n" or "N":            
-                    await SkipAsWrongAsync();
-                    return;
-                case "s" or "S":
-                    await SubmitAsync();
-                    return;
+                case "h" or "H": if (_canHint) GiveHint(); return;
+                case "i" or "I": _peek = !_peek; StateHasChanged(); return;
+                case "c" or "C": ClearInput(); return;
+                case "x" or "X": await CancelAsync(); return;
+                case "n" or "N": await SkipAsWrongAsync(); return;
+                case "s" or "S": await SubmitAsync(); return;
             }
         }
 
-        // 2) Enter で解答（修飾キーなし）
         if (!e.AltKey && !e.CtrlKey && !e.ShiftKey &&
             (e.Key == "Enter" || e.Key == "NumpadEnter"))
         {
@@ -442,7 +435,7 @@
             {
                 _correctCount++;
                 _answeredCount++;
-                _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, true));
+                _rows.Add(new TestResultRowDto { Front = _current.Front, Back = _current.Back, Correct = true });
                 Snackbar.Add("正解です！", Severity.Success);
 
                 if (_showCorrectBeforeNext)
@@ -475,7 +468,7 @@
     {
         _wrongCount++;
         _answeredCount++;
-        _rows.Add(new TestResultSession.Row(_current.Front, _current.Back, false));
+        _rows.Add(new TestResultRowDto { Front = _current.Front, Back = _current.Back, Correct = false });
 
         if (_showCorrectBeforeNext)
             await ShowCorrectDialogAsync("不正解として記録しました。正答を確認して次へ進みます。");
@@ -500,7 +493,15 @@
     {
         if (_answeredCount >= _count)
         {
-            TestResultSession.Set(_rows);
+            // 結果を PSS へ保存 → 結果ページで確実に復元可能
+            var result = new TestResultState
+            {
+                Rows = _rows.ToList(),
+                SavedAtUtc = DateTime.UtcNow
+            };
+            await PSS.SetAsync(ReviewStorage.ReviewResultV1, result);
+
+            // （任意）出題状態は残しておく。結果ページ側で再テスト時に上書きされる
             Navigation.NavigateTo("/tests/result");
             return;
         }
@@ -520,14 +521,8 @@
             Navigation.NavigateTo(Return);
             return;
         }
-        try
-        {
-            await JS.HistoryBackAsync();
-        }
-        catch
-        {
-            Navigation.NavigateTo("/phrases");
-        }
+        try { await JS.HistoryBackAsync(); }
+        catch { Navigation.NavigateTo("/phrases"); }
     }
 
     private async Task ShowCorrectDialogAsync(string? note = null)

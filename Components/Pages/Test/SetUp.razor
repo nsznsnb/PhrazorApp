@@ -1,14 +1,17 @@
 ﻿@page "/tests/setup"
 @attribute [Authorize]
 
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using PhrazorApp.Models.Dtos
+
 @inject PhraseService PhraseService
 @inject GenreService GenreService
 @inject PhraseBookService PhraseBookService
-@inject ReviewSession ReviewSession
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 @inject UiOperationRunner UiRunner
 @inject JsInteropManager JS
+@inject ProtectedSessionStorage PSS
 
 <PageTitle>テスト設定</PageTitle>
 
@@ -49,7 +52,7 @@
 
             @if (_hasAnyAvailableGenre)
             {
-                <!-- ジャンル／サブジャンル：検索＋入れ子リスト（MudList） -->
+                <!-- ジャンル／サブジャンル：検索＋入れ子リスト -->
                 <MudText Typo="Typo.caption" Class="mt-2">ジャンル／サブジャンル（複数選択）</MudText>
 
                 <MudTextField T="string"
@@ -71,23 +74,20 @@
 
                         @foreach (var g in _genres)
                         {
-                            // 利用可能なサブジャンル（＝少なくとも1つのフレーズが紐づく）
                             var availableChildren = (g.SubGenres?.OrderBy(x => x.OrderNo) ?? Enumerable.Empty<SubGenreModel>())
                             .Where(sg => _availableSubGenreIds.Contains(sg.Id));
 
-                            // 検索条件：親が当たれば子は全表示、親が当たらなければ子の名前で絞る
                             var showAllChildren = string.IsNullOrWhiteSpace(_genreFilter) || ContainsCi(g.Name, _genreFilter);
                             var filteredChildren = showAllChildren
                             ? availableChildren
                             : availableChildren.Where(sg => ContainsCi(sg.Name, _genreFilter));
 
                             var childList = filteredChildren.ToList();
-                            if (childList.Count == 0) { continue; } // 表示すべき子が無ければ親ごと非表示
+                            if (childList.Count == 0) { continue; }
 
                             <MudListItem>
                                 <ChildContent>
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                        <!-- 親ジャンル TriState チェック（可視の子のみで判定） -->
                                         <MudCheckBox T="bool?"
                                                      TriState="true"
                                                      Value="@GetGenreCheckStateVisible(g)"
@@ -98,8 +98,6 @@
                                         </MudText>
                                     </MudStack>
                                 </ChildContent>
-
-                                <!-- 常に NestedList を置く（中身のみ制御） -->
                                 <NestedList>
                                     @foreach (var sg in childList)
                                     {
@@ -191,14 +189,14 @@
                         <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
                                    StartIcon="@Icons.Material.TwoTone.Style"
                                    Disabled="@(ctx.GetSelectedIdsAll().Count == 0)"
-                                   OnClick="@(() => StartFromSelection(ctx.GetSelectedIdsAll(), true))">
+                                   OnClick="@(async () => await StartFromSelection(ctx.GetSelectedIdsAll(), true))">
                             復習してから開始
                         </MudButton>
 
                         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                    StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                    Disabled="@(ctx.GetSelectedIdsAll().Count == 0)"
-                                   OnClick="@(() => StartFromSelection(ctx.GetSelectedIdsAll(), false))">
+                                   OnClick="@(async () => await StartFromSelection(ctx.GetSelectedIdsAll(), false))">
                             テスト開始
                         </MudButton>
                     </ExtraToolbar>
@@ -233,7 +231,6 @@
     private List<PhraseBookListItemModel> _books = new();
     private List<PhraseListItemModel> _preview = new();
 
-    // 利用可能サブジャンル（フレーズ帳選択などに応じてサーバで算出）
     private HashSet<Guid> _availableSubGenreIds = new();
     private bool _hasAnyAvailableGenre;
 
@@ -246,7 +243,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // 初期値：直近30日 / 出題数 10
         _f.DatePreset = DateRangePreset.Last30Days;
         _f.Limit = 10;
         _f.UntestedOnly = false;
@@ -273,7 +269,6 @@
         StateHasChanged();
     }
 
-    // --- フレーズ帳変更 → 利用可能サブジャンル再計算
     private async Task OnPhraseBookIdsChangedAsync(IEnumerable<Guid> ids)
     {
         _f.PhraseBookIds = ids?.ToHashSet() ?? new HashSet<Guid>();
@@ -327,10 +322,8 @@
     {
         if (_f.Limit == v) return;
         _f.Limit = v;
-        // プレビュー再計算は不要（開始時に Take）
     }
 
-    // --- TriState（可視の子のみで判定）
     private bool? GetGenreCheckStateVisible(GenreModel g)
     {
         var ids = g.SubGenres?
@@ -367,13 +360,11 @@
     private int GetSelectedCountWithinVisible(GenreModel g)
         => g.SubGenres?.Count(sg => _availableSubGenreIds.Contains(sg.Id) && _f.SubGenreIds.Contains(sg.Id)) ?? 0;
 
-    // --- 利用可能サブジャンルをサービスで算出し、選択値も正規化
     private async Task RefreshAvailableSubGenresAsync()
     {
         var ids = await UiRunner.ReadAsync(() => PhraseService.GetAvailableSubGenreIdsAsync(_f));
         _availableSubGenreIds = ids ?? new HashSet<Guid>();
 
-        // 表示外（無効）になった選択値は除去
         _f.SubGenreIds.IntersectWith(_availableSubGenreIds);
 
         _hasAnyAvailableGenre = _genres.Any(g => g.SubGenres?.Any(sg => _availableSubGenreIds.Contains(sg.Id)) == true);
@@ -410,7 +401,8 @@
         }
     }
 
-    private void StartFromSelection(HashSet<Guid> selectedIds, bool review)
+    // ★ ReviewSession 廃止：選択開始時に PSS へ DTO で保存して遷移
+    private async Task StartFromSelection(HashSet<Guid> selectedIds, bool review)
     {
         if (!_hasPreview)
         {
@@ -431,8 +423,31 @@
         }
         items = items.Take(Math.Clamp(_f.Limit, 1, int.MaxValue)).ToList();
 
-        ReviewSession.Set(items, x => x.Id, x => x.Phrase, x => x.Meaning);
-        Nav.NavigateTo(review ? "/phrases/review" : "/phrases/writing");
+        var cards = items.Select(x => new ReviewCardDto
+        {
+            PhraseId = x.Id,
+            Front = x.Phrase ?? "",
+            Back = x.Meaning ?? ""
+        }).ToList();
+
+        var state = new ReviewState
+        {
+            Items = cards,
+            Index = 0,
+            IsBack = false,
+            Shuffled = _f.Shuffle,
+            SavedAtUtc = DateTime.UtcNow
+        };
+
+        await PSS.SetAsync(ReviewStorage.ReviewStateV1, state);
+        await PSS.SetAsync(ReviewStorage.ShufflePrefV1, _f.Shuffle);
+
+        var rel = Nav.ToBaseRelativePath(Nav.Uri);
+        var returnUrl = "/" + rel.TrimStart('/');
+
+        Nav.NavigateTo(review
+            ? $"/phrases/review?return={Uri.EscapeDataString(returnUrl)}"
+            : $"/phrases/writing?return={Uri.EscapeDataString(returnUrl)}");
     }
 
     // ---- ヘルパー ----
@@ -466,11 +481,9 @@
         _preview.Clear();
         _hasPreview = false;
 
-        // 帳未選択状態で再計算（全体でフレーズが紐づくサブジャンルのみに）
         _ = RefreshAvailableSubGenresAsync();
     }
 
-    // SelectableTable 用：検索対象列
     private IEnumerable<string> SearchByPreview(PhraseListItemModel x)
         => new[] { x.Phrase ?? string.Empty, x.Meaning ?? string.Empty };
 }

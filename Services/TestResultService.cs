@@ -1,6 +1,9 @@
 ﻿using PhrazorApp.Data.Entities;
 using PhrazorApp.Data.UnitOfWork;
+using PhrazorApp.Models.Dtos;
+using PhrazorApp.Models.Dtos.Maps;
 using PhrazorApp.UI.State;
+using System.Linq;
 
 namespace PhrazorApp.Services
 {
@@ -22,17 +25,27 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>
-        /// ReviewSession のカード順（PhraseId）と TestResultSession の結果を突き合わせて保存。
-        /// ※ PhraseId が Guid.Empty の行はスキップ（ログのみ）。
+        /// PSS 由来の結果 <see cref="TestResultState"/> と、
+        /// 出題カード列（<see cref="ReviewCardDto"/> = PhraseId/Front/Back）を突き合わせて保存します。
+        /// ※ PhraseId が Guid.Empty の行はスキップ（警告ログのみ）。
+        /// ※ 結果件数とカード件数が異なる場合、短い方に合わせます（先頭から順次）。
         /// </summary>
-        public async Task<ServiceResult<Guid>> SaveAsync(TestResultSession result, IReadOnlyList<ReviewSession.Card> cards)
+        public async Task<ServiceResult<Guid>> SaveAsync(
+            TestResultState result,
+            IReadOnlyList<ReviewCardDto> cards)
         {
-            if (result.Total <= 0) return ServiceResult.Error<Guid>($"{MSG_PREFIX}：明細がありません。");
+            if (result is null) return ServiceResult.Error<Guid>($"{MSG_PREFIX}：結果が null です。");
+
+            var total = result.Rows?.Count ?? 0;
+            if (total <= 0) return ServiceResult.Error<Guid>($"{MSG_PREFIX}：明細がありません。");
 
             try
             {
                 var userId = _user.GetUserId();
-                var rate = result.Rate();
+
+                var correct = result.Rows!.Count(r => r.Correct);
+                var rate = total == 0 ? 0d : (double)correct / total;
+
                 var grade = await _grade.ResolveByRateEnsureAsync(rate);
                 if (grade is null) return ServiceResult.Error<Guid>($"{MSG_PREFIX}：成績が特定できません。");
 
@@ -54,37 +67,42 @@ namespace PhrazorApp.Services
                     };
                     await repos.TestResults.AddAsync(head);
 
-                    // 明細（Indexを連番に）
-                    var count = Math.Min(result.Items.Count, cards.Count);
-                    var details = new List<DTestResultDetail>(count);
+                    // 明細
+                    var count = Math.Min(total, cards.Count);
+                    if (total != cards.Count)
+                    {
+                        _logger.LogInformation(
+                            "TestResult: rows={Rows}, cards={Cards} → {Count} 件で保存",
+                            total, cards.Count, count);
+                    }
 
+                    var detailNo = 1;
                     for (int i = 0; i < count; i++)
                     {
                         var phraseId = cards[i].PhraseId;
                         if (phraseId == Guid.Empty)
                         {
-                            _logger.LogWarning("TestResultDetail: PhraseId が空のためスキップ (index={Index})", i);
+                            _logger.LogWarning(
+                                "TestResultDetail: PhraseId が空のためスキップ (index={Index}, front={Front})",
+                                i, cards[i].Front);
                             continue;
                         }
 
-                        var row = result.Items[i];
-                        details.Add(new DTestResultDetail
+                        var row = result.Rows![i]; // TestResultRowDto
+                        var d = new DTestResultDetail
                         {
                             TestId = testId,
-                            TestResultDetailNo = i + 1,
+                            TestResultDetailNo = detailNo++,
                             PhraseId = phraseId,
-                            IsCorrect = row.IsCorrect,
+                            IsCorrect = row.Correct,
                             CreatedAt = now,
                             UpdatedAt = now
-                        });
+                        };
+                        await repos.TestResultDetails.AddAsync(d);
                     }
 
-                    if (details.Count == 0)
+                    if (detailNo == 1)
                         throw new InvalidOperationException("保存可能な明細がありません (全行 PhraseId=Empty)。");
-
-                    // まとめて登録
-                    foreach (var d in details)
-                        await repos.TestResultDetails.AddAsync(d);
                 });
 
                 return ServiceResult.Success(testId, $"{MSG_PREFIX}を保存しました。");

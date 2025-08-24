@@ -1,20 +1,22 @@
 ﻿@page "/tests/result"
 @attribute [Authorize]
 
-@inject TestResultSession TestResult
-@inject ReviewSession ReviewSession
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Security.Cryptography
+@using System.Text
+@using PhrazorApp.Models.Dtos
+@using PhrazorApp.Models.Dtos.Maps
+
 @inject TestResultService TestResultService
-@inject GradeService GradeService
 @inject UiOperationRunner UiRunner
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
 @inject JsInteropManager JS
+@inject ProtectedSessionStorage PSS
 
 <PageTitle>テスト結果</PageTitle>
 
-
 <MudStack Spacing="3" AlignItems="AlignItems.Center">
-    <!-- ヘッダ：バッジ + 成績チップ -->
     <MudStack Spacing="1" AlignItems="AlignItems.Center">
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
             <MudImage Src="@GradeImageSrc" Alt="@($"Result ({GradeSymbol})")" Width="120" Height="120" />
@@ -28,20 +30,17 @@
         </MudChip>
         <MudText Typo="Typo.h5">テスト結果</MudText>
         <MudText Typo="Typo.subtitle1">
-            正解 @TestResult.Correct / 合計 @TestResult.Total（正答率 @((int)(TestResult.Rate() * 100))%）
+            正解 @CorrectCount / 合計 @Total（正答率 @((int)(Rate * 100))%）
         </MudText>
     </MudStack>
 
-
     <BaseCard Class="pa-4">
-        <!-- ▲ ボタンをテーブルの上に配置 -->
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <!-- Md以上：横並び -->
             <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" Class="mb-2">
                 <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
                     不正解だけ再テスト
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(Total == 0)">
                     すべて再テスト
                 </MudButton>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
@@ -51,12 +50,11 @@
         </MudHidden>
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <!-- Sm以下：縦積み -->
             <MudStack Spacing="1" Class="mb-2">
                 <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RetestWrong" Disabled="@(_wrongCount == 0)">
                     不正解だけ再テスト
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(TestResult.Total == 0)">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="RetestAll" Disabled="@(Total == 0)">
                     すべて再テスト
                 </MudButton>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync">
@@ -65,8 +63,7 @@
             </MudStack>
         </MudHidden>
 
-        <!-- 明細テーブル -->
-        <MudTable Items="TestResult.Items" Dense="true" Hover="true" Bordered="false" Striped="true" Breakpoint="Breakpoint.Md">
+        <MudTable Items="_rows" Dense="true" Hover="true" Bordered="false" Striped="true" Breakpoint="Breakpoint.Md">
             <HeaderContent>
                 <MudTh>結果</MudTh>
                 <MudTh>英作文</MudTh>
@@ -74,7 +71,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd>
-                    @if (context.IsCorrect)
+                    @if (context.Correct)
                     {
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
                     }
@@ -91,45 +88,85 @@
 </MudStack>
 
 @code {
+    // PSS からの復元データ（唯一のソース）
+    private TestResultState? _state;
+    private List<TestResultRowDto> _rows = new();
+
+    // 保存ガード
     private bool _saved;
     private string? _gradeName;
-    private int _wrongCount => TestResult.Total - TestResult.Correct;
+    private string? _currentSig;
+
+    // 集計
+    private int Total => _rows.Count;
+    private int CorrectCount => _rows.Count(r => r.Correct);
+    private int _wrongCount => Total - CorrectCount;
+    private double Rate => Total == 0 ? 0 : (double)CorrectCount / Total;
 
     private string LocalGradeSymbol
     {
         get
         {
-            var pct = (int)(TestResult.Rate() * 100);
+            var pct = (int)(Rate * 100);
             if (pct >= 90) return "S";
             if (pct >= 75) return "A";
             if (pct >= 60) return "B";
             return "D";
         }
     }
-
-    // 表示用：DBで確定した記号があればそれを優先、なければローカル推定
     private string GradeSymbol => (_gradeName ?? LocalGradeSymbol).ToUpperInvariant();
-
     private string GradeImageSrc => GradeSymbol switch
     {
         "S" => "/images/laurel_gold.svg",
         "A" => "/images/laurel_green.svg",
         "B" => "/images/laurel_blue.svg",
-        _ => "/images/laurel_gray.svg"   // D ほか未知はグレー
+        _ => "/images/laurel_gray.svg"
     };
 
+    // ---- ライフサイクル：結果復元＋二重保存ガード ----
+    protected override async Task OnInitializedAsync()
+    {
+        var got = await PSS.GetAsync<TestResultState>(ReviewStorage.ReviewResultV1);
+        var s = got.Success ? got.Value : null;
+
+        if (s is null || s.Rows.Count == 0)
+        {
+            Snackbar.Add("表示できるテスト結果がありません。", Severity.Warning);
+            Nav.NavigateTo("/phrases");
+            return;
+        }
+
+        _state = s;
+        _rows = s.Rows;
+
+        // 内容署名を計算して、同一なら保存はスキップ
+        _currentSig = ComputeResultSignature(_rows);
+        var gotSig = await PSS.GetAsync<string>(ReviewStorage.ReviewResultSigV1);
+        if (gotSig.Success && string.Equals(gotSig.Value, _currentSig, StringComparison.Ordinal))
+        {
+            _saved = true;
+        }
+    }
+
+    // ---- 保存：元カードは PSS(ReviewStateV1) から復元 ----
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _saved) return;
+        if (!firstRender || _saved || _state is null) return;
 
+        var sourceCards = await LoadSourceCardsAsync(); // PhraseId 付き
         var res = await UiRunner.WriteAsync<Guid>(
-            () => TestResultService.SaveAsync(TestResult, ReviewSession.Items));
+            () => TestResultService.SaveAsync(_state, sourceCards));
 
         if (res.IsSuccess)
         {
             _saved = true;
             _gradeName = LocalGradeSymbol;
             Snackbar.Add("テスト結果を保存しました。", Severity.Success);
+
+            // 保存成功後：結果を掃除、署名を保存
+            await PSS.DeleteAsync(ReviewStorage.ReviewResultV1);
+            if (!string.IsNullOrEmpty(_currentSig))
+                await PSS.SetAsync(ReviewStorage.ReviewResultSigV1, _currentSig);
         }
         else
         {
@@ -139,22 +176,68 @@
         StateHasChanged();
     }
 
-    private void RetestWrong()
+    // ---- 再テスト（不正解のみ／全件） ----
+    private async void RetestWrong() => await StartRetestAsync(_rows.Where(r => !r.Correct));
+    private async void RetestAll() => await StartRetestAsync(_rows);
+
+    private async Task StartRetestAsync(IEnumerable<TestResultRowDto> rows)
     {
-        var wrong = TestResult.WrongOnly();
-        ReviewSession.Set(wrong, x => x.Front, x => x.Back);
+        var src = await LoadSourceCardsAsync();                    // 元カード（PhraseId付き）
+        var map = ReviewStateMapper.BuildFrontKeyMap(src);         // Front 正規化 → 元カード
+
+        var retestCards = rows.Select(r =>
+        {
+            var k = ReviewStateMapper.FrontKey(r.Front);
+            if (map.TryGetValue(k, out var c))
+                return new ReviewCardDto { PhraseId = c.PhraseId, Front = c.Front, Back = c.Back };
+
+            // 見つからない場合は PhraseId 空で出題（保存時にスキップされる）
+            return new ReviewCardDto { PhraseId = Guid.Empty, Front = r.Front ?? "", Back = r.Back ?? "" };
+        }).ToList();
+
+        var state = new ReviewState
+        {
+            Items = retestCards,
+            Index = 0,
+            IsBack = false,
+            Shuffled = false,
+            SavedAtUtc = DateTime.UtcNow
+        };
+        await PSS.SetAsync(ReviewStorage.ReviewStateV1, state);
+
+        // 書き取りページでの「中止→戻る」時の導線制御に使う場合（任意）
+        await PSS.SetAsync(ReviewStorage.ReviewRetestFlagV1, true);
+
         Nav.NavigateTo("/phrases/writing");
     }
 
-    private void RetestAll()
+    // ---- ヘルパ ----
+
+    // PSS の ReviewState からカードを復元（PhraseId付き）
+    private async Task<List<ReviewCardDto>> LoadSourceCardsAsync()
     {
-        ReviewSession.Set(TestResult.Items, x => x.Front, x => x.Back);
-        Nav.NavigateTo("/phrases/writing");
+        var got = await PSS.GetAsync<ReviewState>(ReviewStorage.ReviewStateV1);
+        var st = got.Success ? got.Value : null;
+        if (st is not null && st.Items.Count > 0)
+            return st.Items.ToList();
+        return new List<ReviewCardDto>();
+    }
+
+    // 結果内容から安定的な署名（SHA256）を作る（二重保存防止用）
+    private static string ComputeResultSignature(IEnumerable<TestResultRowDto> rows)
+    {
+        var sb = new StringBuilder();
+        foreach (var r in rows)
+            sb.Append(r.Front).Append('\t').Append(r.Back).Append('\t').Append(r.Correct ? '1' : '0').Append('\n');
+
+        using var sha = SHA256.Create();
+        var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+        return Convert.ToHexString(hash);
     }
 
     private Task FinishAsync()
     {
-        Nav.NavigateTo("/");   // ← Home へ
+        Nav.NavigateTo("/");
         return Task.CompletedTask;
     }
 }
