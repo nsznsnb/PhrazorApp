@@ -8,23 +8,17 @@
                    OnExecuteAsync="ApplyAsync">
 
     <MudStack Spacing="2">
-        <MudRadioGroup T="BulkGenreMode" @bind-Selected="Mode">
-            <MudRadio T="BulkGenreMode"
-                      Option="BulkGenreMode.ReplaceAll"
-                      Color="Color.Primary">
-                既存を全て入れ替え
+        <MudRadioGroup T="BulkGenreMode" @bind-Value="Mode">
+            <MudRadio T="BulkGenreMode" Value="@(BulkGenreMode.ReplaceAll)" Color="Color.Primary">
+                既存の設定を差し替える
             </MudRadio>
 
-            <MudRadio T="BulkGenreMode"
-                      Option="BulkGenreMode.AddMerge"
-                      Color="Color.Primary">
-                既存に追加（重複は無視）
+            <MudRadio T="BulkGenreMode" Value="@(BulkGenreMode.AddMerge)" Color="Color.Primary">
+                既存の設定に追加
             </MudRadio>
 
-            <MudRadio T="BulkGenreMode"
-                      Option="BulkGenreMode.ClearAll"
-                      Color="Color.Primary">
-                ジャンルを全てクリア
+            <MudRadio T="BulkGenreMode" Value="@(BulkGenreMode.ClearAll)" Color="Color.Primary">
+                既存の設定を全てクリア
             </MudRadio>
         </MudRadioGroup>
 
@@ -35,9 +29,18 @@
                               MaxSelection="3"
                               OnAddGenreClicked="OpenGenreDialog" />
         }
-        <MudText Typo="Typo.caption" Color="Color.Secondary">
-            すべての選択フレーズに対して上記の操作を適用します。
-        </MudText>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                すべての選択フレーズに対して上記の操作を適用します。
+            </MudText>
+
+            @if (Mode != BulkGenreMode.ClearAll)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    ※1フレーズに設定できるジャンルは最大3件です。既に3件ある場合は「既存の設定に追加」を選んでも増えません。
+                </MudText>
+            }
+        </MudStack>
     </MudStack>
 </DialogBaseWrapper>
 

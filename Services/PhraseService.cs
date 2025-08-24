@@ -228,8 +228,15 @@ namespace PhrazorApp.Services
                 {
                     var idSet = phraseIds.Distinct().ToArray();
                     const int chunkSize = 500;
+                    const int MaxPerPhrase = 3;
 
-                    // まとめて追加/削除するためのバッファ
+                    // UI選択（順序維持・重複除去・Key1/Key2 必須）
+                    var wantOrdered = selected
+                        .Where(s => s.Key2.HasValue)
+                        .Select(s => (GenreId: s.Key1, SubGenreId: s.Key2!.Value))
+                        .DistinctBy(x => x)            // 先に現れた順を残す
+                        .ToList();
+
                     var toDelete = new List<MPhraseGenre>();
                     var toAdd = new List<MPhraseGenre>();
 
@@ -246,27 +253,30 @@ namespace PhrazorApp.Services
                                 if (current.Count > 0) toDelete.AddRange(current);
                             }
 
-                            if (mode != BulkGenreMode.ClearAll)
-                            {
-                                // UIはMaxSelection=3だが、念のためDistinct＆Key2必須
-                                var want = selected
-                                    .Where(x => x.Key2.HasValue)
-                                    .DistinctBy(x => (x.Key1, x.Key2!.Value))
-                                    .Select(x => new { x.Key1, Sub = x.Key2!.Value })
-                                    .ToList();
+                            if (mode == BulkGenreMode.ClearAll)
+                                continue;
 
-                                if (mode == BulkGenreMode.AddMerge)
+                            if (mode == BulkGenreMode.AddMerge)
+                            {
+                                // 既存維持＋不足分だけ追加（上限3）
+                                var have = current.Select(c => (c.GenreId, c.SubGenreId)).ToHashSet();
+                                var slots = MaxPerPhrase - have.Count;
+                                if (slots <= 0) continue;
+
+                                foreach (var (g, s) in wantOrdered)
                                 {
-                                    var have = current.Select(c => (c.GenreId, c.SubGenreId)).ToHashSet();
-                                    foreach (var w in want)
-                                        if (!have.Contains((w.Key1, w.Sub)))
-                                            toAdd.Add(new MPhraseGenre { PhraseId = p.PhraseId, GenreId = w.Key1, SubGenreId = w.Sub });
+                                    if (slots == 0) break;
+                                    if (have.Add((g, s)))
+                                    {
+                                        toAdd.Add(new MPhraseGenre { PhraseId = p.PhraseId, GenreId = g, SubGenreId = s });
+                                        slots--;
+                                    }
                                 }
-                                else if (mode == BulkGenreMode.ReplaceAll)
-                                {
-                                    foreach (var w in want)
-                                        toAdd.Add(new MPhraseGenre { PhraseId = p.PhraseId, GenreId = w.Key1, SubGenreId = w.Sub });
-                                }
+                            }
+                            else // ReplaceAll
+                            {
+                                foreach (var (g, s) in wantOrdered.Take(MaxPerPhrase))
+                                    toAdd.Add(new MPhraseGenre { PhraseId = p.PhraseId, GenreId = g, SubGenreId = s });
                             }
                         }
                     }
