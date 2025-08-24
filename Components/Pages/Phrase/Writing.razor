@@ -35,22 +35,19 @@
 
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
                    StartIcon="@Icons.Material.TwoTone.Lightbulb"
-                   Disabled="@(!_canHint)" OnClick="GiveHint"
-                   accesskey="h">
+                   Disabled="@(!_canHint)" OnClick="GiveHint">
             ヒント <span class="kbd ml-1">Alt + h</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Info"
                    StartIcon="@Icons.Material.TwoTone.Visibility"
-                   OnClick="@(() => _peek = !_peek)"
-                   accesskey="i">
+                   OnClick="@(() => _peek = !_peek)">
             チラ見 <span class="kbd ml-1">Alt + i</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Error"
                    StartIcon="@Icons.Material.TwoTone.StopCircle"
-                   OnClick="CancelAsync"
-                   accesskey="x">
+                   OnClick="CancelAsync">
             テスト中止 <span class="kbd ml-1">Alt + x</span>
         </MudButton>
     </ActionCard>
@@ -82,6 +79,7 @@
             <!-- 回答 -->
             <MudGrid Justify="Justify.Center">
                 <MudItem Xs="12" Sm="10" Md="8" LG="7" XL="6">
+                    <!-- Enterで送信：OnSubmit で受ける（KeyDown 側では Enter を送らない） -->
                     <EditForm Model="_form" OnSubmit="SubmitAsync">
                         <MudStack @key="_index" Spacing="1" AlignItems="AlignItems.Stretch">
 
@@ -113,15 +111,13 @@
 
                                 <MudButton ButtonType="ButtonType.Submit"
                                            Variant="Variant.Filled" Color="Color.Primary"
-                                           StartIcon="@Icons.Material.TwoTone.CheckCircle"
-                                           accesskey="s">
+                                           StartIcon="@Icons.Material.TwoTone.CheckCircle">
                                     解答 <span class="kbd ml-1">Enter</span>
                                 </MudButton>
 
                                 <MudButton Variant="Variant.Outlined" Color="Color.Warning"
                                            StartIcon="@Icons.Material.TwoTone.SkipNext"
-                                           OnClick="SkipAsWrongAsync"
-                                           accesskey="n">
+                                           OnClick="SkipAsWrongAsync">
                                     次へ（×扱い） <span class="kbd ml-1">Alt + n</span>
                                 </MudButton>
 
@@ -164,62 +160,14 @@
         --mono-line: 1.5rem;
         --qcard-h: 180px;
     }
-
-    .qcard {
-        height: var(--qcard-h);
-    }
-
-    .q-stack {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .q-body {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow-y: auto;
-        text-align: center;
-        overflow-wrap: anywhere;
-        word-break: normal;
-    }
-
-    .mono-input .mud-input-slot textarea {
-        font-family: var(--mono-font-stack) !important;
-        font-size: var(--mono-size) !important;
-        line-height: var(--mono-line) !important;
-        letter-spacing: 0 !important;
-        white-space: pre-wrap;
-        overflow: hidden;
-        resize: none;
-    }
-
-    .assist-input .mud-input-slot textarea {
-        color: rgba(0,0,0,.54);
-        caret-color: transparent;
-    }
-
-    .assist-input .mud-input-adornment-start {
-        visibility: hidden;
-    }
-
-    .kbd {
-        display: inline-block;
-        padding: 0 .35rem;
-        border: 1px solid rgba(0,0,0,.18);
-        background: rgba(0,0,0,.06);
-        border-radius: .25rem;
-        font-family: var(--mono-font-stack);
-        font-size: .75rem;
-        line-height: 1.25rem;
-        vertical-align: baseline;
-    }
-
-    .ml-1 {
-        margin-left: .35rem;
-    }
+    .qcard { height: var(--qcard-h); }
+    .q-stack { height: 100%; display: flex; flex-direction: column; }
+    .q-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow-y: auto; text-align: center; overflow-wrap: anywhere; word-break: normal; }
+    .mono-input .mud-input-slot textarea { font-family: var(--mono-font-stack) !important; font-size: var(--mono-size) !important; line-height: var(--mono-line) !important; letter-spacing: 0 !important; white-space: pre-wrap; overflow: hidden; resize: none; }
+    .assist-input .mud-input-slot textarea { color: rgba(0,0,0,.54); caret-color: transparent; }
+    .assist-input .mud-input-adornment-start { visibility: hidden; }
+    .kbd { display: inline-block; padding: 0 .35rem; border: 1px solid rgba(0,0,0,.18); background: rgba(0,0,0,.06); border-radius: .25rem; font-family: var(--mono-font-stack); font-size: .75rem; line-height: 1.25rem; vertical-align: baseline; }
+    .ml-1 { margin-left: .35rem; }
 </style>
 
 @code {
@@ -242,6 +190,11 @@
     private int _wrongCount;
     private double ProgressPercent => _count == 0 ? 0 : (_answeredCount * 100.0 / _count);
 
+    // 二重トリガー防止
+    private bool _submitting;
+    private bool _answeredThisCard; // このカードを既に確定記録したか
+    private bool _finishing;        // 結果ページへの遷移中か
+
     // 入力モデル
     private sealed class AnswerForm { public string Answer { get; set; } = string.Empty; }
     private AnswerForm _form = new();
@@ -257,7 +210,6 @@
     private string _assistText = string.Empty;
 
     private bool _peek;
-    private bool _submitting;
 
     protected override async Task OnInitializedAsync()
     {
@@ -297,6 +249,7 @@
         _attemptsLeft = 5;
         _revealedWords.Clear();
         _peek = false;
+        _answeredThisCard = false; // ★ 二重記録リセット
 
         _wordSpans = new();
         foreach (Match m in WordRegex.Matches(_current.Front))
@@ -305,7 +258,7 @@
         RebuildAssist();
     }
 
-    // —— ヒント・補助の構築 ——
+    // —— ヒント・補助の構築 —— 
     private List<int> UnsolvedWordIndices()
     {
         var t = _current.Front ?? string.Empty;
@@ -392,9 +345,19 @@
         _ => ch
     };
 
-    // —— キーボード操作 ——
+    // —— キーボード操作 —— 
+    // ※ Enter はフォームの OnSubmit に任せる。ここでは Alt ショートカットのみ処理。
     private async Task HandleAnswerKeyDown(KeyboardEventArgs e)
     {
+        // ← Enter 単体で回答を確定（テキストエリアは OnSubmit が走らないため）
+        if (!e.AltKey && !e.CtrlKey && !e.ShiftKey &&
+            (e.Key == "Enter" || e.Key == "NumpadEnter"))
+        {
+            await SubmitAsync();
+            return;
+        }
+
+        // Alt+? のショートカット
         if (e.AltKey)
         {
             switch (e.Key)
@@ -407,17 +370,27 @@
                 case "s" or "S": await SubmitAsync(); return;
             }
         }
+    }
 
-        if (!e.AltKey && !e.CtrlKey && !e.ShiftKey &&
-            (e.Key == "Enter" || e.Key == "NumpadEnter"))
-        {
-            await SubmitAsync();
-        }
+    // 同一カードを一度だけ確定記録する共通処理
+    private async Task FinalizeAnswerAsync(bool correct, string? note = null)
+    {
+        if (_answeredThisCard) return;   // ★ 二重記録ガード
+        _answeredThisCard = true;
+
+        if (correct) _correctCount++; else _wrongCount++;
+        _answeredCount++;
+        _rows.Add(new TestResultRowDto { Front = _current.Front, Back = _current.Back, Correct = correct });
+
+        if (_showCorrectBeforeNext && note is not null)
+            await ShowCorrectDialogAsync(note);
+
+        await NextAsync();
     }
 
     private async Task SubmitAsync()
     {
-        if (_submitting) return;
+        if (_submitting || _answeredThisCard) return; // 二重防止
         _submitting = true;
         try
         {
@@ -433,15 +406,8 @@
 
             if (user == expected)
             {
-                _correctCount++;
-                _answeredCount++;
-                _rows.Add(new TestResultRowDto { Front = _current.Front, Back = _current.Back, Correct = true });
                 Snackbar.Add("正解です！", Severity.Success);
-
-                if (_showCorrectBeforeNext)
-                    await ShowCorrectDialogAsync("正解を確認して次へ進みます。");
-
-                await NextAsync();
+                await FinalizeAnswerAsync(true, "正解を確認して次へ進みます。");
             }
             else
             {
@@ -452,7 +418,7 @@
                 }
                 else
                 {
-                    await ProceedWrongAsync();
+                    await FinalizeAnswerAsync(false, "不正解として記録しました。正答を確認して次へ進みます。");
                 }
             }
         }
@@ -462,19 +428,7 @@
         }
     }
 
-    private async Task SkipAsWrongAsync() => await ProceedWrongAsync();
-
-    private async Task ProceedWrongAsync()
-    {
-        _wrongCount++;
-        _answeredCount++;
-        _rows.Add(new TestResultRowDto { Front = _current.Front, Back = _current.Back, Correct = false });
-
-        if (_showCorrectBeforeNext)
-            await ShowCorrectDialogAsync("不正解として記録しました。正答を確認して次へ進みます。");
-
-        await NextAsync();
-    }
+    private async Task SkipAsWrongAsync() => await FinalizeAnswerAsync(false, "不正解として記録しました。正答を確認して次へ進みます。");
 
     private void ClearInput()
     {
@@ -491,8 +445,11 @@
 
     private async Task NextAsync()
     {
+        if (_finishing) return; // ★ 多重遷移ガード
+
         if (_answeredCount >= _count)
         {
+            _finishing = true; // ★ ロック
             // 結果を PSS へ保存 → 結果ページで確実に復元可能
             var result = new TestResultState
             {
