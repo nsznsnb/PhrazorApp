@@ -30,15 +30,15 @@
                               OnAddGenreClicked="OpenGenreDialog" />
         }
         <MudStack Spacing="0">
-            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                すべての選択フレーズに対して上記の操作を適用します。
-            </MudText>
-
             @if (Mode != BulkGenreMode.ClearAll)
             {
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    ※1フレーズに設定できるジャンルは最大3件です。既に3件ある場合は「既存の設定に追加」を選んでも増えません。
+                    ※1フレーズに設定できるジャンルは最大3件です。
                 </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    　 既に3件ある場合は「既存の設定に追加」を選んでも増えません。
+                </MudText>
+
             }
         </MudStack>
     </MudStack>
