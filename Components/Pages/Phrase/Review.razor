@@ -16,17 +16,18 @@
     <SectionTitle Title="フレーズ復習" />
 
     <ActionCard>
+        <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
+                   Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.PlayArrow"
+                   Disabled="@(_count == 0)" OnClick="GoWritingTest">
+            英作文テストへ
+        </MudButton>
+
         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
                    Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.Shuffle"
                    Disabled="@(_count <= 1)" OnClick="Reshuffle">
             シャッフル
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Size="@AppConstants.SIZE_BUTTON"
-                   Color="Color.Primary" StartIcon="@Icons.Material.TwoTone.PlayArrow"
-                   Disabled="@(_count == 0)" OnClick="GoWritingTest">
-            英作文テストへ
-        </MudButton>
 
         <MudButton Variant="Variant.Outlined" Size="@AppConstants.SIZE_BUTTON"
                    Color="Color.Default" StartIcon="@Icons.Material.TwoTone.ArrowBack"
