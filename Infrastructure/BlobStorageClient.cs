@@ -12,12 +12,12 @@ namespace PhrazorApp.Infrastructure
     public sealed class BlobStorageClient
     {
         private readonly BlobServiceClient _blobServiceClient;
-        private readonly AzureBlobOptions _options;
+        private readonly AzureStorageOptions _options;
         private readonly ILogger<BlobStorageClient> _logger;
 
         public BlobStorageClient(
             BlobServiceClient blobServiceClient,
-            IOptions<AzureBlobOptions> options,
+            IOptions<AzureStorageOptions> options,
             ILogger<BlobStorageClient> logger)
         {
             _blobServiceClient = blobServiceClient;
@@ -39,7 +39,7 @@ namespace PhrazorApp.Infrastructure
 
             try
             {
-                var container = _blobServiceClient.GetBlobContainerClient(_options.ContainerName);
+                var container = _blobServiceClient.GetBlobContainerClient(_options.Containers.Images);
 
                 // コンテナがなければ作成（一般公開: Blob 単位）
                 await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
@@ -65,7 +65,7 @@ namespace PhrazorApp.Infrastructure
             catch (Exception ex)
             {
                 _logger.LogError(ex, "画像の保存に失敗しました。FileName={FileName}, Container={Container}",
-                                 fileName, _options.ContainerName);
+                                 fileName, _options.Containers.Images);
                 return ServiceResult.Error<string>("画像の保存に失敗しました。");
             }
         }
