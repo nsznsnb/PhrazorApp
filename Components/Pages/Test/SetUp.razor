@@ -249,6 +249,7 @@
         // 初期値：直近30日 / 出題数 10
         _f.DatePreset = DateRangePreset.Last30Days;
         _f.Limit = 10;
+        _f.UntestedOnly = false;
 
         _genres = await UiRunner.ReadAsync(() => GenreService.GetGenreViewModelListAsync()) ?? new();
         _books = await UiRunner.ReadAsync(() => PhraseBookService.GetPhraseBooksAsync()) ?? new();
@@ -458,7 +459,8 @@
         _f = new TestFilterModel
         {
             DatePreset = DateRangePreset.Last30Days,
-            Limit = 10
+            Limit = 10,
+            UntestedOnly = false,
         };
         _genreFilter = string.Empty;
         _preview.Clear();

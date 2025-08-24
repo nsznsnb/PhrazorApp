@@ -15,7 +15,7 @@ namespace PhrazorApp.Models
         public DateTime? DateTo { get; set; }
 
         // オプション
-        public bool UntestedOnly { get; set; } = true;
+        public bool UntestedOnly { get; set; } = false;
         public bool Shuffle { get; set; } = true;
 
         // 出題数
