@@ -15,15 +15,15 @@
 <SectionTitle HeadingLevel="2" Title="フレーズ帳" />
 
 <MudGrid Spacing="2">
-    <!-- 左：ブック作成＋一覧 -->
+    <!-- 左：フレーズ帳作成＋一覧 -->
     <MudItem xs="12" md="4" lg="3">
         <BaseCard>
-            <MudCardContent>
+            <MudCardContent Class="book-panel">
                 <MudStack Spacing="1">
                     <MudTextField T="string"
                                   Value="_newBookName"
                                   ValueChanged="@((string? v) => _newBookName = v ?? string.Empty)"
-                                  Placeholder="新しいブック名"
+                                  Placeholder="新しいフレーズ帳名"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   MaxLength="60"
@@ -41,94 +41,91 @@
 
                 <MudDivider Class="my-2" />
 
-                <MudList T="PhraseBookListItemModel"
-                         Dense="true"
-                         SelectedValue="_selectedBook"
-                         SelectedValueChanged="OnBookSelectedAsync">
-                    @if (_books.Count == 0)
-                    {
-                        <MudListItem T="PhraseBookListItemModel" Disabled="true">
-                            <MudText>ブックがありません</MudText>
-                        </MudListItem>
-                    }
-                    else
-                    {
-                        @foreach (var b in _books)
+                <!-- 一覧だけスクロール -->
+                <div class="book-list-scroll">
+                    <MudList T="PhraseBookListItemModel"
+                             Dense="true"
+                             SelectedValue="_selectedBook"
+                             SelectedValueChanged="OnBookSelectedAsync">
+                        @if (_books.Count == 0)
                         {
-                            <MudListItem T="PhraseBookListItemModel" Value="@b">
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudIcon Icon="@Icons.Material.TwoTone.MenuBook" Class="mr-2" />
-                                    <!-- 件数 -->
-                                    <MudText>
-                                        @(b.Count.ToString() + "件")
-                                    </MudText>
-                                </MudStack>
+                            <MudListItem T="PhraseBookListItemModel" Disabled="true">
+                                <MudText>フレーズ帳がありません</MudText>
+                            </MudListItem>
+                        }
+                        else
+                        {
+                            @foreach (var b in _books)
+                            {
+                                <MudListItem T="PhraseBookListItemModel" Value="@b">
+                                    <MudStack Row AlignItems="AlignItems.Center">
+                                        <MudIcon Icon="@Icons.Material.TwoTone.MenuBook" Class="mr-2" />
+                                        <MudText>@(b.Count.ToString() + "件")</MudText>
+                                    </MudStack>
 
-                                @if (_renamingBookId == b.Id)
-                                {
-                                    <!-- インライン・リネーム入力（Enter=保存 / Esc=取消） -->
-                                    <MudTextField T="string"
-                                                  Id="@($"rename-{b.Id}")"
-                                                  Class="mr-2"
-                                                  Variant="Variant.Outlined"
-                                                  Margin="Margin.Dense"
-                                                  Immediate="true"
-                                                  MaxLength="60"
-                                                  Value="@_renameText"
-                                                  ValueChanged="@((string? v) => _renameText = v ?? string.Empty)"
-                                                  OnKeyDown="@(e => OnRenameKeyDown(e, b))"
-                                                  Placeholder="新しい名称" />
-                                }
-                                else
-                                {
-                                    <MudText>@StringUtil.Truncate(@b.Name)</MudText>
-                                }
-
-                                <MudSpacer />
-
-                                <!-- 末尾アクション（重なり防止の inline-flex + gap） -->
-                                <MudStack Row AlignItems="AlignItems.Center" Class="book-list-trailing">
                                     @if (_renamingBookId == b.Id)
                                     {
-                                        <!-- 保存／キャンセル -->
-                                        <MudTooltip Text="確定">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                                           Color="Color.Primary"
-                                                           Disabled="@string.IsNullOrWhiteSpace((_renameText ?? string.Empty).Trim())"
-                                                           OnClick="@(() => SaveRenameAsync(b))" />
-                                        </MudTooltip>
-                                        <MudTooltip Text="キャンセル">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                                           Color="Color.Default"
-                                                           OnClick="@CancelRename" />
-                                        </MudTooltip>
+                                        <!-- インライン・リネーム（Enter=保存 / Esc=取消） -->
+                                        <MudTextField T="string"
+                                                      Id="@($"rename-{b.Id}")"
+                                                      Class="mr-2"
+                                                      Variant="Variant.Outlined"
+                                                      Margin="Margin.Dense"
+                                                      Immediate="true"
+                                                      MaxLength="60"
+                                                      Value="@_renameText"
+                                                      ValueChanged="@((string? v) => _renameText = v ?? string.Empty)"
+                                                      OnKeyDown="@(e => OnRenameKeyDown(e, b))"
+                                                      Placeholder="新しい名称" />
                                     }
                                     else
                                     {
-                                        <!-- 編集（リネーム開始） -->
-                                        <MudTooltip Text="フレーズ名変更">
-                                            <MudIconButton Icon="@Icons.Material.TwoTone.Edit"
-                                                           Color="Color.Default"
-                                                           OnClick="@(() => BeginRename(b))" />
-                                        </MudTooltip>
-
-                                        <!-- 削除 -->
-                                        <MudTooltip Text="フレーズ帳削除">
-                                            <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
-                                                           Color="Color.Error"
-                                                           OnClick="@(() => OnDeleteBookAsync(b))" />
-                                        </MudTooltip>
+                                        <MudText>@StringUtil.Truncate(@b.Name)</MudText>
                                     }
-                                </MudStack>
-                            </MudListItem>
+
+                                    <MudSpacer />
+
+                                    <!-- 末尾アクション -->
+                                    <MudStack Row AlignItems="AlignItems.Center" Class="book-list-trailing">
+                                        @if (_renamingBookId == b.Id)
+                                        {
+                                            <MudTooltip Text="確定">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                               Color="Color.Primary"
+                                                               Disabled="@string.IsNullOrWhiteSpace((_renameText ?? string.Empty).Trim())"
+                                                               OnClick="@(() => SaveRenameAsync(b))" />
+                                            </MudTooltip>
+                                            <MudTooltip Text="キャンセル">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                               Color="Color.Default"
+                                                               OnClick="@CancelRename" />
+                                            </MudTooltip>
+                                        }
+                                        else
+                                        {
+                                            <MudTooltip Text="フレーズ帳名変更">
+                                                <MudIconButton Icon="@Icons.Material.TwoTone.Edit"
+                                                               Color="Color.Default"
+                                                               OnClick="@(() => BeginRename(b))" />
+                                            </MudTooltip>
+
+                                            <MudTooltip Text="フレーズ帳削除">
+                                                <MudIconButton Icon="@Icons.Material.TwoTone.Delete"
+                                                               Color="Color.Error"
+                                                               OnClick="@(() => OnDeleteBookAsync(b))" />
+                                            </MudTooltip>
+                                        }
+                                    </MudStack>
+                                </MudListItem>
+                            }
                         }
-                    }
-                </MudList>
+                    </MudList>
+                </div>
             </MudCardContent>
         </BaseCard>
     </MudItem>
 
-    <!-- 右：候補検索＋一覧 と ブックの中身 -->
+    <!-- 右：候補検索＋一覧 と フレーズ帳の中身 -->
     <MudItem xs="12" md="8" lg="9" Class="fi-safe-area">
 
         <!-- 候補（フィルタ） -->
@@ -143,7 +140,7 @@
                 @if (_initialized && !HasBooks)
                 {
                     <MudAlert Severity="Severity.Info" Dense Class="mb-2">
-                        まずフレーズ帳を作成してください。作成後、候補からブックへ追加できます。
+                        まずフレーズ帳を作成してください。作成後、候補からフレーズ帳へ追加できます。
                     </MudAlert>
                 }
 
@@ -213,7 +210,7 @@
             </MudCardContent>
         </BaseCard>
 
-        <!-- ブックの中身 -->
+        <!-- フレーズ帳の中身 -->
         <BaseCard Class="mt-2 book-section-elevated" id="book-section">
             <MudCardHeader>
                 <CardHeaderContent>
@@ -224,7 +221,7 @@
             <MudCardContent>
                 @if (_selectedBook is null)
                 {
-                    <MudText Class="p-2">左の一覧からブックを選択してください。</MudText>
+                    <MudText Class="p-2">左の一覧からフレーズ帳を選択してください。</MudText>
                 }
                 else
                 {
@@ -266,7 +263,7 @@
                         </RowTemplate>
 
                         <NoRecordsContent>
-                            <MudText Class="p-2">このブックにはフレーズがありません。</MudText>
+                            <MudText Class="p-2">このフレーズ帳にはフレーズがありません。</MudText>
                         </NoRecordsContent>
                     </SelectableTable>
                 }
@@ -313,6 +310,24 @@
             padding-bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
         }
     }
+
+    /* 左カード：一覧だけスクロール */
+    .book-panel {
+        padding-bottom: 0;
+    }
+
+    .book-list-scroll {
+        height: clamp(220px, 50vh, 600px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @@media (max-width: 960px) {
+        .book-list-scroll {
+            height: clamp(180px, 45vh, 460px);
+        }
+    }
 </style>
 
 @code {
@@ -348,7 +363,7 @@
     {
         _books = await UiOperationRunner.ReadWithOverlayAsync(
             () => PhraseBookService.GetPhraseBooksAsync(),
-            "ブックを読込中…") ?? new();
+            "フレーズ帳を読込中…") ?? new();
 
         _allCandidates = await UiOperationRunner.ReadWithOverlayAsync(
             () => PhraseService.GetPhraseListAsync(),
@@ -366,10 +381,10 @@
 
     private string GetCurrentBookTitle()
         => _selectedBook is null
-           ? "選択中ブックのフレーズ一覧：未選択"
+           ? "選択中フレーズ帳のフレーズ一覧：未選択"
            : $"「{_selectedBook.Name}」のフレーズ一覧";
 
-    // --- Enterで新規作成確定 ---
+    // Enterで新規作成確定
     private async Task OnNewBookNameKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -386,7 +401,7 @@
 
         var created = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.CreateAsync(_newBookName),
-            "ブックを作成中…");
+            "フレーズ帳を作成中…");
         if (!created.IsSuccess) return;
 
         _newBookName = string.Empty;
@@ -403,12 +418,12 @@
     private async Task OnDeleteBookAsync(PhraseBookListItemModel b)
     {
         var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm,
-            $"「{b.Name}」を削除します。よろしいですか？");
+            $"フレーズ帳「{b.Name}」を削除します。よろしいですか？");
         if (!ok) return;
 
         var result = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.DeleteAsync(b.Id),
-            "ブックを削除中…");
+            "フレーズ帳を削除中…");
         if (!result.IsSuccess) return;
 
         _books = await UiOperationRunner.ReadAsync(
@@ -484,12 +499,12 @@
 
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.InfoConfirm,
-            $"選択中の {ids.Count} 件を「{_selectedBook.Name}」へ追加します。よろしいですか？");
+            $"選択中の {ids.Count} 件をフレーズ帳「{_selectedBook.Name}」へ追加します。よろしいですか？");
         if (!ok) return;
 
         var write = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.CreateAsync(_selectedBook.Id, ids),
-            "ブックに追加中…");
+            "フレーズ帳に追加中…");
         if (!write.IsSuccess) return;
 
         await RefreshBookAndListAsync();
@@ -504,11 +519,10 @@
 
         var write = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.CreateAsync(_selectedBook.Id, new[] { id }),
-            "ブックに追加中…");
+            "フレーズ帳に追加中…");
         if (!write.IsSuccess) return;
 
         await RefreshBookAndListAsync();
-
         await Js.ScrollToIdAsync("book-section", true);
     }
 
@@ -517,17 +531,16 @@
         if (_selectedBook is null || ids.Count == 0) return;
 
         var ok = await DialogService.ShowConfirmAsync(DialogConfirmType.DangerConfirm,
-            $"「{_selectedBook.Name}」から選択中 {ids.Count} 件を削除します。よろしいですか？");
+            $"フレーズ帳「{_selectedBook.Name}」から選択中 {ids.Count} 件を削除します。よろしいですか？");
         if (!ok) return;
 
         var res = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.DeleteAsync(_selectedBook.Id, ids),
-            "ブックから削除中…");
+            "フレーズ帳から削除中…");
         if (!res.IsSuccess) return;
 
         await RefreshBookAndListAsync();
         _bookTable?.ClearSelection();
-
     }
 
     private async Task DeleteSingleItemAsync(Guid id)
@@ -536,7 +549,7 @@
 
         var res = await UiOperationRunner.WriteAsync(
             () => PhraseBookService.DeleteAsync(_selectedBook.Id, new[] { id }),
-            "ブックから削除中…");
+            "フレーズ帳から削除中…");
         if (!res.IsSuccess) return;
 
         await RefreshBookAndListAsync();
