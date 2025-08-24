@@ -30,31 +30,27 @@ namespace PhrazorApp.Services
                 var endExclusive = nowDate.AddDays(1);
 
 
-                // --- 1) 登録/習得フレーズ数 ---
                 var pQuery = repos.Phrases.Queryable(asNoTracking: true)
-                                          .Where(p => p.UserId == userId);
+                                      .Where(p => p.UserId == userId);
 
                 var registeredCount = await pQuery.CountAsync();
 
-
                 const int MIN_TOTAL = 2;   // 最低試行回数
-                const int MIN_RATE = 60;  // 合格率(％)
+                const int MIN_RATE = 60;  // 合格率(%)
 
+                // 翻訳しやすい並び：group → select new → where → CountAsync
                 var learnedCount = await (
-                    from rl in repos.ReviewLogs.Queryable(asNoTracking: true)
-                    join p in pQuery on rl.PhraseId equals p.PhraseId
-                    join d in repos.TestResultDetails.Queryable(asNoTracking: true)
-                        on new { rl.TestId, rl.TestResultDetailNo }
-                        equals new { d.TestId, d.TestResultDetailNo }
-                    group d by rl.PhraseId into g
+                    from d in repos.TestResultDetails.Queryable(asNoTracking: true)
+                    where d.PhraseId != Guid.Empty
+                    join p in pQuery on d.PhraseId equals p.PhraseId
+                    group d by d.PhraseId into g
                     select new
                     {
-                        PhraseId = g.Key,
                         Total = g.Count(),
                         Correct = g.Count(x => x.IsCorrect == true) // bool? 対応
                     }
                 )
-                .Where(x => x.Total >= MIN_TOTAL && (100 * x.Correct) >= (MIN_RATE * x.Total))
+                .Where(x => x.Total >= MIN_TOTAL && 100 * x.Correct >= MIN_RATE * x.Total)
                 .CountAsync();
 
                 // --- 2) 今日の格言 ---
