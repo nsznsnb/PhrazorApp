@@ -35,21 +35,21 @@
                    StartIcon="@Icons.Material.TwoTone.Lightbulb"
                    Disabled="@(!_canHint)" OnClick="GiveHint"
                    accesskey="h">
-            ヒント <span class="kbd ml-1">Alt + H</span>
+            ヒント <span class="kbd ml-1">Alt + h</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Info"
                    StartIcon="@Icons.Material.TwoTone.Visibility"
                    OnClick="@(() => _peek = !_peek)"
                    accesskey="i">
-            チラ見 <span class="kbd ml-1">Alt + I</span>
+            チラ見 <span class="kbd ml-1">Alt + i</span>
         </MudButton>
 
         <MudButton Variant="Variant.Outlined" Color="Color.Error"
                    StartIcon="@Icons.Material.TwoTone.StopCircle"
                    OnClick="CancelAsync"
                    accesskey="x">
-            テスト中止 <span class="kbd ml-1">Alt + X</span>
+            テスト中止 <span class="kbd ml-1">Alt + x</span>
         </MudButton>
     </ActionCard>
 
@@ -123,14 +123,14 @@
                                            StartIcon="@Icons.Material.TwoTone.SkipNext"
                                            OnClick="SkipAsWrongAsync"
                                            accesskey="n">
-                                    次へ（×扱い） <span class="kbd ml-1">Alt + N</span>
+                                    次へ（×扱い） <span class="kbd ml-1">Alt + n</span>
                                 </MudButton>
 
                                 <MudButton Variant="Variant.Outlined" Color="Color.Default"
                                            StartIcon="@Icons.Material.TwoTone.RestartAlt"
                                            OnClick="ClearInput"
                                            accesskey="c">
-                                    クリア <span class="kbd ml-1">Alt + C</span>
+                                    クリア <span class="kbd ml-1">Alt + c</span>
                                 </MudButton>
 
                                 <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
