@@ -98,7 +98,6 @@ flowchart TB
   - **Validation/** … バリデーションのグローバル設定
 
 - **tools/** … 開発用スクリプト（PowerShell 等）  
-  ※ JavaScript は **wwwroot/js/** に配置
 
 - **wwwroot/** … 静的ファイル（js/css/画像 など）
 
