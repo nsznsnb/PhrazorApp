@@ -424,15 +424,12 @@
             return;
         }
 
+        // プレビュー順を維持（Where は _preview の列挙順＝表示順を保ちます）
         var items = _preview.Where(x => selectedIds.Contains(x.Id)).ToList();
-        if (_f.Shuffle)
-        {
-            var rnd = Random.Shared;
-            items = items.OrderBy(_ => rnd.Next()).ToList();
-        }
+
+        // ★ ここではシャッフルしない（サービスで一度だけ実施）
         items = items.Take(Math.Clamp(_f.Limit, 1, int.MaxValue)).ToList();
 
-        // ReviewSession は AttachJs 済みなので Set => 自動保存される
         ReviewSession.Set(items, x => x.Id, x => x.Phrase, x => x.Meaning);
         var ret = BuildReturnQuery();
         Nav.NavigateTo(review ? $"/phrases/review{ret}" : $"/phrases/writing{ret}");

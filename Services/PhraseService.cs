@@ -80,33 +80,65 @@ namespace PhrazorApp.Services
         }
 
         /// <summary>
-        /// テスト候補の抽出（画面のプレビュー／開始で使用）
-        /// - 絞り込みは Repository レイヤーに委譲（DbContext のユーザーフィルタもそちらで適用）
-        /// - 並び替えは Shuffle 指定時のみメモリでランダム
-        /// - Limit は 1〜500 に丸め
+        /// テスト設定画面のプレビュー
         /// </summary>
+        /// <param name="filter"></param>
+        /// <returns></returns>
         public Task<ServiceResult<List<PhraseListItemModel>>> BuildCandidatesAsync(TestFilterModel filter)
         {
             return _uow.ReadAsync(async (UowRepos repos) =>
             {
                 var uid = _userService.GetUserId();
-
-                // ★ 重要：Repository 側で SubGenreIds / PhraseBookIds / 期間 / UntestedOnly を解釈する
-                //   （UI 変更に合わせ「GenreIds 依存」は不要。SubGenreIds 優先の実装にしておく）
-                var list = await repos.Phrases.GetListByFilterProjectedAsync(uid, filter);
-
-                // シャッフル（SQL依存を避けメモリ側で）
-                if (filter.Shuffle && list.Count > 1)
-                    list = list.OrderBy(_ => Guid.NewGuid()).ToList();
-
-                // 上限丸め
                 var take = Math.Clamp(filter.Limit <= 0 ? 20 : filter.Limit, 1, 500);
-                if (list.Count > take)
-                    list = list.Take(take).ToList();
+
+                const int MaxShufflePool = 2000; // 大きすぎる全件読みを避ける上限
+
+                List<PhraseListItemModel> list;
+
+                if (filter.Shuffle)
+                {
+                    var poolFilter = CloneWithLimit(filter, MaxShufflePool);
+                    list = await repos.Phrases.GetListByFilterProjectedAsync(uid, poolFilter);
+
+                    if (list.Count > 1)
+                        ShuffleInPlace(list); // ★ 一度だけ
+
+                    if (list.Count > take)
+                        list.RemoveRange(take, list.Count - take); // 最後にTake
+                }
+                else
+                {
+                    var limitedFilter = CloneWithLimit(filter, take);
+                    list = await repos.Phrases.GetListByFilterProjectedAsync(uid, limitedFilter);
+                }
 
                 return ServiceResult.Success(list, "");
             });
         }
+
+        private static TestFilterModel CloneWithLimit(TestFilterModel src, int limit) => new()
+        {
+            PhraseBookIds = src.PhraseBookIds?.ToHashSet() ?? new(),
+            SubGenreIds = src.SubGenreIds?.ToHashSet() ?? new(),
+            DatePreset = src.DatePreset,
+            DateFrom = src.DateFrom,
+            DateTo = src.DateTo,
+            UntestedOnly = src.UntestedOnly,
+            Shuffle = src.Shuffle,
+            Limit = Math.Clamp(limit, 1, 5000)
+        };
+
+        private static void ShuffleInPlace<T>(List<T> list)
+        {
+            var rng = Random.Shared;
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+        }
+
+
 
         public async Task<ServiceResult<HashSet<Guid>>> GetAvailableSubGenreIdsAsync(TestFilterModel f)
         {
