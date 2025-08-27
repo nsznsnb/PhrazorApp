@@ -41,6 +41,14 @@ public class Program
             .AddInteractiveServerComponents(); // Blazor Server 用サービス
         builder.Services.AddCascadingAuthenticationState();
 
+        builder.Services.AddServerSideBlazor()
+          .AddHubOptions(o =>
+          {
+              o.MaximumReceiveMessageSize = 1_048_576; // まず1MB。心配なら512KBでも可
+              o.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+              o.KeepAliveInterval = TimeSpan.FromSeconds(15);
+          });
+
         // ─────────────────────────────────────────
         // 認証・認可（Identity + ApplicationDbContext）
         // ─────────────────────────────────────────
