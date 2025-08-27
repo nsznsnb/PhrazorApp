@@ -7,13 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MudBlazor;
 using MudBlazor.Services;
-using PhrazorApp;                       // <App/>
 using PhrazorApp.Components;           // App
 using PhrazorApp.Components.Account;   // Identity ヘルパ
 using PhrazorApp.Data;                 // ApplicationDbContext（Identity 用）
 using PhrazorApp.Data.UnitOfWork;      // UnitOfWork
 using PhrazorApp.Endpoints;
-using PhrazorApp.Infrastructure;       // BlobStorageClient, Options
 using PhrazorApp.Models;               // ApplicationUser, DTO
 using PhrazorApp.Models.Validators;    // FluentValidation バリデータ
 using PhrazorApp.Services;             // ドメインサービス
@@ -125,6 +123,11 @@ public class Program
         // BlobServiceClient（インフラ用）
         builder.Services.AddSingleton(new BlobServiceClient(storageConnStr));
         builder.Services.AddSingleton<BlobStorageClient>();
+
+        #if DEBUG
+                // WebSocket寸断ログ
+                builder.Services.AddSingleton<CircuitHandler, DiagnosticCircuitHandler>();
+        #endif
 
         // ─────────────────────────────────────────
         // UI 層（Blazor Server の Circuit 単位で状態を持つため Scoped）
