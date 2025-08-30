@@ -1,4 +1,5 @@
 ﻿@typeparam TItem
+@using MudBlazor
 
 @if (HasToolbar)
 {
@@ -11,8 +12,21 @@
 
             @if (ToolbarContent is not null)
             {
-                var ctx = new TableToolbarContext { IsMdUp = IsMdUp, SearchText = _searchText };
-                @if (IsMdUp)
+                var ctx = new TableToolbarContext
+                {
+                    IsMdUp = IsMdUp,
+                    SearchText = _searchText,
+
+                    // 検索×選択 連動
+                    SelectedCountInView = SelectedCountInView,
+                    AllInViewSelected = AllInViewSelected,
+                    HasFilteredRows = ItemsView.Any(),
+                    GetSelectedIdsInView = BuildGetSelectedIdsInView(),
+                    GetSelectedIdsAll = BuildGetSelectedIdsAll(),
+                    ToggleSelectAllInView = ToggleSelectAllInViewAsync
+                };
+
+                if (IsMdUp)
                 {
                     <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
                         @ToolbarContent(ctx)
@@ -53,15 +67,20 @@
 
 <MudCardContent Class="p-0">
     <MudTable T="TItem"
+              @key="_tableKey"
               Items="@ItemsView"
-              Hover="true" Dense="true" Bordered="true" Outlined="true" 
+              Hover="true" Dense="true" Bordered="true" Outlined="true"
               HorizontalScrollbar="true"
               Height="@_effectiveHeight"
-              FixedHeader="@_effectiveFixedHeader" 
+              FixedHeader="@_effectiveFixedHeader"
               FixedFooter="false"
               Elevation="@Elevation" Class="@Class"
               CurrentPage="@_page" CurrentPageChanged="OnPageChanged"
               RowsPerPage="@_rowsPerPageInternal" RowsPerPageChanged="OnRowsPerPageChanged"
+              MultiSelection="@EffectiveMultiSelection"
+              Comparer="Comparer"
+              SelectedItems="WorkingSelectedItems"
+              SelectedItemsChanged="OnMudSelectedItemsChanged"
               @attributes="AdditionalAttributes">
 
         <HeaderContent>
@@ -75,10 +94,9 @@
         <PagerContent>
             @if (Pager == TablePagerMode.Auto)
             {
-                <MudTablePager 
-                    HorizontalAlignment="HorizontalAlignment.Center"
-                    RowsPerPageString=" "
-                    InfoFormat="{first_item}-{last_item} / {all_items}" />
+                <MudTablePager HorizontalAlignment="HorizontalAlignment.Center"
+                               RowsPerPageString=" "
+                               InfoFormat="{first_item}-{last_item} / {all_items}" />
             }
         </PagerContent>
 
@@ -89,10 +107,10 @@
 </MudCardContent>
 
 @code {
-    // 必須
+    // ===== 必須 =====
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
-    // スロット（MudTable準拠）
+    // ===== スロット =====
     [Parameter] public RenderFragment? HeaderContent { get; set; }
     [Parameter] public RenderFragment<TItem>? RowTemplate { get; set; }
     [Parameter] public RenderFragment? NoRecordsContent { get; set; }
@@ -101,7 +119,7 @@
     // 見出し／ツールバー
     [Parameter] public string? Title { get; set; }
 
-    // 検索（内部状態で完結）
+    // 検索
     [Parameter] public bool Search { get; set; } = false;
     [Parameter] public Func<TItem, IEnumerable<string>>? SearchBy { get; set; }
     [Parameter] public string SearchPlaceholder { get; set; } = "検索";
@@ -111,26 +129,54 @@
     [Parameter] public int RowsPerPage { get; set; } = 10;
 
     // 高さ/外観
-    [Parameter] public string? Height { get; set; }   // 例: "500px" → MaxHeight として扱う
+    [Parameter] public string? Height { get; set; }
     [Parameter] public int Elevation { get; set; } = AppConstants.DEFAULT_ELEVATION;
     [Parameter] public string? Class { get; set; } = "px-4";
-
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    // 内部状態
+    // ===== 選択（MultiSelection）=====
+    [Parameter] public bool UseMultiSelection { get; set; } = false; // 既定 false
+    [Parameter] public IEqualityComparer<TItem>? Comparer { get; set; }
+    [Parameter] public HashSet<TItem>? SelectedItems { get; set; }   // 任意
+    [Parameter] public EventCallback<HashSet<TItem>> SelectedItemsChanged { get; set; }
+
+    // Toolbar で ID を使いたいときだけ指定
+    [Parameter] public Func<TItem, Guid>? IdSelector { get; set; }
+
+    // 親が未指定のとき用の内部セット
+    private HashSet<TItem>? _internalSelected;
+    private IEqualityComparer<TItem> EffectiveComparer => Comparer ?? EqualityComparer<TItem>.Default;
+
+    private HashSet<TItem> WorkingSelectedItems
+        => SelectedItems ?? (_internalSelected ??= new HashSet<TItem>(EffectiveComparer));
+
+    private bool EffectiveMultiSelection => UseMultiSelection || (SelectedItems is not null);
+
+    private async Task OnMudSelectedItemsChanged(HashSet<TItem> _)
+    {
+        if (SelectedItems is not null)
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        else
+            _internalSelected = _;
+
+        StateHasChanged();
+    }
+
+    // ===== 内部状態 =====
     private string _searchText = "";
     private int _page = 0;
     private int _rowsPerPageInternal;
+    private int _tableKey; // ヘッダー三状態の再計算用
+    private bool _didInitialAutoSelect;
+    private IEnumerable<TItem>? _lastItemsRef;
+    private bool _pendingRaiseSelectionChanged;
 
-    // “Height を MaxHeight として扱う”ための内部推定
-    // Dense=true を前提に行高・ヘッダ高を素朴推定
+    // Dense 前提の素朴推定
     private const int _rowHeightPxDense = 40;
     private const int _headerHeightPx = 56;
 
-    // ← ここがキモ：MaxHeight を超えるときだけ MudTable.Height を付け、固定ヘッダを有効化
     private string? _effectiveHeight => ShouldScroll ? Height : null;
     private bool _effectiveFixedHeader => ShouldScroll;
-
     private bool ShouldScroll
     {
         get
@@ -146,34 +192,72 @@
     }
 
     private int ItemsViewCount => (ItemsView as ICollection<TItem>)?.Count ?? ItemsView.Count();
-
     private bool HasToolbar => !string.IsNullOrWhiteSpace(Title) || ToolbarContent is not null || Search;
 
     protected override void OnParametersSet()
     {
-        _rowsPerPageInternal = Pager == TablePagerMode.Auto ? RowsPerPage : int.MaxValue;
+        _rowsPerPageInternal = (Pager == TablePagerMode.Auto) ? RowsPerPage : int.MaxValue;
+
+        // 外から SelectedItems が来たら内部モード破棄
+        if (SelectedItems is not null) _internalSelected = null;
+
+        // --- 初期表示：MultiSelection 有効なら“現在の検索結果で全選択（置換）” ---
+        if (EffectiveMultiSelection && !_didInitialAutoSelect && ItemsView.Any())
+        {
+            ReplaceSelectionWith(ItemsView);
+            _didInitialAutoSelect = true;
+        }
+
+        // --- Items の参照が差し替わったら、現在の検索結果で再置換 ---
+        if (!ReferenceEquals(_lastItemsRef, Items))
+        {
+            _lastItemsRef = Items;
+            if (EffectiveMultiSelection)
+                ReplaceSelectionWith(ItemsView);
+        }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingRaiseSelectionChanged && SelectedItems is not null)
+        {
+            _pendingRaiseSelectionChanged = false;
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+        }
+    }
+
+    // フィルタ済みデータ（この子を“正”とする）
     private IEnumerable<TItem> ItemsView
-        => (Items ?? Enumerable.Empty<TItem>()).Where(x => !Search || Matches(x, _searchText));
+        => (Items ?? Enumerable.Empty<TItem>()).Where(i => !Search || Matches(i, _searchText));
 
     private bool Matches(TItem item, string text)
     {
         if (!Search || string.IsNullOrWhiteSpace(text)) return true;
         var t = text.Trim();
-        if (SearchBy is null) return item?.ToString()?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false;
 
-        foreach (var s in SearchBy(item) ?? Array.Empty<string>())
-            if (!string.IsNullOrEmpty(s) && s.Contains(t, StringComparison.OrdinalIgnoreCase)) return true;
+        if (SearchBy is null)
+            return item?.ToString()?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false;
+
+        foreach (var s in (SearchBy(item) ?? Array.Empty<string>()))
+            if (!string.IsNullOrEmpty(s) && s.Contains(t, StringComparison.OrdinalIgnoreCase))
+                return true;
         return false;
     }
 
+    // ---- 検索・ページ操作 ----
     private void OnSearchChanged(string? v)
     {
         var value = v ?? string.Empty;
         if (_searchText == value) return;
+
         _searchText = value;
-        _page = 0; // 検索変更で先頭へ
+        _page = 0;
+
+        // 検索語が変わったら “検索結果で全選択（置換）”
+        if (EffectiveMultiSelection)
+            ReplaceSelectionWith(ItemsView);
+
+        _tableKey++;         // ヘッダー三状態の再計算
         StateHasChanged();
     }
 
@@ -181,6 +265,7 @@
     {
         if (_page == v) return;
         _page = v;
+        _tableKey++;         // 三状態の再計算
         StateHasChanged();
     }
 
@@ -188,8 +273,71 @@
     {
         if (Pager == TablePagerMode.Off) return;
         if (_rowsPerPageInternal == size) return;
+
         _rowsPerPageInternal = size;
         _page = 0;
+        _tableKey++;         // 三状態の再計算
+        StateHasChanged();
+    }
+
+    // ---- Toolbar 連動（検索結果に対して全選択/解除）----
+    private int SelectedCountInView =>
+        EffectiveMultiSelection ? ItemsView.Count(i => WorkingSelectedItems.Contains(i)) : 0;
+
+    private bool AllInViewSelected =>
+        EffectiveMultiSelection && ItemsView.Any()
+            ? ItemsView.All(i => WorkingSelectedItems.Contains(i))
+            : false;
+
+    private Func<HashSet<Guid>> BuildGetSelectedIdsInView() => () =>
+    {
+        if (IdSelector is null || !EffectiveMultiSelection) return new HashSet<Guid>();
+        return ItemsView.Where(i => WorkingSelectedItems.Contains(i)).Select(IdSelector).ToHashSet();
+    };
+
+    private Func<HashSet<Guid>> BuildGetSelectedIdsAll() => () =>
+    {
+        if (IdSelector is null || !EffectiveMultiSelection) return new HashSet<Guid>();
+        return WorkingSelectedItems.Select(IdSelector).ToHashSet();
+    };
+
+    private async Task ToggleSelectAllInViewAsync(bool select)
+    {
+        if (!EffectiveMultiSelection) return;
+
+        if (select)
+        {
+            foreach (var it in ItemsView)
+                WorkingSelectedItems.Add(it);
+        }
+        else
+        {
+            var set = ItemsView.ToHashSet(EffectiveComparer);
+            WorkingSelectedItems.RemoveWhere(set.Contains);
+        }
+
+        if (SelectedItems is not null)
+            await SelectedItemsChanged.InvokeAsync(SelectedItems);
+
+        StateHasChanged();
+    }
+
+    // ---- 共通ユーティリティ ----
+    private void ReplaceSelectionWith(IEnumerable<TItem> src)
+    {
+        var set = WorkingSelectedItems;
+        set.Clear();
+        foreach (var it in src) set.Add(it);
+
+        _pendingRaiseSelectionChanged = true; // 親が居るなら通知
+        _tableKey++; // ヘッダー三状態の再計算
+    }
+
+    // 外部公開：全解除
+    public void ClearSelection()
+    {
+        WorkingSelectedItems.Clear();
+        _tableKey++;
         StateHasChanged();
     }
 
@@ -197,12 +345,19 @@
     {
         public bool IsMdUp { get; set; }
         public string SearchText { get; set; } = "";
+
+        public int SelectedCountInView { get; set; }
+        public bool AllInViewSelected { get; set; }
+        public bool HasFilteredRows { get; set; }
+
+        public Func<HashSet<Guid>> GetSelectedIdsInView { get; set; } = () => new HashSet<Guid>();
+        public Func<HashSet<Guid>> GetSelectedIdsAll { get; set; } = () => new HashSet<Guid>();
+        public Func<bool, Task> ToggleSelectAllInView { get; set; } = _ => Task.CompletedTask;
     }
 
     [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
     private bool IsMdUp => CurrentBreakpoint >= Breakpoint.Md;
 
-    // '500px' → 500 などに変換
     private static int ParsePixel(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return 0;
