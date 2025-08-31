@@ -31,7 +31,9 @@
                      View="CalendarView.Month"
                      ShowWeek="false"
                      ShowDay="false"
-                     Culture="@_ja">
+                     Culture="@_ja"
+                     CurrentDay="_currentDay"
+                     CurrentDayChanged="OnCurrentDayChanged">
             <CellTemplate Context="item">
                 <MudStack Row AlignItems="AlignItems.Center" Spacing="1" Class="w-100">
                     <!-- 編集へ：JST の日付に正規化して遷移 -->
@@ -60,8 +62,14 @@
 
     private List<DiaryCalendarItem> _items = new();
     private DateOnly _month = DateOnly.FromDateTime(ToTokyoNow());
+    private DateTime _currentDay;
 
-    protected override async Task OnInitializedAsync() => await ReloadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        // カレンダーの初期表示月（当月1日）をセット
+        _currentDay = new DateTime(_month.Year, _month.Month, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        await ReloadAsync();
+    }
 
     private async Task ReloadAsync()
     {
@@ -69,6 +77,20 @@
         _items = list ?? new();
         StateHasChanged();
     }
+
+    // 月ナビゲーション（前月/次月や月選択）のたびに呼ばれる
+    private async Task OnCurrentDayChanged(DateTime day)
+    {
+        _currentDay = day;
+        // 表示月が変わったときだけ再読込（Tokyoのタイムゾーン差を避けるため素直に年月で判定）
+        var newMonth = new DateOnly(day.Year, day.Month, 1);
+        if (newMonth != _month)
+        {
+            _month = newMonth;
+            await ReloadAsync();
+        }
+    }
+
 
     private void GoToDate(DateOnly jstDate)
         => Nav.NavigateTo($"/diary/edit/{jstDate:yyyy-MM-dd}");
