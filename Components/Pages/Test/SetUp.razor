@@ -183,18 +183,18 @@
                             選択：@ctx.SelectedCountInView 件（検索結果内）
                         </MudText>
 
-                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
-                                   StartIcon="@Icons.Material.TwoTone.Style"
-                                   Disabled="@(ctx.GetSelectedIdsAll().Count == 0)"
-                                   OnClick="@(() => StartFromSelection(ctx.GetSelectedIdsAll(), true))">
-                            復習してから開始
-                        </MudButton>
-
                         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                    StartIcon="@Icons.Material.TwoTone.PlayArrow"
                                    Disabled="@(ctx.GetSelectedIdsAll().Count == 0)"
                                    OnClick="@(() => StartFromSelection(ctx.GetSelectedIdsAll(), false))">
                             テスト開始
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                                   StartIcon="@Icons.Material.TwoTone.Style"
+                                   Disabled="@(ctx.GetSelectedIdsAll().Count == 0)"
+                                   OnClick="@(() => StartFromSelection(ctx.GetSelectedIdsAll(), true))">
+                            復習してから開始
                         </MudButton>
                     </ExtraToolbar>
 
