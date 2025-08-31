@@ -152,12 +152,12 @@ namespace PhrazorApp.Services
                     await repos.PhraseBooks.UpdateAsync(book);
                 });
 
-                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Success(string.Format(AppMessages.MSG_I_SUCCESS_UPDATE_DETAIL, "フレーズ帳名"));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "フレーズ帳更新で例外が発生しました。");
-                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, MSG_PREFIX));
+                return ServiceResult.None.Error(string.Format(AppMessages.MSG_E_FAILURE_UPDATE_DETAIL, "フレーズ帳名"));
             }
         }
 

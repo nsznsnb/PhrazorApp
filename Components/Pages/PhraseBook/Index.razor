@@ -397,14 +397,26 @@
 
     private async Task CreateBookAsync()
     {
-        if (string.IsNullOrWhiteSpace(_newBookName)) return;
+        var name = (_newBookName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        // クライアント側の重複チェック（競合対策のためDBの一意制約は残します）
+        if (_books.Any(x => string.Equals((x.Name ?? string.Empty).Trim(),
+                                          name, StringComparison.OrdinalIgnoreCase)))
+        {
+            Snackbar.Add($"同名のフレーズ帳「{name}」が既にあります。別の名称を入力してください。", Severity.Warning);
+            await Js.FocusByIdAsync("new-book-name");
+            return;
+        }
+
 
         var created = await UiOperationRunner.WriteAsync(
-            () => PhraseBookService.CreateAsync(_newBookName),
+            () => PhraseBookService.CreateAsync(name),
             "フレーズ帳を作成中…");
         if (!created.IsSuccess) return;
 
         _newBookName = string.Empty;
+        StateHasChanged();
 
         _books = await UiOperationRunner.ReadAsync(
             () => PhraseBookService.GetPhraseBooksAsync()) ?? _books;
