@@ -76,7 +76,7 @@
     <!-- 2行目：グラフ 2枚 -->
     <!-- 直近1か月 新規フレーズ登録数（Line） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:420px;">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:360px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
                 <MudText Typo="Typo.subtitle1">直近1か月 新規フレーズ登録数</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Default">日次/推移（単位: 件）</MudText>
@@ -89,11 +89,11 @@
                           XAxisLabels="@MonthLabels"
                           ChartOptions="@_chartOptions"
                           AxisChartOptions="@_axisChartOptions"
-                          Width="100%" Height="350px" />
+                          Width="100%" Height="300px" />
             }
             else
             {
-                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:350px;">
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:300px;">
                     <MudText Typo="Typo.body2" Style="opacity:.7;">直近1か月の登録データがありません</MudText>
                 </MudStack>
             }
@@ -102,7 +102,7 @@
 
     <!-- 成績構成比（Donut） -->
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6">
-        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:420px;">
+        <MudPaper Elevation="2" Class="pa-4 rounded-xl" Style="height:360px;">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                     <MudText Typo="Typo.subtitle1">成績の割合（全テスト）</MudText>
@@ -122,7 +122,7 @@
                           InputData="@DonutData"
                           InputLabels="@DonutLabels"
                           ChartOptions="@_donutOptions"
-                          Width="100%" Height="300px" />
+                          Width="100%" Height="230px" />
 
                 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1"
                           Class="mt-2" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd">
@@ -138,7 +138,7 @@
             }
             else
             {
-                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:350px;">
+                <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:240px;">
                     <MudText Typo="Typo.body2" Style="opacity:.7;">テストデータがありません</MudText>
                 </MudStack>
             }
