@@ -16,6 +16,7 @@
         return Array.from(document.querySelectorAll(`
       input:not([type="hidden"]),
       select,
+      textarea,
       [tabindex]:not([tabindex="-1"])
     `)).filter(isFocusable);
     };
