@@ -6,7 +6,12 @@
                 <RedirectToLogin />
             </NotAuthorized>
         </AuthorizeRouteView>
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        @* <FocusOnNavigate RouteData="routeData" Selector="h1" /> *@
+        <FocusOnNavigate RouteData="routeData"
+                         Selector=".mud-main-content input:not([type='hidden']):not([disabled]):not([readonly]),
+                                   .mud-main-content select:not([disabled]):not([readonly]),
+                                   .mud-main-content textarea:not([disabled]):not([readonly]),
+                                   .mud-main-content [role='combobox']" />
     </Found>
         <NotFound>
         <LayoutView Layout="@typeof(MainLayout)">
