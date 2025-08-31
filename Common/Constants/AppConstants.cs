@@ -51,6 +51,8 @@ public class AppConstants
     // カードのデフォルトのElevation値
     public const int DEFAULT_ELEVATION = 0;
 
+    public const int DEFAULT_ROWS_PER_PAGE = 25;
+
     // FluentValidationのプロパティテンプレート
     public const string FLUENT_PROP_TEMPLATE = "{PropertyName}";
 }

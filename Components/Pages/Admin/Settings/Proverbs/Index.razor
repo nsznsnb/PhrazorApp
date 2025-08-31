@@ -37,7 +37,7 @@
                          Search="true"
                          SearchBy="@(x => new[] { x.Text ?? string.Empty, x.Meaning ?? string.Empty, x.Author ?? string.Empty })"
                          Pager="TablePagerMode.Auto"
-                         RowsPerPage="10"
+                         RowsPerPage="@AppConstants.DEFAULT_ROWS_PER_PAGE"
                          Height="500px">
 
             <!-- 追加ツールバー：一括削除 -->

@@ -33,15 +33,14 @@
             </MudHidden>
         }
 
-
         @if (ExtraToolbar is not null)
         {
             var compat = new SelectableTableToolbarContext(
-            SelectedCountInView: tb.SelectedCountInView,
-            IsMdUp: tb.IsMdUp,
-            SearchText: tb.SearchText ?? string.Empty,
-            GetSelectedIdsInView: tb.GetSelectedIdsInView,
-            GetSelectedIdsAll: tb.GetSelectedIdsAll
+                SelectedCountInView: tb.SelectedCountInView,
+                IsMdUp: tb.IsMdUp,
+                SearchText: tb.SearchText ?? string.Empty,
+                GetSelectedIdsInView: tb.GetSelectedIdsInView,
+                GetSelectedIdsAll: tb.GetSelectedIdsAll
             );
 
             if (tb.IsMdUp)
@@ -86,14 +85,14 @@
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? Height { get; set; } = "500px";
     [Parameter] public TablePagerMode Pager { get; set; } = TablePagerMode.Auto;
-    [Parameter] public int RowsPerPage { get; set; } = 10;
+    [Parameter] public int RowsPerPage { get; set; } = AppConstants.DEFAULT_ROWS_PER_PAGE;
 
     // 検索
     [Parameter] public bool Search { get; set; } = true;
     [Parameter] public string SearchPlaceholder { get; set; } = "検索";
     [Parameter] public Func<TItem, IEnumerable<string>>? SearchBy { get; set; }
 
-    // MultiSelection（既定 false）
+    // MultiSelection（既定 true）
     [Parameter] public bool UseMultiSelection { get; set; } = true;
     [Parameter] public IEqualityComparer<TItem>? Comparer { get; set; }
 

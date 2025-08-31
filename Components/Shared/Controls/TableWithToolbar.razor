@@ -126,7 +126,7 @@
 
     // ページャ
     [Parameter] public TablePagerMode Pager { get; set; } = TablePagerMode.Auto;
-    [Parameter] public int RowsPerPage { get; set; } = 10;
+    [Parameter] public int RowsPerPage { get; set; } = AppConstants.DEFAULT_ROWS_PER_PAGE;
 
     // 高さ/外観
     [Parameter] public string? Height { get; set; }
@@ -166,37 +166,28 @@
     private string _searchText = "";
     private int _page = 0;
     private int _rowsPerPageInternal;
+    private int? _lastParamRowsPerPage; // 親RowsPerPageの最後の有効値
+
     private int _tableKey; // ヘッダー三状態の再計算用
     private bool _didInitialAutoSelect;
     private IEnumerable<TItem>? _lastItemsRef;
     private bool _pendingRaiseSelectionChanged;
 
-    // Dense 前提の素朴推定
-    private const int _rowHeightPxDense = 40;
-    private const int _headerHeightPx = 56;
+    // 高さ固定（Height 指定があれば常に固定）
+    private string? _effectiveHeight => !string.IsNullOrWhiteSpace(Height) ? Height : null;
+    private bool _effectiveFixedHeader => !string.IsNullOrWhiteSpace(Height);
 
-    private string? _effectiveHeight => ShouldScroll ? Height : null;
-    private bool _effectiveFixedHeader => ShouldScroll;
-    private bool ShouldScroll
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(Height)) return false;
-            var maxPx = ParsePixel(Height);
-            if (maxPx <= 0) return false;
-
-            var visibleCount = Math.Min(_rowsPerPageInternal, ItemsViewCount);
-            var needPx = _headerHeightPx + (visibleCount * _rowHeightPxDense);
-            return needPx > maxPx;
-        }
-    }
-
-    private int ItemsViewCount => (ItemsView as ICollection<TItem>)?.Count ?? ItemsView.Count();
     private bool HasToolbar => !string.IsNullOrWhiteSpace(Title) || ToolbarContent is not null || Search;
 
     protected override void OnParametersSet()
     {
-        _rowsPerPageInternal = (Pager == TablePagerMode.Auto) ? RowsPerPage : int.MaxValue;
+        // 親のRowsPerPageが変化した時だけ内部へ反映（選択操作等の再描画でリセットされない）
+        var effectiveParamRows = (Pager == TablePagerMode.Auto) ? RowsPerPage : int.MaxValue;
+        if (_lastParamRowsPerPage != effectiveParamRows)
+        {
+            _rowsPerPageInternal = effectiveParamRows;
+            _lastParamRowsPerPage = effectiveParamRows;
+        }
 
         // 外から SelectedItems が来たら内部モード破棄
         if (SelectedItems is not null) _internalSelected = null;
@@ -357,12 +348,4 @@
 
     [CascadingParameter] public Breakpoint CurrentBreakpoint { get; set; } = Breakpoint.Xl;
     private bool IsMdUp => CurrentBreakpoint >= Breakpoint.Md;
-
-    private static int ParsePixel(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return 0;
-        var s = value.Trim().ToLowerInvariant();
-        if (s.EndsWith("px")) s = s[..^2];
-        return int.TryParse(s, out var px) ? px : 0;
-    }
 }

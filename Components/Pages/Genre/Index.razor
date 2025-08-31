@@ -20,7 +20,6 @@
                           Search="false"
                           SearchBy="@(g => new[] { g.Name ?? string.Empty }.Concat(g.SubGenres?.Select(s => s.Name ?? "") ?? Array.Empty<string>()))"
                           Pager="TablePagerMode.Auto"
-                          RowsPerPage="10"
                           Height="500px">
 
             <HeaderContent>
