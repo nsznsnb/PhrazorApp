@@ -190,7 +190,7 @@
     {
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.InfoConfirm,
-            string.Format(AppMessages.MSG_I_CONFIRM_REGIST, model.Phrase)
+            string.Format(AppMessages.MSG_I_CONFIRM_REGIST_DETAIL, model.Phrase)
         );
         if (!ok) return;
 

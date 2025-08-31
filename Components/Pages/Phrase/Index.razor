@@ -847,7 +847,7 @@
 
         var ok = await DialogService.ShowConfirmAsync(
             DialogConfirmType.DangerConfirm,
-            string.Format(AppMessages.MSG_I_CONFIRM_DELETE, targetPhrase));
+            string.Format(AppMessages.MSG_I_CONFIRM_DELETE_DETAIL, targetPhrase));
         if (!ok) return;
 
         var list = await UiOperationRunner.WriteThenReloadAsync(
