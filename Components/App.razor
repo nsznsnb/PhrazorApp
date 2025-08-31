@@ -29,6 +29,11 @@
     <script type="module" src="_content/Heron.MudCalendar/Heron.MudCalendar.min.js"></script>
     <script src="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"></script>
     <script type="module" src="js/site.js"></script>
+    <!-- ★ SSRだけ読み込む -->
+    @if (PageRenderMode is null)
+    {
+        <script src="js/site_ssr.js"></script>
+    }
 </body>
 
 </html>
