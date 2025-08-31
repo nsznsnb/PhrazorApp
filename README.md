@@ -24,7 +24,7 @@
 ```mermaid
 flowchart TB
 
-  Client["ユーザーのブラウザ（HTTPS）"]
+  Client["ユーザーのブラウザ（HTTPS/WSS）"]
 
   subgraph Azure["Azure App Service"]
     direction TB
